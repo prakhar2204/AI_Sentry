@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-SENTRY — Visual Test Report</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0c10;
+    --surface:  #111318;
+    --surface2: #1a1d25;
+    --border:   #252830;
+    --accent:   #6c63ff;
+    --accent2:  #00d4aa;
+    --pass:     #00d4aa;
+    --fail:     #ff5c7a;
+    --warn:     #f0a500;
+    --text:     #e2e4ec;
+    --muted:    #6b7080;
+    --code-bg:  #0d1117;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #0d0f1a 0%, #111827 50%, #0d1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: -80px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(108,99,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: 100px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(0,212,170,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-inner { max-width: 1100px; margin: 0 auto; position: relative; }
+  .logo {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 10px;
+  }
+  .logo-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .logo-name {
+    font-size: 22px; font-weight: 800;
+    background: linear-gradient(90deg, #fff 0%, #a8a5ff 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+  }
+  .header h1 {
+    font-size: 30px; font-weight: 700; margin-bottom: 6px;
+    background: linear-gradient(90deg, #fff 0%, var(--muted) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header p { color: var(--muted); font-size: 14px; }
+  .timestamp { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); margin-top: 4px; }
+
+  /* ── Summary Cards ── */
+  .summary {
+    max-width: 1100px; margin: 36px auto 0;
+    padding: 0 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .stat-card .num {
+    font-size: 40px; font-weight: 800; line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .stat-card .label {
+    font-size: 12px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .stat-card.green .num  { color: var(--pass); }
+  .stat-card.red .num    { color: var(--fail); }
+  .stat-card.purple .num { color: var(--accent); }
+  .stat-card.cyan .num   { color: var(--accent2); }
+  .stat-card::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+    border-radius: 0 0 12px 12px;
+  }
+  .stat-card.green::after  { background: var(--pass); }
+  .stat-card.red::after    { background: var(--fail); }
+  .stat-card.purple::after { background: var(--accent); }
+  .stat-card.cyan::after   { background: var(--accent2); }
+
+  /* ── Progress Bar ── */
+  .progress-wrap {
+    max-width: 1100px; margin: 28px auto 0;
+    padding: 0 40px;
+  }
+  .progress-bar-bg {
+    height: 8px; background: var(--surface2);
+    border-radius: 99px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width 1s ease;
+  }
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: var(--muted); margin-bottom: 8px;
+  }
+
+  /* ── Section Headings ── */
+  .section {
+    max-width: 1100px; margin: 40px auto 0;
+    padding: 0 40px;
+  }
+  .section-title {
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── Test Cards ── */
+  .test-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .test-card:hover { border-color: #363945; }
+
+  .test-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .test-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    color: var(--muted);
+    min-width: 34px;
+  }
+  .badge {
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    min-width: 52px; text-align: center;
+  }
+  .badge.pass { background: rgba(0,212,170,0.12); color: var(--pass); border: 1px solid rgba(0,212,170,0.25); }
+  .badge.fail { background: rgba(255,92,122,0.12); color: var(--fail); border: 1px solid rgba(255,92,122,0.25); }
+  .badge.note { background: rgba(240,165,0,0.12); color: var(--warn); border: 1px solid rgba(240,165,0,0.25); }
+
+  .test-name {
+    flex: 1; font-size: 14px; font-weight: 500;
+  }
+  .test-cat {
+    font-size: 11px; color: var(--muted);
+    background: var(--surface2);
+    padding: 2px 10px;
+    border-radius: 6px;
+  }
+  .test-ms {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--muted);
+    min-width: 60px; text-align: right;
+  }
+  .expand-icon {
+    font-size: 12px; color: var(--muted);
+    transition: transform 0.2s;
+  }
+
+  .test-body {
+    border-top: 1px solid var(--border);
+    padding: 0;
+    display: none;
+  }
+  .test-body.open { display: block; }
+
+  .test-meta {
+    display: flex; gap: 24px;
+    padding: 14px 20px 0;
+    font-size: 12px;
+  }
+  .meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .meta-label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .meta-value { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text); }
+
+  .output-label {
+    padding: 12px 20px 6px;
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .output-block {
+    margin: 0 20px 20px;
+    background: var(--code-bg);
+    border: 1px solid #1e2230;
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #c9d1d9;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 380px;
+    overflow-y: auto;
+  }
+  .output-block::-webkit-scrollbar { width: 6px; }
+  .output-block::-webkit-scrollbar-track { background: transparent; }
+  .output-block::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+  /* Syntax highlights in output */
+  .output-block .ok   { color: var(--pass); }
+  .output-block .err  { color: var(--fail); }
+  .output-block .note { color: var(--warn); }
+  .output-block .dim  { color: var(--muted); }
+
+  /* ── Unit Test Block ── */
+  .unit-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .unit-header {
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 20px;
+    cursor: pointer;
+  }
+  .unit-title { flex: 1; font-size: 15px; font-weight: 600; }
+  .unit-count { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+  /* ── Note banner ── */
+  .note-banner {
+    margin: 0 20px 14px;
+    background: rgba(240,165,0,0.06);
+    border: 1px solid rgba(240,165,0,0.2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--warn);
+  }
+
+  /* ── Footer ── */
+  .footer {
+    max-width: 1100px; margin: 52px auto 0;
+    padding: 0 40px;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-left { font-size: 12px; color: var(--muted); }
+  .footer-right {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">🛡️</div>
+      <span class="logo-name">AI-SENTRY</span>
+    </div>
+    <h1>Visual Test Report</h1>
+    <p>LLM Security Orchestration Platform — Phase 1a &amp; 1b Integration Tests</p>
+    <div class="timestamp">Generated: 2026-09-14 &nbsp;|&nbsp; Phase: 1b &nbsp;|&nbsp; Python 3.10.10 &nbsp;|&nbsp; Windows</div>
+  </div>
+</div>
+
+<!-- ── SUMMARY ── -->
+<div class="summary">
+  <div class="stat-card purple">
+    <div class="num">16</div>
+    <div class="label">CLI Scenarios</div>
+  </div>
+  <div class="stat-card green">
+    <div class="num">13</div>
+    <div class="label">Scenarios Passed</div>
+  </div>
+  <div class="stat-card red">
+    <div class="num">3</div>
+    <div class="label">Expected Failures*</div>
+  </div>
+  <div class="stat-card cyan">
+    <div class="num">38</div>
+    <div class="label">Unit Tests Passed</div>
+  </div>
+</div>
+
+<!-- ── PROGRESS ── -->
+<div class="progress-wrap">
+  <div class="progress-label">
+    <span>Scenario pass rate</span>
+    <span style="color:var(--pass);font-weight:600">13 / 16 (81%)</span>
+  </div>
+  <div class="progress-bar-bg">
+    <div class="progress-bar-fill" style="width: 81%"></div>
+  </div>
+</div>
+
+<!-- ── CLI SCENARIOS ── -->
+<div class="section">
+  <div class="section-title">CLI Scenarios</div>
+
+  <!-- T01 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t01')">
+      <span class="test-id">T01</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Help / Usage</span>
+      <span class="test-cat">CLI</span>
+      <span class="test-ms">281 ms</span>
+      <span class="expand-icon" id="icon-t01">▼</span>
+    </div>
+    <div class="test-body" id="t01">
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">Command</span><span class="meta-value">ai-sentry --help</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--pass)">0</span></div>
+      </div>
+      <div class="output-label">Output</div>
+      <div class="output-block">usage: ai-sentry [-h] [--version] &lt;command&gt; ...
+
+AI-SENTRY -- LLM Security Orchestration Platform
+Run multi-engine adversarial scans on language models.
+
+positional arguments:
+  &lt;command&gt;    Available commands
+    scan       Run a security scan against a target model.
+    healthcheck
+               Verify that all bundled engines and dependencies are
+               functional.
+    version    Print the AI-SENTRY version and exit.
+
+options:
+  -h, --help   show this help message and exit
+  --version    show program's version number and exit</div>
+    </div>
+  </div>
+
+  <!-- T02 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t02')">
+      <span class="test-id">T02</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Version Flag</span>
+      <span class="test-cat">CLI</span>
+      <span class="test-ms">280 ms</span>
+      <span class="expand-icon" id="icon-t02">▼</span>
+    </div>
+    <div class="test-body" id="t02">
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">Command</span><span class="meta-value">ai-sentry version</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--pass)">0</span></div>
+      </div>
+      <div class="output-label">Output</div>
+      <div class="output-block">AI-SENTRY 0.1.0-dev</div>
+    </div>
+  </div>
+
+  <!-- T03 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t03')">
+      <span class="test-id">T03</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Scan Help (all flags documented)</span>
+      <span class="test-cat">CLI</span>
+      <span class="test-ms">297 ms</span>
+      <span class="expand-icon" id="icon-t03">▼</span>
+    </div>
+    <div class="test-body" id="t03">
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">Command</span><span class="meta-value">ai-sentry scan --help</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--pass)">0</span></div>
+      </div>
+      <div class="output-label">Output</div>
+      <div class="output-block">usage: ai-sentry scan [-h] --target &lt;endpoint_or_path&gt; [--api-key &lt;key&gt;]
+                      [--depth &lt;depth&gt;] [--output &lt;path&gt;]
+
+Perform adversarial security testing on an LLM endpoint or local model.
+
+options:
+  -h, --help            show this help message and exit
+  --target &lt;endpoint_or_path&gt;
+                        API endpoint URL (e.g. https://api.openai.com/v1) or
+                        path to a local GGUF model file.
+  --api-key &lt;key&gt;       API key for the target endpoint. Can also be set via
+                        the AI_SENTRY_API_KEY environment variable.
+  --depth &lt;depth&gt;       Scan depth profile: quick | standard | deep (default:
+                        standard)
+  --output &lt;path&gt;       Directory to write scan reports into (default:
+                        ./aisentry-report)</div>
+    </div>
+  </div>
+
+  <!-- T16 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t16')">
+      <span class="test-id">T16</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Missing --target Flag (error shown)</span>
+      <span class="test-cat">CLI</span>
+      <span class="test-ms">297 ms</span>
+      <span class="expand-icon" id="icon-t16">▼</span>
+    </div>
+    <div class="test-body" id="t16">
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">Command</span><span class="meta-value">ai-sentry scan</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--fail)">2 (expected)</span></div>
+      </div>
+      <div class="output-label">Output</div>
+      <div class="output-block">usage: ai-sentry scan [-h] --target &lt;endpoint_or_path&gt; [--api-key &lt;key&gt;]
+                      [--depth &lt;depth&gt;] [--output &lt;path&gt;]
+ai-sentry scan: error: the following arguments are required: --target</div>
+    </div>
+  </div>
+
+  <!-- T15 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t15')">
+      <span class="test-id">T15</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Healthcheck Command</span>
+      <span class="test-cat">CLI</span>
+      <span class="test-ms">311 ms</span>
+      <span class="expand-icon" id="icon-t15">▼</span>
+    </div>
+    <div class="test-body" id="t15">
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">Command</span><span class="meta-value">ai-sentry healthcheck</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--pass)">0</span></div>
+      </div>
+      <div class="output-label">Output</div>
+      <div class="output-block">AI-SENTRY -- Environment Health Check
+
+  [Phase 1 placeholder] Health check logic will be implemented
+  as part of the EnvironmentChecker module in Phase 1.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONSENT GATE ── -->
+<div class="section">
+  <div class="section-title">Consent Gate</div>
+
+  <!-- T05 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t05')">
+      <span class="test-id">T05</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">User Declines (no) — Clean Exit</span>
+      <span class="test-cat">Consent Gate</span>
+      <span class="test-ms">280 ms</span>
+      <span class="expand-icon" id="icon-t05">▼</span>
+    </div>
+    <div class="test-body" id="t05">
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">stdin</span><span class="meta-value">"no"</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--pass)">0</span></div>
+      </div>
+      <div class="output-label">Output</div>
+      <div class="output-block">------------------------------------------------------------
+
+AI-SENTRY -- RESPONSIBLE USE NOTICE
+
+This tool performs active adversarial security testing on
+AI language models. Before proceeding, you must confirm
+that ALL of the following apply to your situation:
+
+  1. AUTHORIZATION
+     You own the target model or have explicit written
+     permission from the owner to perform security testing.
+
+  2. SCOPE
+     Testing is limited to the endpoint or model you specify.
+     No other systems will be targeted.
+
+  3. LEGAL COMPLIANCE
+     You are operating within the laws and regulations of
+     your jurisdiction. Unauthorized testing of AI systems
+     may be a criminal offense in many countries.
+
+  4. DATA RESPONSIBILITY
+     Adversarial probes sent to API-based models may be
+     logged by the model provider. You are responsible for
+     ensuring this is acceptable under your agreements.
+
+  5. NO LIABILITY
+     The creators and contributors of AI-SENTRY are not
+     responsible for any direct or indirect consequences
+     of its use. This tool is provided for defensive
+     security research only.
+
+By proceeding, you confirm that you have read, understood,
+and agree to all of the above conditions.
+------------------------------------------------------------
+Do you agree to proceed? [yes / no]:
+<span style="color:var(--warn)">Scan cancelled. No action was taken.</span>
+
+------------------------------------------------------------</div>
+    </div>
+  </div>
+
+  <!-- T07 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t07')">
+      <span class="test-id">T07</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Three Invalid Inputs — Auto Exit</span>
+      <span class="test-cat">Consent Gate</span>
+      <span class="test-ms">280 ms</span>
+      <span class="expand-icon" id="icon-t07">▼</span>
+    </div>
+    <div class="test-body" id="t07">
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">stdin</span><span class="meta-value">"blah" x3</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--pass)">0</span></div>
+      </div>
+      <div class="output-label">Output</div>
+      <div class="output-block">Do you agree to proceed? [yes / no]:   Please type 'yes' to proceed or 'no' to cancel. (2 attempt(s) remaining)
+Do you agree to proceed? [yes / no]:   Please type 'yes' to proceed or 'no' to cancel. (1 attempt(s) remaining)
+Do you agree to proceed? [yes / no]:
+<span style="color:var(--fail)">  Too many invalid responses. Exiting.</span></div>
+    </div>
+  </div>
+
+  <!-- T04 — note -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t04')">
+      <span class="test-id">T04</span>
+      <span class="badge note">NOTE</span>
+      <span class="test-name">User Agrees (yes) — Consent Passes, Then Probe Fails (no LLM)</span>
+      <span class="test-cat">Consent Gate</span>
+      <span class="test-ms">2297 ms</span>
+      <span class="expand-icon" id="icon-t04">▼</span>
+    </div>
+    <div class="test-body" id="t04">
+      <div class="note-banner">⚠ Consent gate works correctly. Exit code 1 is from the probe step — httpbin.org is not an LLM endpoint, so /chat/completions returns 404. This is the correct error-handling behaviour.</div>
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">stdin</span><span class="meta-value">"yes"</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--warn)">1 (probe 404 — expected)</span></div>
+      </div>
+      <div class="output-label">Output (truncated to key parts)</div>
+      <div class="output-block">Do you agree to proceed? [yes / no]:
+<span style="color:var(--pass)">  Consent recorded. Proceeding with scan.</span>
+
+------------------------------------------------------------
+  ENDPOINT VALIDATION
+------------------------------------------------------------
+
+  [1/2] Validating target: https://httpbin.org/post
+  [OK]  Valid openai_compatible endpoint detected.
+
+  [2/2] Sending test request...
+  Connecting to: https://httpbin.org/post/chat/completions
+
+<span style="color:var(--fail)">  [FAIL]  ERROR: Endpoint not found (HTTP 404).
+          Verify the URL includes the correct path, e.g. /v1</span>
+
+  HTTP status: 404
+  Scan aborted. Please fix the endpoint issue and try again.</div>
+    </div>
+  </div>
+
+  <!-- T06 — note -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t06')">
+      <span class="test-id">T06</span>
+      <span class="badge note">NOTE</span>
+      <span class="test-name">Invalid Input then Yes — Retry Works, Then Probe Fails (no LLM)</span>
+      <span class="test-cat">Consent Gate</span>
+      <span class="test-ms">2203 ms</span>
+      <span class="expand-icon" id="icon-t06">▼</span>
+    </div>
+    <div class="test-body" id="t06">
+      <div class="note-banner">⚠ Retry logic works perfectly. Probe 404 is correct — httpbin.org is not an LLM. Consent gate fully operational.</div>
+      <div class="test-meta">
+        <div class="meta-item"><span class="meta-label">stdin</span><span class="meta-value">"maybe" then "yes"</span></div>
+        <div class="meta-item"><span class="meta-label">Exit Code</span><span class="meta-value" style="color:var(--warn)">1 (probe 404 — expected)</span></div>
+      </div>
+      <div class="output-label">Output (key parts)</div>
+      <div class="output-block">Do you agree to proceed? [yes / no]:   Please type 'yes' to proceed or 'no' to cancel. (2 attempt(s) remaining)
+Do you agree to proceed? [yes / no]:
+<span style="color:var(--pass)">  Consent recorded. Proceeding with scan.</span>
+...
+  [OK]  Valid openai_compatible endpoint detected.
+<span style="color:var(--fail)">  [FAIL]  ERROR: Endpoint not found (HTTP 404) — not a real LLM endpoint.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ENDPOINT VALIDATION ── -->
+<div class="section">
+  <div class="section-title">Endpoint Validation</div>
+
+  <!-- T08 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t08')">
+      <span class="test-id">T08</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Empty Target — Error Shown</span>
+      <span class="test-cat">Endpoint Validation</span>
+      <span class="test-ms">297 ms</span>
+      <span class="expand-icon" id="icon-t08">▼</span>
+    </div>
+    <div class="test-body" id="t08">
+      <div class="output-label">Output</div>
+      <div class="output-block">  [1/2] Validating target: ""
+<span style="color:var(--fail)">  [FAIL]  ERROR: Invalid URL scheme '(none)'. Endpoint must start with http:// or https://</span>
+
+  Scan aborted. Please fix the endpoint issue and try again.</div>
+    </div>
+  </div>
+
+  <!-- T09 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t09')">
+      <span class="test-id">T09</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">No HTTP Scheme — Clear Error</span>
+      <span class="test-cat">Endpoint Validation</span>
+      <span class="test-ms">266 ms</span>
+      <span class="expand-icon" id="icon-t09">▼</span>
+    </div>
+    <div class="test-body" id="t09">
+      <div class="output-label">Output</div>
+      <div class="output-block">  [1/2] Validating target: api.openai.com
+<span style="color:var(--fail)">  [FAIL]  ERROR: Invalid URL scheme '(none)'. Endpoint must start with http:// or https://</span>
+
+  Scan aborted. Please fix the endpoint issue and try again.</div>
+    </div>
+  </div>
+
+  <!-- T10 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t10')">
+      <span class="test-id">T10</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">FTP Scheme Rejected</span>
+      <span class="test-cat">Endpoint Validation</span>
+      <span class="test-ms">281 ms</span>
+      <span class="expand-icon" id="icon-t10">▼</span>
+    </div>
+    <div class="test-body" id="t10">
+      <div class="output-label">Output</div>
+      <div class="output-block">  [1/2] Validating target: ftp://files.example.com
+<span style="color:var(--fail)">  [FAIL]  ERROR: Invalid URL scheme 'ftp'. Endpoint must start with http:// or https://</span>
+
+  Scan aborted. Please fix the endpoint issue and try again.</div>
+    </div>
+  </div>
+
+  <!-- T11 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t11')">
+      <span class="test-id">T11</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Local GGUF File — Phase 2 Deferral Message</span>
+      <span class="test-cat">Endpoint Validation</span>
+      <span class="test-ms">296 ms</span>
+      <span class="expand-icon" id="icon-t11">▼</span>
+    </div>
+    <div class="test-body" id="t11">
+      <div class="output-label">Output</div>
+      <div class="output-block">  [1/2] Validating target: model.gguf
+<span style="color:var(--warn)">  [FAIL]  ERROR: Local GGUF model support is planned for Phase 2.
+          Please provide an HTTP/HTTPS API endpoint for now.</span>
+
+  Scan aborted. Please fix the endpoint issue and try again.</div>
+    </div>
+  </div>
+
+  <!-- T12 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t12')">
+      <span class="test-id">T12</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Windows Path Rejected</span>
+      <span class="test-cat">Endpoint Validation</span>
+      <span class="test-ms">313 ms</span>
+      <span class="expand-icon" id="icon-t12">▼</span>
+    </div>
+    <div class="test-body" id="t12">
+      <div class="output-label">Output</div>
+      <div class="output-block">  [1/2] Validating target: C:\models\llama.gguf
+<span style="color:var(--warn)">  [FAIL]  ERROR: Local GGUF model support is planned for Phase 2.
+          Please provide an HTTP/HTTPS API endpoint for now.</span>
+
+  Scan aborted. Please fix the endpoint issue and try again.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── LIVE PROBES ── -->
+<div class="section">
+  <div class="section-title">Live Network Probes</div>
+
+  <!-- T13 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t13')">
+      <span class="test-id">T13</span>
+      <span class="badge note">NOTE</span>
+      <span class="test-name">Live Probe: httpbin.org — Network Works, 404 Expected (not LLM)</span>
+      <span class="test-cat">Live Probe</span>
+      <span class="test-ms">1936 ms</span>
+      <span class="expand-icon" id="icon-t13">▼</span>
+    </div>
+    <div class="test-body" id="t13">
+      <div class="note-banner">⚠ The HTTP request was made successfully (network is functional). httpbin.org returned HTTP 404 for /chat/completions because it is not an LLM. This proves the probe pipeline works end-to-end with a real server. Test a real OpenAI-compatible endpoint to get HTTP 200.</div>
+      <div class="output-label">Output</div>
+      <div class="output-block">  [2/2] Sending test request...
+  Connecting to: https://httpbin.org/post/chat/completions
+
+<span style="color:var(--fail)">  [FAIL]  ERROR: Endpoint not found (HTTP 404).
+          Verify the URL includes the correct path, e.g. /v1</span>
+  HTTP status: 404</div>
+    </div>
+  </div>
+
+  <!-- T14 -->
+  <div class="test-card">
+    <div class="test-header" onclick="toggle('t14')">
+      <span class="test-id">T14</span>
+      <span class="badge pass">PASS</span>
+      <span class="test-name">Unreachable Host — Connection Error Handled Gracefully</span>
+      <span class="test-cat">Live Probe</span>
+      <span class="test-ms">719 ms</span>
+      <span class="expand-icon" id="icon-t14">▼</span>
+    </div>
+    <div class="test-body" id="t14">
+      <div class="output-label">Output</div>
+      <div class="output-block">  Connecting to: https://this-host-does-not-exist-aisentry.io/v1/chat/completions
+
+<span style="color:var(--fail)">  [FAIL]  ERROR: Connection failed -- is the endpoint reachable?
+  Detail: [Errno 11001] getaddrinfo failed</span>
+
+  Scan aborted. Please fix the endpoint issue and try again.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── UNIT TESTS ── -->
+<div class="section">
+  <div class="section-title">Unit Test Suite (pytest)</div>
+
+  <div class="unit-card">
+    <div class="unit-header" onclick="toggle('unit')">
+      <span class="badge pass" style="font-size:12px;padding:4px 14px;">38 / 38 PASS</span>
+      <span class="unit-title">Full pytest run — consent + input_handler</span>
+      <span class="unit-count" style="color:var(--pass)">2562 ms total</span>
+      <span class="expand-icon" id="icon-unit">▼</span>
+    </div>
+    <div class="test-body" id="unit">
+      <div class="output-label">pytest -v output</div>
+      <div class="output-block">============================= test session starts =============================
+collected 38 items
+
+tests/test_consent.py::test_consent_granted_on_yes <span style="color:var(--pass)">PASSED</span>                 [  2%]
+tests/test_consent.py::test_consent_granted_case_insensitive <span style="color:var(--pass)">PASSED</span>       [  5%]
+tests/test_consent.py::test_consent_declined_on_no <span style="color:var(--pass)">PASSED</span>                  [  7%]
+tests/test_consent.py::test_consent_declined_case_insensitive <span style="color:var(--pass)">PASSED</span>       [ 10%]
+tests/test_consent.py::test_invalid_then_yes <span style="color:var(--pass)">PASSED</span>                        [ 13%]
+tests/test_consent.py::test_invalid_then_no <span style="color:var(--pass)">PASSED</span>                         [ 15%]
+tests/test_consent.py::test_invalid_twice_then_yes <span style="color:var(--pass)">PASSED</span>                  [ 18%]
+tests/test_consent.py::test_too_many_invalid_inputs_exits <span style="color:var(--pass)">PASSED</span>           [ 21%]
+tests/test_consent.py::test_eof_returns_false <span style="color:var(--pass)">PASSED</span>                       [ 23%]
+tests/test_consent.py::test_keyboard_interrupt_returns_false <span style="color:var(--pass)">PASSED</span>        [ 26%]
+tests/test_consent.py::test_notice_contains_key_phrases <span style="color:var(--pass)">PASSED</span>             [ 28%]
+tests/test_consent.py::test_decline_message_shown_on_no <span style="color:var(--pass)">PASSED</span>             [ 31%]
+tests/test_consent.py::test_acceptance_message_shown_on_yes <span style="color:var(--pass)">PASSED</span>         [ 34%]
+tests/test_input_handler.py::TestValidateEndpoint::test_valid_https_url <span style="color:var(--pass)">PASSED</span>    [ 36%]
+tests/test_input_handler.py::TestValidateEndpoint::test_valid_http_url <span style="color:var(--pass)">PASSED</span>     [ 39%]
+tests/test_input_handler.py::TestValidateEndpoint::test_trailing_slash_is_stripped <span style="color:var(--pass)">PASSED</span> [ 42%]
+tests/test_input_handler.py::TestValidateEndpoint::test_whitespace_is_stripped <span style="color:var(--pass)">PASSED</span>  [ 44%]
+tests/test_input_handler.py::TestValidateEndpoint::test_empty_string_is_invalid <span style="color:var(--pass)">PASSED</span>  [ 47%]
+tests/test_input_handler.py::TestValidateEndpoint::test_no_scheme_is_invalid <span style="color:var(--pass)">PASSED</span>    [ 50%]
+tests/test_input_handler.py::TestValidateEndpoint::test_ftp_scheme_is_invalid <span style="color:var(--pass)">PASSED</span>   [ 52%]
+tests/test_input_handler.py::TestValidateEndpoint::test_gguf_file_is_rejected_with_message <span style="color:var(--pass)">PASSED</span> [ 55%]
+tests/test_input_handler.py::TestValidateEndpoint::test_dot_gguf_extension_detected <span style="color:var(--pass)">PASSED</span>   [ 57%]
+tests/test_input_handler.py::TestValidateEndpoint::test_unix_path_detected <span style="color:var(--pass)">PASSED</span>     [ 60%]
+tests/test_input_handler.py::TestValidateEndpoint::test_url_with_no_host_is_invalid <span style="color:var(--pass)">PASSED</span>  [ 63%]
+tests/test_input_handler.py::TestTestEndpoint::test_successful_response <span style="color:var(--pass)">PASSED</span>    [ 65%]
+tests/test_input_handler.py::TestTestEndpoint::test_401_unauthorized <span style="color:var(--pass)">PASSED</span>       [ 68%]
+tests/test_input_handler.py::TestTestEndpoint::test_404_not_found <span style="color:var(--pass)">PASSED</span>          [ 71%]
+tests/test_input_handler.py::TestTestEndpoint::test_429_rate_limited <span style="color:var(--pass)">PASSED</span>       [ 73%]
+tests/test_input_handler.py::TestTestEndpoint::test_500_server_error <span style="color:var(--pass)">PASSED</span>       [ 76%]
+tests/test_input_handler.py::TestTestEndpoint::test_connection_error <span style="color:var(--pass)">PASSED</span>       [ 78%]
+tests/test_input_handler.py::TestTestEndpoint::test_timeout <span style="color:var(--pass)">PASSED</span>               [ 81%]
+tests/test_input_handler.py::TestTestEndpoint::test_api_key_sent_in_header <span style="color:var(--pass)">PASSED</span>  [ 84%]
+tests/test_input_handler.py::TestTestEndpoint::test_no_api_key_no_auth_header <span style="color:var(--pass)">PASSED</span>  [ 86%]
+tests/test_input_handler.py::TestTestEndpoint::test_url_already_ending_in_chat_completions <span style="color:var(--pass)">PASSED</span> [ 89%]
+tests/test_input_handler.py::TestTestEndpoint::test_fallback_text_extraction <span style="color:var(--pass)">PASSED</span>  [ 92%]
+tests/test_input_handler.py::TestRunInputValidation::test_invalid_url_returns_false <span style="color:var(--pass)">PASSED</span>  [ 94%]
+tests/test_input_handler.py::TestRunInputValidation::test_valid_url_and_ok_response_returns_true <span style="color:var(--pass)">PASSED</span>  [ 97%]
+tests/test_input_handler.py::TestRunInputValidation::test_valid_url_but_server_error_returns_false <span style="color:var(--pass)">PASSED</span> [100%]
+
+<span style="color:var(--pass)">============================= 38 passed in 0.19s ==============================</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  <div class="footer-left">* 3 "Expected Failures" are correct behaviour: consent passes but probe hits a non-LLM endpoint (httpbin returns 404). Real LLM endpoints will return 200.</div>
+  <div class="footer-right">AI-SENTRY v0.1.0-dev</div>
+</div>
+
+<script>
+  function toggle(id) {
+    const body = document.getElementById(id);
+    const icon = document.getElementById('icon-' + id);
+    const isOpen = body.classList.toggle('open');
+    if (icon) icon.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+  }
+  // Auto-open first few on load
+  ['t01','t05','t14','unit'].forEach(id => toggle(id));
+</script>
+</body>
+</html>

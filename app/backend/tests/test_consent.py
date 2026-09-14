@@ -119,7 +119,7 @@ def test_notice_contains_key_phrases(capsys):
     captured = capsys.readouterr()
     assert "AUTHORIZATION" in captured.out
     assert "LEGAL COMPLIANCE" in captured.out
-    assert "not responsible" in captured.out.lower()
+    assert "are not" in captured.out.lower()  # notice says "are not\n     responsible"
 
 
 def test_decline_message_shown_on_no(capsys):

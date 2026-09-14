@@ -1,0 +1,7 @@
+﻿python : C:\Users\Prakhar\AppData\Local\Programs\Python\Python310\python.exe: No module named aisentry
+At line:1 char:1
++ python -m aisentry --help 2>&1 | Out-File "test_out_help.txt" -Encodi ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (C:\Users\Prakha... named aisentry:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

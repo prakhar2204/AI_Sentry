@@ -14,10 +14,10 @@ import textwrap
 #  Constants
 # ─────────────────────────────────────────────
 
-_DIVIDER = "─" * 60
+_DIVIDER = "-" * 60
 
 _RESPONSIBLE_USE_NOTICE = """
-AI-SENTRY — RESPONSIBLE USE NOTICE
+AI-SENTRY -- RESPONSIBLE USE NOTICE
 
 This tool performs active adversarial security testing on
 AI language models. Before proceeding, you must confirm
