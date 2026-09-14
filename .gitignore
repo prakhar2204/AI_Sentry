@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+*.coveragerc
+
+# mypy
+.mypy_cache/
+
+# ruff
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Tauri / Rust
+app/src-tauri/target/
+app/src-tauri/WixTools/
+
+# Node / Next.js website
+website/node_modules/
+website/.next/
+website/out/
+
+# Scan artifacts (never committed — may contain sensitive probe data)
+scan_artifacts/
+*.aisentry-scan/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Temporary files
+*.tmp
+test_output.txt
+pytest_result.txt
+run_smoke_tests.py

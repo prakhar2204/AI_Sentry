@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+# ─────────────────────────────────────────────────────────────
+#  Project metadata
+# ─────────────────────────────────────────────────────────────
+
+[project]
+name            = "aisentry"
+version         = "0.1.0-dev"
+description     = "AI-SENTRY — LLM Security Orchestration Platform"
+readme          = "README.md"
+requires-python = ">=3.11"
+license         = { text = "Apache-2.0" }
+keywords        = ["llm", "security", "red-teaming", "ai-safety"]
+
+# ─────────────────────────────────────────────────────────────
+#  Runtime dependencies (pinned — see decisions D-002)
+# ─────────────────────────────────────────────────────────────
+
+[project.optional-dependencies]
+engines = [
+    # Scanning engines — pinned to tested versions.
+    # DO NOT change these versions without running the full test suite.
+    "garak==0.9.0.14",          # D-002: Garak pinned
+    "pyrit-ai==0.5.0",          # D-002: PyRIT pinned
+    "deepeval==1.4.0",          # D-002: DeepTeam pinned
+]
+
+reports = [
+    "weasyprint>=61.0,<62.0",   # D-019: PDF renderer
+]
+
+aws = [
+    "boto3>=1.34,<2.0",         # D-022: AWS deployment
+]
+
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",                # linter + formatter
+    "mypy>=1.10",
+]
+
+# Install everything:
+#   pip install -e ".[engines,reports,aws,dev]"
+
+# ─────────────────────────────────────────────────────────────
+#  CLI entry point
+# ─────────────────────────────────────────────────────────────
+
+[project.scripts]
+aisentry = "cli.main:main"
+
+# ─────────────────────────────────────────────────────────────
+#  Tool configuration
+# ─────────────────────────────────────────────────────────────
+
+[tool.pytest.ini_options]
+testpaths    = ["tests"]
+pythonpath   = ["."]           # ensures `from core.consent import ...` resolves
+addopts      = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]              # long lines handled by formatter
+
+[tool.mypy]
+python_version    = "3.11"
+strict            = true
+ignore_missing_imports = true

@@ -1,0 +1,12 @@
+# Normalize line endings to LF in the repository for all text files.
+* text=auto eol=lf
+
+# Explicitly binary files — never touch line endings.
+*.exe  binary
+*.dll  binary
+*.so   binary
+*.dylib binary
+*.woff2 binary
+*.png  binary
+*.jpg  binary
+*.webp binary
