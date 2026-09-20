@@ -21,6 +21,7 @@ import sys
 from core.consent import get_user_consent
 from core.input_handler import run_input_validation
 from core.local_handler import run_local_validation
+from core.validator import run_all_validations, print_validation_error
 
 
 # ─────────────────────────────────────────────
@@ -150,11 +151,12 @@ def handle_scan(args: argparse.Namespace) -> int:
     Entry point for the `scan` command.
 
     Pipeline:
-        1. Consent gate          (mandatory -- cannot be skipped)
-        2. Mode dispatch:
-             --mode api   -> API endpoint validation + probe  (Phase 1b)
-             --mode local -> local server validation + probe  (Phase 1c)
-        3. Scan orchestration    (Phase 3 -- placeholder for now)
+        1. Consent gate      (mandatory -- cannot be skipped)
+        2. Input validation  (Phase 1d -- strict, fail-fast)
+        3. Mode dispatch:
+             --mode api   -> API endpoint probe  (Phase 1b)
+             --mode local -> local server probe  (Phase 1c)
+        4. Scan orchestration (Phase 3 -- placeholder for now)
 
     Returns an integer exit code (0 = success, non-zero = error).
     """
@@ -162,7 +164,14 @@ def handle_scan(args: argparse.Namespace) -> int:
     if not get_user_consent():
         return 0  # user declined -- clean exit, nothing was done
 
-    # ── 2. Mode dispatch ──────────────────────
+    # ── 2. Strict input validation (fail-fast) ─
+    validation_err = run_all_validations(mode=args.mode, target=args.target)
+    if validation_err is not None:
+        print_validation_error(validation_err)
+        print("  Scan aborted. Fix the issue above and retry.\n")
+        return 1
+
+    # ── 3. Mode dispatch ──────────────────────
     mode = args.mode
 
     _print_divider()
@@ -187,7 +196,7 @@ def handle_scan(args: argparse.Namespace) -> int:
         print("  Scan aborted. Please fix the issue above and try again.\n")
         return 1
 
-    # ── 3. Scan orchestration (Phase 3) ───────
+    # ── 4. Scan orchestration (Phase 3) ───────
     _print_divider()
     print(f"\n  Target  : {args.target}")
     print(f"  Mode    : {mode}")
