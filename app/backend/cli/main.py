@@ -22,6 +22,13 @@ from core.consent import get_user_consent
 from core.input_handler import run_input_validation
 from core.local_handler import run_local_validation
 from core.validator import run_all_validations, print_validation_error
+from core.manifest import (
+    create_manifest,
+    load_manifest_from_file,
+    merge_cli_and_manifest,
+    format_manifest_summary,
+    VALID_CATEGORY_NAMES,
+)
 
 
 # ─────────────────────────────────────────────
@@ -116,6 +123,26 @@ def build_parser() -> argparse.ArgumentParser:
         help="Scan depth profile: quick | standard | deep  (default: standard)",
     )
     scan_parser.add_argument(
+        "--categories",
+        nargs="+",
+        metavar="<category>",
+        default=None,
+        help=(
+            "Probe categories to run. Space-separated list of: "
+            + "  ".join(sorted(VALID_CATEGORY_NAMES))
+            + "  (default: all categories for the chosen --depth)"
+        ),
+    )
+    scan_parser.add_argument(
+        "--manifest",
+        default=None,
+        metavar="<path>",
+        help=(
+            "Path to a JSON manifest file. CLI flags override file values. "
+            "See example_manifest.json for format."
+        ),
+    )
+    scan_parser.add_argument(
         "--output",
         default="./aisentry-report",
         metavar="<path>",
@@ -153,33 +180,60 @@ def handle_scan(args: argparse.Namespace) -> int:
     Pipeline:
         1. Consent gate      (mandatory -- cannot be skipped)
         2. Input validation  (Phase 1d -- strict, fail-fast)
-        3. Mode dispatch:
+        3. Manifest creation (Phase 2a -- configuration object)
+        4. Mode dispatch:
              --mode api   -> API endpoint probe  (Phase 1b)
              --mode local -> local server probe  (Phase 1c)
-        4. Scan orchestration (Phase 3 -- placeholder for now)
+        5. Scan orchestration (Phase 3 -- placeholder for now)
 
     Returns an integer exit code (0 = success, non-zero = error).
     """
-    # ── 1. Consent gate ───────────────────────
+    # -- 1. Consent gate ------------------------------------------
     if not get_user_consent():
         return 0  # user declined -- clean exit, nothing was done
 
-    # ── 2. Strict input validation (fail-fast) ─
+    # -- 2. Strict input validation (fail-fast) -------------------
     validation_err = run_all_validations(mode=args.mode, target=args.target)
     if validation_err is not None:
         print_validation_error(validation_err)
         print("  Scan aborted. Fix the issue above and retry.\n")
         return 1
 
-    # ── 3. Mode dispatch ──────────────────────
+    # -- 3. Build scan manifest ------------------------------------
+    api_key: str = args.api_key or os.environ.get("AI_SENTRY_API_KEY", "")
+
+    try:
+        if args.manifest:
+            file_manifest = load_manifest_from_file(args.manifest)
+            manifest = merge_cli_and_manifest(
+                file_manifest,
+                target=args.target,
+                mode=args.mode,
+                scan_depth=args.depth,
+                categories=args.categories,
+                api_key=api_key,
+                output_dir=args.output,
+            )
+        else:
+            manifest = create_manifest(
+                target=args.target,
+                mode=args.mode,
+                scan_depth=args.depth,
+                categories=args.categories,
+                api_key=api_key,
+                output_dir=args.output,
+            )
+    except (ValueError, FileNotFoundError) as exc:
+        print(f"\n  [X] Manifest error: {exc}\n")
+        return 1
+
+    # Display manifest summary
+    print(format_manifest_summary(manifest))
+
+    # -- 4. Mode dispatch ------------------------------------------
     mode = args.mode
 
-    _print_divider()
-    print(f"  Mode: {'Remote API' if mode == MODE_API else 'Local Model (llama.cpp)'}")
-    _print_divider()
-
     if mode == MODE_LOCAL:
-        # Warn if --api-key was supplied with --mode local (it is ignored)
         if args.api_key:
             print(
                 "\n  [WARN] --api-key is ignored in --mode local. "
@@ -188,23 +242,17 @@ def handle_scan(args: argparse.Namespace) -> int:
         reachable = run_local_validation(target=args.target)
 
     else:  # MODE_API (default)
-        # Resolve API key: CLI flag > environment variable > empty
-        api_key: str = args.api_key or os.environ.get("AI_SENTRY_API_KEY", "")
         reachable = run_input_validation(target=args.target, api_key=api_key)
 
     if not reachable:
         print("  Scan aborted. Please fix the issue above and try again.\n")
         return 1
 
-    # ── 4. Scan orchestration (Phase 3) ───────
+    # -- 5. Scan orchestration (Phase 3) ---------------------------
     _print_divider()
-    print(f"\n  Target  : {args.target}")
-    print(f"  Mode    : {mode}")
-    print(f"  Depth   : {args.depth}")
-    print(f"  Output  : {args.output}")
-    print()
     print("  [INFO] Scan engine is not yet implemented (Phase 3).")
-    print("  [INFO] Connection test passed -- the target is ready to be scanned.\n")
+    print("  [INFO] Connection test passed -- the target is ready to be scanned.")
+    print(f"  [INFO] Manifest ID: {manifest.manifest_id}\n")
 
     return 0
 

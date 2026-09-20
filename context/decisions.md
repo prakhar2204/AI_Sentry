@@ -318,3 +318,59 @@ The download begins immediately upon clicking the button.
 - Email capture before download is common but actively hostile to the target user
 - Trust is built by transparency and technical depth — not by gating access to a free tool
 
+
+---
+
+### D-014: ASCII-Only CLI Output
+
+**Date:** 2026-09-14  **Phase:** 1a/1b  **Status:** Active
+
+All CLI output uses plain ASCII. No Unicode box-drawing or em-dashes. Windows cp1252 crashes otherwise.
+
+---
+
+### D-015: Validator is Pure Functions, No I/O
+
+**Date:** 2026-09-17  **Phase:** 1d  **Status:** Active
+
+core/validator.py contains only pure functions. No HTTP, no file access. Fail-fast validation is instantaneous.
+
+---
+
+### D-016: ValidationError is a Dataclass, Not an Exception
+
+**Date:** 2026-09-17  **Phase:** 1d  **Status:** Active
+
+validator.py returns ValidationError dataclass instances (with .field, .message, .hint). Never raises for validation failures.
+
+---
+
+### D-017: Manifest as Central Pipeline Contract
+
+**Date:** 2026-09-20  **Phase:** 2a  **Status:** Active
+
+ScanManifest is the single configuration object through the entire pipeline. No hardcoded scan parameters exist below the manifest layer. Same manifest => same scan, every time.
+
+---
+
+### D-018: ProbeCategory (user-facing) vs VulnClass (engine-facing)
+
+**Date:** 2026-09-20  **Phase:** 2a  **Status:** Active
+
+Manifest exposes 4 coarse ProbeCategory values. Engine adapters (Phase 3) map these to TRD's 17-value VulnClass taxonomy. Users never see engine internals.
+
+---
+
+### D-019: Manifest Status is a Strict State Machine
+
+**Date:** 2026-09-20  **Phase:** 2a  **Status:** Active
+
+advance_status() enforces legal transitions. Terminal states are immutable. Cannot skip consent (CREATED -> RUNNING raises ValueError).
+
+---
+
+### D-020: CLI Flag Priority Over Manifest File
+
+**Date:** 2026-09-20  **Phase:** 2a  **Status:** Active
+
+Priority: CLI flag > JSON file > built-in default. Enables: ai-sentry scan --manifest base.json --target \

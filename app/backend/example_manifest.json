@@ -1,0 +1,15 @@
+{
+  "_comment": "AI-SENTRY Scan Manifest — edit and pass with: python __main__.py scan --manifest manifest.json",
+  "target": "https://api.openai.com/v1",
+  "mode": "api",
+  "scan_depth": "standard",
+  "categories": [
+    "prompt_injection",
+    "jailbreak",
+    "data_leak",
+    "harmful_output"
+  ],
+  "api_key": "",
+  "output_dir": "./aisentry-report",
+  "notes": "Pre-launch scan — standard coverage"
+}
