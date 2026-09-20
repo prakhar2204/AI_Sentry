@@ -618,3 +618,248 @@ def _parse_categories(values: list[str]) -> list[ProbeCategory]:
             )
 
     return result
+
+
+# =============================================================================
+#  PHASE 2b -- Manifest Loader System
+# =============================================================================
+
+@dataclass
+class ManifestLoadResult:
+    """
+    Result returned by get_final_manifest().
+
+    Attributes:
+        ok       -- True if a valid manifest was produced.
+        manifest -- The resolved ScanManifest (None if ok=False).
+        error    -- Human-readable description of what went wrong.
+        hint     -- Corrective suggestion shown to the user.
+        source   -- Where the manifest came from: "cli", "file", or "merged".
+    """
+    ok:       bool
+    manifest: Optional[ScanManifest] = None
+    error:    str                    = ""
+    hint:     str                    = ""
+    source:   str                    = ""
+
+    @classmethod
+    def success(cls, manifest: ScanManifest, source: str) -> "ManifestLoadResult":
+        return cls(ok=True, manifest=manifest, source=source)
+
+    @classmethod
+    def failure(cls, error: str, hint: str = "") -> "ManifestLoadResult":
+        return cls(ok=False, error=error, hint=hint)
+
+
+def validate_manifest_structure(raw: object) -> Optional[str]:
+    """
+    Validate the raw parsed JSON object from a manifest file.
+
+    Returns None if the structure is acceptable.
+    Returns a human-readable error string if something is wrong.
+    """
+    if raw is None:
+        return "Manifest file is empty or contains only 'null'."
+
+    if isinstance(raw, list):
+        return (
+            "Manifest file must contain a JSON object { ... }, "
+            "not a JSON array [ ... ]."
+        )
+
+    if not isinstance(raw, dict):
+        return (
+            f"Manifest file must contain a JSON object, "
+            f"got {type(raw).__name__}."
+        )
+
+    if len(raw) == 0:
+        return "Manifest file is an empty JSON object {}. 'target' is required."
+
+    data = {k: v for k, v in raw.items() if not k.startswith("_")}
+
+    target = data.get("target")
+    if target is None:
+        return (
+            "Manifest file is missing required field 'target'. "
+            "Example: \"target\": \"https://api.openai.com/v1\""
+        )
+    if not isinstance(target, str) or not target.strip():
+        return (
+            "'target' must be a non-empty string. "
+            f"Got: {repr(target)}"
+        )
+
+    if "mode" in data and not isinstance(data["mode"], str):
+        return f"'mode' must be a string. Got: {type(data['mode']).__name__}"
+
+    if "scan_depth" in data and not isinstance(data["scan_depth"], str):
+        return f"'scan_depth' must be a string. Got: {type(data['scan_depth']).__name__}"
+
+    if "categories" in data:
+        cats = data["categories"]
+        if not isinstance(cats, list):
+            return f"'categories' must be a list. Got: {type(cats).__name__}"
+        for i, item in enumerate(cats):
+            if not isinstance(item, str):
+                return (
+                    f"'categories[{i}]' must be a string. "
+                    f"Got: {type(item).__name__} ({repr(item)})"
+                )
+
+    return None
+
+
+def load_manifest_file(path: str) -> ScanManifest:
+    """
+    Load and fully validate a ScanManifest from a JSON file.
+
+    Hardened version of load_manifest_from_file() with:
+      - Empty file detection
+      - Null / array JSON detection
+      - Comment-key stripping (keys starting with _)
+      - Structural validation before enum parsing
+
+    Raises:
+        FileNotFoundError  -- file does not exist
+        ValueError         -- any structural or value problem
+    """
+    file_path = Path(path).resolve()
+
+    if not file_path.exists():
+        raise FileNotFoundError(
+            f"Manifest file not found: {file_path}\n"
+            "  Create one from the template: copy example_manifest.json config.json"
+        )
+
+    if file_path.suffix.lower() != ".json":
+        raise ValueError(
+            f"Manifest file must have a .json extension. Got: '{file_path.suffix}'"
+        )
+
+    content = file_path.read_text(encoding="utf-8").strip()
+    if not content:
+        raise ValueError(
+            f"Manifest file is empty: {file_path.name}\n"
+            "  Add at least: {{\"target\": \"https://api.openai.com/v1\"}}"
+        )
+
+    try:
+        raw = json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise ValueError(
+            f"Invalid JSON in '{file_path.name}': {exc}\n"
+            "  Tip: validate your JSON at https://jsonlint.com"
+        )
+
+    struct_error = validate_manifest_structure(raw)
+    if struct_error:
+        raise ValueError(f"Manifest '{file_path.name}': {struct_error}")
+
+    data = {k: v for k, v in raw.items() if not k.startswith("_")}
+
+    manifest = create_manifest(
+        target=data["target"].strip(),
+        mode=data.get("mode", ScanMode.API.value),
+        scan_depth=data.get("scan_depth", DEFAULT_SCAN_DEPTH.value),
+        categories=data.get("categories", None),
+        api_key=data.get("api_key", ""),
+        output_dir=data.get("output_dir", DEFAULT_OUTPUT_DIR),
+        notes=data.get("notes", ""),
+    )
+    manifest.source_file = str(file_path)
+    return manifest
+
+
+def get_final_manifest(
+    manifest_path:  Optional[str]       = None,
+    cli_target:     Optional[str]       = None,
+    cli_mode:       Optional[str]       = None,
+    cli_scan_depth: Optional[str]       = None,
+    cli_categories: Optional[list[str]] = None,
+    cli_api_key:    Optional[str]       = None,
+    cli_output_dir: Optional[str]       = None,
+) -> ManifestLoadResult:
+    """
+    Single entry point: resolve the final ScanManifest from any combination
+    of a JSON file and/or CLI flags.
+
+    Priority: CLI flags > JSON file > built-in defaults
+
+    Scenarios:
+      A. CLI only   -- manifest_path=None, cli_target provided
+      B. File only  -- manifest_path set, no CLI overrides
+      C. Both       -- CLI flags override file values where provided
+
+    Returns ManifestLoadResult with .ok, .manifest, .error, .hint, .source
+    """
+    file_manifest: Optional[ScanManifest] = None
+
+    # -- Step 1: Load file (if requested) ---------------------------------
+    if manifest_path:
+        try:
+            file_manifest = load_manifest_file(manifest_path)
+        except FileNotFoundError as exc:
+            return ManifestLoadResult.failure(
+                error=str(exc),
+                hint="Check the path and try again.",
+            )
+        except ValueError as exc:
+            return ManifestLoadResult.failure(
+                error=str(exc),
+                hint=(
+                    "Fix the manifest file or drop --manifest to use CLI flags only.\n"
+                    "  See example_manifest.json for the correct format."
+                ),
+            )
+
+    # -- Step 2: Determine source label -----------------------------------
+    any_cli_override = any([
+        cli_target, cli_mode, cli_scan_depth,
+        cli_categories, cli_api_key, cli_output_dir,
+    ])
+    if file_manifest is None:
+        source = "cli"
+    elif any_cli_override:
+        source = "merged"
+    else:
+        source = "file"
+
+    # -- Step 3: Require a target -----------------------------------------
+    effective_target = cli_target or (file_manifest.target if file_manifest else "")
+    if not effective_target:
+        return ManifestLoadResult.failure(
+            error="No target provided. --target is required.",
+            hint=(
+                "Provide a target via:\n"
+                "  CLI:  --target https://api.openai.com/v1\n"
+                "  File: {\"target\": \"https://api.openai.com/v1\"}"
+            ),
+        )
+
+    # -- Step 4: Merge and build ------------------------------------------
+    try:
+        final = merge_cli_and_manifest(
+            file_manifest,
+            target=cli_target,
+            mode=cli_mode,
+            scan_depth=cli_scan_depth,
+            categories=cli_categories,
+            api_key=cli_api_key,
+            output_dir=cli_output_dir,
+        )
+    except ValueError as exc:
+        return ManifestLoadResult.failure(
+            error=str(exc),
+            hint="Check your --categories, --mode, and --depth values.",
+        )
+
+    return ManifestLoadResult.success(manifest=final, source=source)
+
+
+def print_manifest_load_error(result: ManifestLoadResult) -> None:
+    """Print a formatted manifest load error to stdout."""
+    print(f"\n  [X] Manifest error: {result.error}")
+    if result.hint:
+        print(f"\n      Hint: {result.hint}")
+    print()

@@ -374,3 +374,35 @@ advance_status() enforces legal transitions. Terminal states are immutable. Cann
 **Date:** 2026-09-20  **Phase:** 2a  **Status:** Active
 
 Priority: CLI flag > JSON file > built-in default. Enables: ai-sentry scan --manifest base.json --target \
+
+---
+
+### D-021: ManifestLoadResult Over Raw Exceptions
+
+**Date:** 2026-09-20  **Phase:** 2b  **Status:** Active
+
+get_final_manifest() returns ManifestLoadResult (ok, manifest, error, hint, source) instead of raising exceptions. CLI calls one function and pattern-matches on .ok. Errors never leak stack traces to users.
+
+---
+
+### D-022: validate_manifest_structure() is Pure Shape Check
+
+**Date:** 2026-09-20  **Phase:** 2b  **Status:** Active
+
+validate_manifest_structure() only checks JSON shape (types, required keys). Enum value validity (mode=cloud) is checked later by create_manifest(). Two-stage validation: structure first, semantics second.
+
+---
+
+### D-023: Comment Keys Stripped Before Parsing
+
+**Date:** 2026-09-20  **Phase:** 2b  **Status:** Active
+
+Any JSON key starting with _ is treated as a comment and silently stripped before parsing. Allows {_comment: ..., target: ...} without breaking validation. Follows JSON5 community convention.
+
+---
+
+### D-024: --target Made Optional in CLI
+
+**Date:** 2026-09-20  **Phase:** 2b  **Status:** Active
+
+--target is no longer required=True in argparse. It can be omitted if --manifest provides the target. get_final_manifest() enforces that at least one source provides a target, and returns a clear error if neither does.

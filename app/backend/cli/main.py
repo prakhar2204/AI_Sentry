@@ -23,9 +23,8 @@ from core.input_handler import run_input_validation
 from core.local_handler import run_local_validation
 from core.validator import run_all_validations, print_validation_error
 from core.manifest import (
-    create_manifest,
-    load_manifest_from_file,
-    merge_cli_and_manifest,
+    get_final_manifest,
+    print_manifest_load_error,
     format_manifest_summary,
     VALID_CATEGORY_NAMES,
 )
@@ -89,11 +88,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     scan_parser.add_argument(
         "--target",
-        required=True,
+        required=False,
+        default=None,
         metavar="<url>",
         help=(
             "API endpoint URL (e.g. https://api.openai.com/v1) or "
-            "local server URL (e.g. http://localhost:8080)."
+            "local server URL (e.g. http://localhost:8080). "
+            "Can also be set in a --manifest file."
         ),
     )
     scan_parser.add_argument(
@@ -179,12 +180,12 @@ def handle_scan(args: argparse.Namespace) -> int:
 
     Pipeline:
         1. Consent gate      (mandatory -- cannot be skipped)
-        2. Input validation  (Phase 1d -- strict, fail-fast)
-        3. Manifest creation (Phase 2a -- configuration object)
+        2. Manifest loading  (Phase 2b -- file + CLI merge via get_final_manifest)
+        3. Input validation  (Phase 1d -- strict, fail-fast)
         4. Mode dispatch:
              --mode api   -> API endpoint probe  (Phase 1b)
              --mode local -> local server probe  (Phase 1c)
-        5. Scan orchestration (Phase 3 -- placeholder for now)
+        5. Scan orchestration (Phase 3 -- placeholder)
 
     Returns an integer exit code (0 = success, non-zero = error).
     """
@@ -192,57 +193,50 @@ def handle_scan(args: argparse.Namespace) -> int:
     if not get_user_consent():
         return 0  # user declined -- clean exit, nothing was done
 
-    # -- 2. Strict input validation (fail-fast) -------------------
-    validation_err = run_all_validations(mode=args.mode, target=args.target)
+    # -- 2. Manifest loading (file + CLI merge) --------------------
+    api_key: str = getattr(args, "api_key", "") or os.environ.get("AI_SENTRY_API_KEY", "")
+
+    result = get_final_manifest(
+        manifest_path=args.manifest,
+        cli_target=args.target,
+        cli_mode=args.mode if args.mode != MODE_API else None,  # only pass if non-default
+        cli_scan_depth=args.depth if args.depth != "standard" else None,
+        cli_categories=args.categories,
+        cli_api_key=api_key or None,
+        cli_output_dir=args.output if args.output != "./aisentry-report" else None,
+    )
+
+    if not result.ok:
+        print_manifest_load_error(result)
+        print("  Scan aborted. Fix the issue above and retry.\n")
+        return 1
+
+    manifest = result.manifest
+
+    # -- 3. Strict input validation (fail-fast) -------------------
+    validation_err = run_all_validations(mode=manifest.mode.value, target=manifest.target)
     if validation_err is not None:
         print_validation_error(validation_err)
         print("  Scan aborted. Fix the issue above and retry.\n")
         return 1
 
-    # -- 3. Build scan manifest ------------------------------------
-    api_key: str = args.api_key or os.environ.get("AI_SENTRY_API_KEY", "")
-
-    try:
-        if args.manifest:
-            file_manifest = load_manifest_from_file(args.manifest)
-            manifest = merge_cli_and_manifest(
-                file_manifest,
-                target=args.target,
-                mode=args.mode,
-                scan_depth=args.depth,
-                categories=args.categories,
-                api_key=api_key,
-                output_dir=args.output,
-            )
-        else:
-            manifest = create_manifest(
-                target=args.target,
-                mode=args.mode,
-                scan_depth=args.depth,
-                categories=args.categories,
-                api_key=api_key,
-                output_dir=args.output,
-            )
-    except (ValueError, FileNotFoundError) as exc:
-        print(f"\n  [X] Manifest error: {exc}\n")
-        return 1
-
     # Display manifest summary
     print(format_manifest_summary(manifest))
+    print(f"  [Config source: {result.source}]")
 
     # -- 4. Mode dispatch ------------------------------------------
-    mode = args.mode
+    mode = manifest.mode.value
 
     if mode == MODE_LOCAL:
-        if args.api_key:
+        if api_key:
             print(
                 "\n  [WARN] --api-key is ignored in --mode local. "
                 "Local servers do not require authentication.\n"
             )
-        reachable = run_local_validation(target=args.target)
+        reachable = run_local_validation(target=manifest.target)
 
-    else:  # MODE_API (default)
-        reachable = run_input_validation(target=args.target, api_key=api_key)
+    else:  # MODE_API
+        reachable = run_input_validation(target=manifest.target, api_key=api_key)
 
     if not reachable:
         print("  Scan aborted. Please fix the issue above and try again.\n")
