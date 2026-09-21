@@ -406,3 +406,27 @@ Any JSON key starting with _ is treated as a comment and silently stripped befor
 **Date:** 2026-09-20  **Phase:** 2b  **Status:** Active
 
 --target is no longer required=True in argparse. It can be omitted if --manifest provides the target. get_final_manifest() enforces that at least one source provides a target, and returns a clear error if neither does.
+
+---
+
+### D-025: Manifest Validator Does NOT Auto-Correct
+
+**Date:** 2026-09-21  **Phase:** 2c  **Status:** Active
+
+validate_manifest() never silently fixes invalid values (no lowercasing, no aliasing 'full'->'deep'). Strict rejection only. If the manifest is invalid, it is rejected with a specific error. This prevents silent behavior drift and ensures the scan engine always receives exactly what the user specified.
+
+---
+
+### D-026: Three Validation Layers, Three Distinct Responsibilities
+
+**Date:** 2026-09-21  **Phase:** 2c  **Status:** Active
+
+Phase 1d (validator.py): validates raw CLI strings before manifest creation. Phase 2b (manifest.py): validates JSON file structure during loading. Phase 2c (manifest_validator.py): validates the final resolved ScanManifest object after merging. Each layer has a single responsibility and inputs from a different source. No layer duplicates another.
+
+---
+
+### D-027: scan_depth valid values are quick/standard/deep (not basic/full)
+
+**Date:** 2026-09-21  **Phase:** 2c  **Status:** Active
+
+The TRD (Section 2.1, F-03) specifies Quick/Standard/Deep. 'basic' and 'full' are NOT valid and are explicitly rejected by Phase 2c. This decision resolves a contradiction between a Phase 2c user prompt (which mentioned 'basic'/'full') and the TRD.

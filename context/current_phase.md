@@ -1,9 +1,9 @@
 # AI-SENTRY -- Current Phase
 
-**Last Updated:** 2026-09-20
-**Current Phase:** 2b -- Manifest Loader System (COMPLETE)
-**Previous Phase:** 2a -- Manifest System (COMPLETE)
-**Next Phase:** 2c -- Health Check System  OR  Phase 3 -- Engine Adapters
+**Last Updated:** 2026-09-21
+**Current Phase:** 2c -- Strict Manifest Validation (COMPLETE)
+**Previous Phase:** 2b -- Manifest Loader System (COMPLETE)
+**Next Phase:** Phase 3 -- Engine Adapters (Garak, PyRIT, DeepTeam)
 
 ---
 
@@ -22,8 +22,8 @@
 | 1d | Central Validation & Rejection System | COMPLETE |
 | 2a | Manifest System (schema + enums + lifecycle) | COMPLETE |
 | 2b | Manifest Loader System (file + CLI + merge) | COMPLETE |
-| 2c | Health Check System | NOT STARTED |
-| 3  | Engine Adapters (Garak, PyRIT, DeepTeam) | NOT STARTED |
+| 2c | Strict Manifest Validation (post-merge semantic check) | COMPLETE |
+| 3  | Engine Adapters (Garak, PyRIT, DeepTeam) | NOT STARTED -- READY |
 | 4  | Normalization Layer | NOT STARTED |
 | 5  | Intelligence Layer (Scoring + Remediation) | NOT STARTED |
 | 6  | Report Generator | NOT STARTED |
@@ -38,38 +38,43 @@
 ## Implemented Phases (Code Complete)
 
 ### Phase 1a -- Consent Gate
-- `core/consent.py` -- responsible use notice, yes/no gate, 3-strike exit
-- `tests/test_consent.py` -- 13 tests
+- `core/consent.py`: responsible use notice, yes/no gate, 3-strike exit
+- `tests/test_consent.py`: 13 tests
 
 ### Phase 1b -- API Endpoint Input & HTTP Probe
-- `core/input_handler.py` -- URL validation, OpenAI-compatible HTTP probe, error classification
-- `tests/test_input_handler.py` -- 25 tests
+- `core/input_handler.py`: URL validation, OpenAI-compatible HTTP probe, error classification
+- `tests/test_input_handler.py`: 25 tests
 
 ### Phase 1c -- Local Model Support (llama.cpp)
-- `core/local_handler.py` -- localhost validation, /v1/chat/completions probe
-- `tests/test_local_handler.py` -- 31 tests
+- `core/local_handler.py`: localhost-only validation, /v1/chat/completions probe
+- `tests/test_local_handler.py`: 31 tests
 
 ### Phase 1d -- Central Validation & Rejection System
-- `core/validator.py` -- validate_mode(), validate_target(), validate_input_combination(), run_all_validations()
-- `tests/test_validator.py` -- 66 tests
+- `core/validator.py`: validate_mode(), validate_target(), validate_input_combination(), run_all_validations()
+- `tests/test_validator.py`: 66 tests
 
 ### Phase 2a -- Manifest System
-- `core/manifest.py` (sections 1-4): ScanManifest dataclass, enums, create_manifest(), load_manifest_from_file(), merge_cli_and_manifest()
-- `example_manifest.json` -- copyable template
-- `tests/test_manifest.py` -- 73 tests
+- `core/manifest.py` (core sections): ScanManifest dataclass, enums, create_manifest(), load_manifest_from_file(), merge_cli_and_manifest(), lifecycle state machine, display helper
+- `example_manifest.json`: copyable template
+- `tests/test_manifest.py`: 73 tests
 
 ### Phase 2b -- Manifest Loader System
-- `core/manifest.py` (sections 5-8 added):
-  - ManifestLoadResult dataclass (ok, manifest, error, hint, source)
-  - validate_manifest_structure() -- pure structural check before enum parsing
-  - load_manifest_file() -- hardened loader (empty file, null JSON, array JSON, comment keys)
-  - get_final_manifest() -- single CLI entry point, all 3 scenarios
-  - print_manifest_load_error() -- formatted error display
-- `cli/main.py` updated:
-  - --target now optional (can come from manifest file)
-  - handle_scan() calls get_final_manifest() instead of inline try/except
-  - [Config source: cli|file|merged] shown in output
-- `tests/test_manifest_loader.py` -- 76 tests
+- `core/manifest.py` (loader sections): ManifestLoadResult, validate_manifest_structure(), load_manifest_file(), get_final_manifest(), print_manifest_load_error()
+- `cli/main.py`: --target made optional; handle_scan() uses get_final_manifest()
+- `tests/test_manifest_loader.py`: 76 tests
+
+### Phase 2c -- Strict Manifest Validation
+- `core/manifest_validator.py`:
+  - ManifestValidationIssue dataclass (field, value, message, hint)
+  - validate_target(): non-empty string, max 2048 chars
+  - validate_mode(): "api" or "local" (accepts ScanMode enum or string)
+  - validate_scan_depth(): "quick", "standard", or "deep" (rejects "basic", "full", etc.)
+  - validate_categories(): non-empty list, all items must be known ProbeCategory values
+  - validate_output_dir(): optional, string, max 512 chars
+  - validate_manifest(): fail-fast orchestrator -- returns first issue found
+  - format_manifest_validation_error(): specific, readable CLI output
+- `cli/main.py`: Step 3 in pipeline now calls validate_manifest()
+- `tests/test_manifest_validator.py`: 96 tests
 
 ---
 
@@ -83,11 +88,12 @@
 | test_validator.py | 66 |
 | test_manifest.py | 73 |
 | test_manifest_loader.py | 76 |
-| **Total** | **284** |
+| test_manifest_validator.py | 96 |
+| **Total** | **380** |
 
 ---
 
-## CLI Pipeline (as of Phase 2b)
+## Full CLI Pipeline (Phase 2c)
 
 ```
 python __main__.py scan [--target <url>] [--manifest <file.json>]
@@ -95,52 +101,56 @@ python __main__.py scan [--target <url>] [--manifest <file.json>]
                         [--categories <cat1> <cat2>...]
                         [--api-key <key>] [--output <dir>]
 
-Scenario A -- CLI only:
-  python __main__.py scan --target https://api.openai.com/v1
-
-Scenario B -- File only:
-  python __main__.py scan --manifest config.json
-
-Scenario C -- Both (CLI wins on conflict):
-  python __main__.py scan --manifest config.json --depth deep --categories jailbreak
-
-Flow:
-  1. Consent gate (yes/no)
-  2. get_final_manifest() -> loads file (if any) + applies CLI overrides
-  3. Strict validation (mode + target + combination)
-  4. Manifest summary displayed + [Config source: cli|file|merged]
-  5. Endpoint probe (api or local)
-  6. [Phase 3: scan engine dispatch -- NOT YET IMPLEMENTED]
+Step 1: Consent gate               (core/consent.py)
+Step 2: Manifest loading + merge   (core/manifest.py :: get_final_manifest)
+  - loads file if --manifest given
+  - applies CLI flag overrides
+  - priority: CLI > file > default
+Step 3: Manifest validation        (core/manifest_validator.py :: validate_manifest)
+  - validates target, mode, scan_depth, categories, output_dir
+  - fail-fast: first issue returned immediately
+  - strict: no silent auto-correction
+Step 4: Connection validation      (core/validator.py :: run_all_validations)
+  - validates URL format and mode/target combination
+Step 5: Mode dispatch              (core/input_handler.py or core/local_handler.py)
+  - probes the actual endpoint
+Step 6: Scan orchestration         [Phase 3 -- NOT YET IMPLEMENTED]
 ```
 
 ---
 
-## get_final_manifest() Priority Table
+## Validation Layer Architecture
 
-| Field | Source Priority |
-|---|---|
-| target | CLI --target > JSON "target" > ERROR (required) |
-| mode | CLI --mode > JSON "mode" > default: "api" |
-| scan_depth | CLI --depth > JSON "scan_depth" > default: "standard" |
-| categories | CLI --categories > JSON "categories" > depth defaults |
-| api_key | CLI --api-key > env AI_SENTRY_API_KEY > JSON "api_key" > "" |
-| output_dir | CLI --output > JSON "output_dir" > default: "./aisentry-report" |
+| Layer | File | Input | What it checks |
+|---|---|---|---|
+| Phase 1d | `core/validator.py` | Raw CLI strings | URL format, mode string, mode+target combination |
+| Phase 2b | `core/manifest.py` | JSON file content | Shape, types, required keys |
+| Phase 2c | `core/manifest_validator.py` | ScanManifest object | Semantic correctness of final resolved values |
+
+These layers are intentionally separate:
+- Phase 1d: validates BEFORE manifest is built
+- Phase 2b: validates DURING file loading (structural)
+- Phase 2c: validates AFTER merge (semantic -- last line of defense before scan engine)
 
 ---
 
-## Blockers
+## Scan Depth Values (IMPORTANT)
 
-None. Phase 2c (Health Check) or Phase 3 (Engine Adapters) ready to begin.
+Valid values per TRD Section 2.1 / F-03:
+  - quick    (5-15 min, core probes, rapid iteration)
+  - standard (30-90 min, balanced coverage -- DEFAULT)
+  - deep     (2-6 hrs, full enterprise audit)
+
+"basic" and "full" are NOT valid values and will be rejected by Phase 2c.
 
 ---
 
 ## Context Notes for AI Tools
 
-- All design decisions in `context/decisions.md`
 - Primary technical reference: `docs/TRD.md`
 - Primary product reference: `docs/PRD.md`
-- `get_final_manifest()` is the ONLY function the CLI calls for manifest resolution
-- `ScanManifest` object is what all future phases receive as their config
-- `ProbeCategory` (user-facing, 4 values) maps to TRD VulnClass (engine-facing, 17 values) in Phase 3
-- PyRIT requires attacker LLM -- documented in TRD Section 2.1, must handle in Phase 3
+- Design decisions: `context/decisions.md`
+- `ScanManifest` is the pipeline contract -- all future phases receive it
+- `validate_manifest()` is the LAST semantic gate before Phase 3 receives control
+- Do NOT add silent value auto-correction to manifest_validator.py (D-025)
 - Do NOT commit or push to GitHub -- user handles commits manually

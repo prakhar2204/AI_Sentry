@@ -28,6 +28,10 @@ from core.manifest import (
     format_manifest_summary,
     VALID_CATEGORY_NAMES,
 )
+from core.manifest_validator import (
+    validate_manifest,
+    print_manifest_validation_error,
+)
 
 
 # ─────────────────────────────────────────────
@@ -179,13 +183,14 @@ def handle_scan(args: argparse.Namespace) -> int:
     Entry point for the `scan` command.
 
     Pipeline:
-        1. Consent gate      (mandatory -- cannot be skipped)
-        2. Manifest loading  (Phase 2b -- file + CLI merge via get_final_manifest)
-        3. Input validation  (Phase 1d -- strict, fail-fast)
-        4. Mode dispatch:
+        1. Consent gate           (mandatory -- cannot be skipped)
+        2. Manifest loading       (Phase 2b -- file + CLI merge)
+        3. Manifest validation    (Phase 2c -- post-merge semantic check)
+        4. Connection validation  (Phase 1d -- URL format + mode rules)
+        5. Mode dispatch:
              --mode api   -> API endpoint probe  (Phase 1b)
              --mode local -> local server probe  (Phase 1c)
-        5. Scan orchestration (Phase 3 -- placeholder)
+        6. Scan orchestration     (Phase 3 -- placeholder)
 
     Returns an integer exit code (0 = success, non-zero = error).
     """
@@ -199,7 +204,7 @@ def handle_scan(args: argparse.Namespace) -> int:
     result = get_final_manifest(
         manifest_path=args.manifest,
         cli_target=args.target,
-        cli_mode=args.mode if args.mode != MODE_API else None,  # only pass if non-default
+        cli_mode=args.mode if args.mode != MODE_API else None,
         cli_scan_depth=args.depth if args.depth != "standard" else None,
         cli_categories=args.categories,
         cli_api_key=api_key or None,
@@ -213,7 +218,14 @@ def handle_scan(args: argparse.Namespace) -> int:
 
     manifest = result.manifest
 
-    # -- 3. Strict input validation (fail-fast) -------------------
+    # -- 3. Manifest validation (post-merge semantic check) --------
+    issue = validate_manifest(manifest)
+    if issue is not None:
+        print_manifest_validation_error(issue)
+        print("  Scan aborted. Fix the issue above and retry.\n")
+        return 1
+
+    # -- 4. Connection validation (URL format + mode rules) --------
     validation_err = run_all_validations(mode=manifest.mode.value, target=manifest.target)
     if validation_err is not None:
         print_validation_error(validation_err)
@@ -224,7 +236,7 @@ def handle_scan(args: argparse.Namespace) -> int:
     print(format_manifest_summary(manifest))
     print(f"  [Config source: {result.source}]")
 
-    # -- 4. Mode dispatch ------------------------------------------
+    # -- 5. Mode dispatch ------------------------------------------
     mode = manifest.mode.value
 
     if mode == MODE_LOCAL:
@@ -242,7 +254,7 @@ def handle_scan(args: argparse.Namespace) -> int:
         print("  Scan aborted. Please fix the issue above and try again.\n")
         return 1
 
-    # -- 5. Scan orchestration (Phase 3) ---------------------------
+    # -- 6. Scan orchestration (Phase 3) ---------------------------
     _print_divider()
     print("  [INFO] Scan engine is not yet implemented (Phase 3).")
     print("  [INFO] Connection test passed -- the target is ready to be scanned.")
