@@ -1,9 +1,9 @@
 # AI-SENTRY -- Current Phase
 
 **Last Updated:** 2026-09-24
-**Current Phase:** 3b -- Safety Threshold System (COMPLETE)
-**Previous Phase:** 3a -- Pre-Scan Estimation Engine (COMPLETE)
-**Next Phase:** Phase 3c -- Engine Adapters (Garak, PyRIT, DeepTeam)
+**Current Phase:** 3c -- Engine Adapter System (COMPLETE)
+**Previous Phase:** 3b -- Safety Threshold System (COMPLETE)
+**Next Phase:** Phase 4 -- Normalization Layer / Report Generator
 
 ---
 
@@ -22,8 +22,8 @@
 | 2d | Manifest Display & Pre-Scan Confirmation | COMPLETE |
 | 3a | Pre-Scan Estimation Engine | COMPLETE |
 | 3b | Safety Threshold System (heavy scan guard) | COMPLETE |
-| 3c | Engine Adapters (Garak, PyRIT, DeepTeam) | NOT STARTED -- READY |
-| 4  | Normalization Layer | NOT STARTED |
+| 3c | Engine Adapter System (mock engine) | COMPLETE |
+| 4  | Normalization Layer | NOT STARTED -- READY |
 | 5  | Intelligence Layer (Scoring + Remediation) | NOT STARTED |
 | 6  | Report Generator | NOT STARTED |
 | 7  | Deployment Advisor + AWS Deploy Engine | NOT STARTED |
@@ -34,29 +34,31 @@
 
 ---
 
-## Phase 3b -- Safety Threshold System
+## Phase 3c -- Engine Adapter System
 
-### New file: `core/scan_guard.py`
+### New files
 
-**Thresholds:**
-- `MAX_SAFE_PROBES = 300`
-- `MAX_SAFE_TIME_SEC = 300` (5 minutes)
+**`core/engine_interface.py`** -- Abstract contract
+- `ScanFinding` (frozen dataclass): category, severity (low/medium/high), confidence (0-1), evidence, source, probe_id
+- `ScanResult`: findings list, engine_name, manifest_id, total_probes, duration_sec, error; severity count properties; to_dict()
+- `BaseEngine` (ABC): name property + run_scan() abstract method
 
-**Functions:**
-- `is_heavy_scan(estimate)` -- returns `GuardResult` (frozen dataclass)
-  - `is_heavy`: True if EITHER threshold exceeded
-  - `probes_exceeded` / `time_exceeded`: which specific threshold tripped
-  - Boundary: exactly at threshold is NOT heavy (uses `>`, not `>=`)
-- `display_warning(guard)` -- shows which thresholds exceeded with exact values
-- `confirm_heavy_scan()` -- "Proceed with heavy scan? [yes/no]", 3-attempt limit, Ctrl-C safe
-- `check_scan_safety(estimate)` -- orchestrator:
-  - Light scan: returns True immediately, no prompt shown
-  - Heavy scan: display_warning() + confirm_heavy_scan()
+**`core/mock_engine.py`** -- Deterministic mock engine
+- `MockEngine(BaseEngine)`: reads manifest categories, produces fixed findings per category
+- Finding counts: prompt_injection=2, jailbreak=3, data_leak=2, harmful_output=2 (total 9 for all 4)
+- Each finding has realistic evidence text, probe_id (e.g. PI-001, JB-002), and calibrated confidence
+- 100% deterministic: same manifest → same findings, always
+
+**`core/engine_runner.py`** -- Orchestrator + display
+- `run_engine(manifest)` -- instantiates MockEngine, calls run_scan()
+- `format_finding(finding, index)` -- per-finding CLI display with severity tag
+- `format_results(result)` -- full results with sorting (HIGH → MED → LOW), severity counts, risk assessment
+- `display_results(result)` / `print_scan_error(result)` -- stdout helpers
 
 ### Integration
-- CLI pipeline now has 9 steps (was 7)
-- Safety guard (Step 5) runs AFTER estimate (Step 4), BEFORE config display (Step 6)
-- Heavy scan declined = exit code 0 (not an error)
+- CLI Step 9: `run_engine(manifest)` → `display_results(scan_result)`
+- Engine errors return exit code 1 with `print_scan_error()`
+- The system now runs a COMPLETE scan from consent to findings output
 
 ---
 
@@ -74,11 +76,12 @@
 | test_manifest_display.py | 47 |
 | test_estimator.py | 57 |
 | test_scan_guard.py | 51 |
-| **Total** | **535** |
+| test_engine.py | 75 |
+| **Total** | **610** |
 
 ---
 
-## Full CLI Pipeline (Phase 3b -- 9 steps)
+## Full CLI Pipeline (Phase 3c -- 9 steps)
 
 ```
 Step 1: Consent gate          core/consent.py
@@ -86,58 +89,60 @@ Step 2: Manifest load+merge   core/manifest.py :: get_final_manifest()
 Step 3: Manifest validation    core/manifest_validator.py :: validate_manifest()
 Step 4: Estimate               core/estimator.py :: estimate_scan()
 Step 5: Safety guard           core/scan_guard.py :: check_scan_safety()
-        - light (<=300 probes AND <=5min): passes silently
-        - heavy (>300 probes OR >5min): warning + extra "Proceed with heavy scan?"
 Step 6: Display + confirm      core/manifest_display.py :: display_and_confirm()
-        Shows full config, estimate, then "Proceed with scan? [yes/no]"
 Step 7: Connection validate    core/validator.py :: run_all_validations()
 Step 8: Endpoint probe         core/input_handler.py or core/local_handler.py
-Step 9: Scan engine            [Phase 3c -- NOT YET IMPLEMENTED]
+Step 9: Scan engine            core/engine_runner.py :: run_engine()
+        + Results display      core/engine_runner.py :: display_results()
 ```
 
 ---
 
-## Example: Light Scan (no warning)
+## Example: Full 4-Category Scan Results
 
 ```
-quick depth, 1 category, 25 probes
-→ Step 5 returns True silently (no extra prompt)
-→ Step 6 shows config + "Proceed with scan?"
-```
-
-## Example: Heavy Scan (warning + extra confirm)
-
-```
-deep depth, 4 categories, 390 probes
-
 ------------------------------------------------------------
-  [!] HEAVY SCAN DETECTED
+  SCAN RESULTS
 ------------------------------------------------------------
+  Engine       : mock
+  Manifest ID  : 196b3b1d-...
+  Probes run   : 9
+  Duration     : 0.0 sec
 
-  Total probes   : 390  (threshold: 300)
-  Est. time      : ~9.8 min  (threshold: 5 min)
-
-  This scan exceeds recommended safety limits.
-  It may take significantly longer than a standard scan
-  and will send a large number of adversarial probes.
-
-  Both probe count and time thresholds exceeded.
+  Findings     : 9
+    HIGH       : 3
+    MEDIUM     : 3
+    LOW        : 3
 
 ------------------------------------------------------------
 
-  Proceed with heavy scan? [yes / no]: yes
+  #1 [HIGH] prompt_injection  (conf: 0.92)
+     Evidence: System prompt was fully extracted...
+     Probe: PI-001 | Source: mock
 
-  Heavy scan confirmed. Proceeding...
+  #2 [HIGH] jailbreak  (conf: 0.88)
+     Evidence: DAN-style jailbreak successful...
+     Probe: JB-001 | Source: mock
 
-→ Then Step 6 shows full config + "Proceed with scan?"
+  #3 [HIGH] data_leak  (conf: 0.85)
+     Evidence: Training data extraction detected...
+     Probe: DL-001 | Source: mock
+  ...
+
+------------------------------------------------------------
+
+  [!] 3 HIGH severity finding(s) detected.
+  [!] This target has critical vulnerabilities that require attention.
 ```
 
 ---
 
 ## Context Notes for AI Tools
 
-- `check_scan_safety()` is the single CLI entry point for the guard
-- Light scans never show a warning or prompt -- returns True immediately
-- Heavy scan declined = exit code 0 (user choice, not error)
-- Boundary semantics: exactly at threshold is NOT heavy (strict `>`)
+- To add a real engine: subclass `BaseEngine`, implement `name` + `run_scan()`, return `ScanResult` with `ScanFinding` list
+- `engine_runner.py` currently hardcodes MockEngine -- future: engine registry/selection
+- `ScanFinding.severity` is validated on construction (rejects anything outside low/medium/high)
+- `ScanFinding.confidence` is validated 0.0-1.0 on construction
+- `format_results()` sorts findings HIGH → MEDIUM → LOW regardless of insertion order
+- JSON output via `ScanResult.to_dict()` is ready for Phase 6 (Report Generator)
 - Do NOT commit or push to GitHub -- user handles commits manually

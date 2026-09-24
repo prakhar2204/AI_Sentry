@@ -34,6 +34,7 @@ from core.manifest_validator import (
 from core.manifest_display import display_and_confirm
 from core.estimator import estimate_scan
 from core.scan_guard import check_scan_safety
+from core.engine_runner import run_engine, display_results, print_scan_error
 
 
 # ─────────────────────────────────────────────
@@ -264,11 +265,19 @@ def handle_scan(args: argparse.Namespace) -> int:
         print("  Scan aborted. Please fix the issue above and try again.\n")
         return 1
 
-    # -- 9. Scan orchestration (Phase 3+) --------------------------
+    # -- 9. Scan engine execution ----------------------------------
     _print_divider()
-    print("  [INFO] Scan engine is not yet implemented (Phase 3).")
-    print("  [INFO] Connection test passed -- the target is ready to be scanned.")
+    print("  [INFO] Starting scan engine...")
     print(f"  [INFO] Manifest ID: {manifest.manifest_id}\n")
+
+    scan_result = run_engine(manifest)
+
+    if not scan_result.ok:
+        print_scan_error(scan_result)
+        print("  Scan engine failed. Check the error above.\n")
+        return 1
+
+    display_results(scan_result)
 
     return 0
 

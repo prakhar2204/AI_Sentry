@@ -494,3 +494,27 @@ The safety guard NEVER auto-cancels a scan. It always asks the user. This respec
 **Date:** 2026-09-24  **Phase:** 3b  **Status:** Active
 
 Heavy scans require TWO confirmations: (1) 'Proceed with heavy scan?' from scan_guard.py (Step 5), and (2) 'Proceed with scan?' from manifest_display.py (Step 6). This is intentional -- the heavy warning fires before the user even sees the full config display, giving them an early exit point. Light scans only see confirmation (2).
+
+---
+
+### D-036: ScanFinding Validates Severity and Confidence on Construction
+
+**Date:** 2026-09-24  **Phase:** 3c  **Status:** Active
+
+ScanFinding.__post_init__() rejects invalid severity (must be low/medium/high) and out-of-range confidence (must be 0.0-1.0) with ValueError. This is fail-fast by design -- invalid findings can never enter the pipeline.
+
+---
+
+### D-037: Engine Errors Wrapped in ScanResult, Not Exceptions
+
+**Date:** 2026-09-24  **Phase:** 3c  **Status:** Active
+
+Engines must never raise exceptions to the CLI. If an engine fails, it returns ScanResult(error='...') and the CLI checks result.ok. This keeps the pipeline predictable and avoids uncaught exception crashes.
+
+---
+
+### D-038: MockEngine is Default Until Real Engines Are Integrated
+
+**Date:** 2026-09-24  **Phase:** 3c  **Status:** Active
+
+engine_runner.run_engine() currently always uses MockEngine. When Garak/PyRIT/DeepTeam adapters are built, this function will select the engine based on a registry or manifest configuration. The mock engine remains as a fallback and testing tool.
