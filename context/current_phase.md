@@ -1,9 +1,9 @@
 # AI-SENTRY -- Current Phase
 
-**Last Updated:** 2026-09-21
-**Current Phase:** 2c -- Strict Manifest Validation (COMPLETE)
-**Previous Phase:** 2b -- Manifest Loader System (COMPLETE)
-**Next Phase:** Phase 3 -- Engine Adapters (Garak, PyRIT, DeepTeam)
+**Last Updated:** 2026-09-24
+**Current Phase:** 3b -- Safety Threshold System (COMPLETE)
+**Previous Phase:** 3a -- Pre-Scan Estimation Engine (COMPLETE)
+**Next Phase:** Phase 3c -- Engine Adapters (Garak, PyRIT, DeepTeam)
 
 ---
 
@@ -11,11 +11,7 @@
 
 | Phase | Name | Status |
 |---|---|---|
-| 0a | Idea Design | COMPLETE |
-| 0b | Documentation Foundation | COMPLETE |
-| 0c | System Execution Design | COMPLETE |
-| 0d | Website Design | COMPLETE |
-| 0e | Gap Analysis & Final Consolidation | COMPLETE |
+| 0a-0e | Design & Documentation Foundation | COMPLETE |
 | 1a | Consent Gate (CLI) | COMPLETE |
 | 1b | API Endpoint Input & HTTP Probe | COMPLETE |
 | 1c | Local Model Support (llama.cpp) | COMPLETE |
@@ -23,7 +19,10 @@
 | 2a | Manifest System (schema + enums + lifecycle) | COMPLETE |
 | 2b | Manifest Loader System (file + CLI + merge) | COMPLETE |
 | 2c | Strict Manifest Validation (post-merge semantic check) | COMPLETE |
-| 3  | Engine Adapters (Garak, PyRIT, DeepTeam) | NOT STARTED -- READY |
+| 2d | Manifest Display & Pre-Scan Confirmation | COMPLETE |
+| 3a | Pre-Scan Estimation Engine | COMPLETE |
+| 3b | Safety Threshold System (heavy scan guard) | COMPLETE |
+| 3c | Engine Adapters (Garak, PyRIT, DeepTeam) | NOT STARTED -- READY |
 | 4  | Normalization Layer | NOT STARTED |
 | 5  | Intelligence Layer (Scoring + Remediation) | NOT STARTED |
 | 6  | Report Generator | NOT STARTED |
@@ -35,46 +34,29 @@
 
 ---
 
-## Implemented Phases (Code Complete)
+## Phase 3b -- Safety Threshold System
 
-### Phase 1a -- Consent Gate
-- `core/consent.py`: responsible use notice, yes/no gate, 3-strike exit
-- `tests/test_consent.py`: 13 tests
+### New file: `core/scan_guard.py`
 
-### Phase 1b -- API Endpoint Input & HTTP Probe
-- `core/input_handler.py`: URL validation, OpenAI-compatible HTTP probe, error classification
-- `tests/test_input_handler.py`: 25 tests
+**Thresholds:**
+- `MAX_SAFE_PROBES = 300`
+- `MAX_SAFE_TIME_SEC = 300` (5 minutes)
 
-### Phase 1c -- Local Model Support (llama.cpp)
-- `core/local_handler.py`: localhost-only validation, /v1/chat/completions probe
-- `tests/test_local_handler.py`: 31 tests
+**Functions:**
+- `is_heavy_scan(estimate)` -- returns `GuardResult` (frozen dataclass)
+  - `is_heavy`: True if EITHER threshold exceeded
+  - `probes_exceeded` / `time_exceeded`: which specific threshold tripped
+  - Boundary: exactly at threshold is NOT heavy (uses `>`, not `>=`)
+- `display_warning(guard)` -- shows which thresholds exceeded with exact values
+- `confirm_heavy_scan()` -- "Proceed with heavy scan? [yes/no]", 3-attempt limit, Ctrl-C safe
+- `check_scan_safety(estimate)` -- orchestrator:
+  - Light scan: returns True immediately, no prompt shown
+  - Heavy scan: display_warning() + confirm_heavy_scan()
 
-### Phase 1d -- Central Validation & Rejection System
-- `core/validator.py`: validate_mode(), validate_target(), validate_input_combination(), run_all_validations()
-- `tests/test_validator.py`: 66 tests
-
-### Phase 2a -- Manifest System
-- `core/manifest.py` (core sections): ScanManifest dataclass, enums, create_manifest(), load_manifest_from_file(), merge_cli_and_manifest(), lifecycle state machine, display helper
-- `example_manifest.json`: copyable template
-- `tests/test_manifest.py`: 73 tests
-
-### Phase 2b -- Manifest Loader System
-- `core/manifest.py` (loader sections): ManifestLoadResult, validate_manifest_structure(), load_manifest_file(), get_final_manifest(), print_manifest_load_error()
-- `cli/main.py`: --target made optional; handle_scan() uses get_final_manifest()
-- `tests/test_manifest_loader.py`: 76 tests
-
-### Phase 2c -- Strict Manifest Validation
-- `core/manifest_validator.py`:
-  - ManifestValidationIssue dataclass (field, value, message, hint)
-  - validate_target(): non-empty string, max 2048 chars
-  - validate_mode(): "api" or "local" (accepts ScanMode enum or string)
-  - validate_scan_depth(): "quick", "standard", or "deep" (rejects "basic", "full", etc.)
-  - validate_categories(): non-empty list, all items must be known ProbeCategory values
-  - validate_output_dir(): optional, string, max 512 chars
-  - validate_manifest(): fail-fast orchestrator -- returns first issue found
-  - format_manifest_validation_error(): specific, readable CLI output
-- `cli/main.py`: Step 3 in pipeline now calls validate_manifest()
-- `tests/test_manifest_validator.py`: 96 tests
+### Integration
+- CLI pipeline now has 9 steps (was 7)
+- Safety guard (Step 5) runs AFTER estimate (Step 4), BEFORE config display (Step 6)
+- Heavy scan declined = exit code 0 (not an error)
 
 ---
 
@@ -89,68 +71,73 @@
 | test_manifest.py | 73 |
 | test_manifest_loader.py | 76 |
 | test_manifest_validator.py | 96 |
-| **Total** | **380** |
+| test_manifest_display.py | 47 |
+| test_estimator.py | 57 |
+| test_scan_guard.py | 51 |
+| **Total** | **535** |
 
 ---
 
-## Full CLI Pipeline (Phase 2c)
+## Full CLI Pipeline (Phase 3b -- 9 steps)
 
 ```
-python __main__.py scan [--target <url>] [--manifest <file.json>]
-                        [--mode api|local] [--depth quick|standard|deep]
-                        [--categories <cat1> <cat2>...]
-                        [--api-key <key>] [--output <dir>]
-
-Step 1: Consent gate               (core/consent.py)
-Step 2: Manifest loading + merge   (core/manifest.py :: get_final_manifest)
-  - loads file if --manifest given
-  - applies CLI flag overrides
-  - priority: CLI > file > default
-Step 3: Manifest validation        (core/manifest_validator.py :: validate_manifest)
-  - validates target, mode, scan_depth, categories, output_dir
-  - fail-fast: first issue returned immediately
-  - strict: no silent auto-correction
-Step 4: Connection validation      (core/validator.py :: run_all_validations)
-  - validates URL format and mode/target combination
-Step 5: Mode dispatch              (core/input_handler.py or core/local_handler.py)
-  - probes the actual endpoint
-Step 6: Scan orchestration         [Phase 3 -- NOT YET IMPLEMENTED]
+Step 1: Consent gate          core/consent.py
+Step 2: Manifest load+merge   core/manifest.py :: get_final_manifest()
+Step 3: Manifest validation    core/manifest_validator.py :: validate_manifest()
+Step 4: Estimate               core/estimator.py :: estimate_scan()
+Step 5: Safety guard           core/scan_guard.py :: check_scan_safety()
+        - light (<=300 probes AND <=5min): passes silently
+        - heavy (>300 probes OR >5min): warning + extra "Proceed with heavy scan?"
+Step 6: Display + confirm      core/manifest_display.py :: display_and_confirm()
+        Shows full config, estimate, then "Proceed with scan? [yes/no]"
+Step 7: Connection validate    core/validator.py :: run_all_validations()
+Step 8: Endpoint probe         core/input_handler.py or core/local_handler.py
+Step 9: Scan engine            [Phase 3c -- NOT YET IMPLEMENTED]
 ```
 
 ---
 
-## Validation Layer Architecture
+## Example: Light Scan (no warning)
 
-| Layer | File | Input | What it checks |
-|---|---|---|---|
-| Phase 1d | `core/validator.py` | Raw CLI strings | URL format, mode string, mode+target combination |
-| Phase 2b | `core/manifest.py` | JSON file content | Shape, types, required keys |
-| Phase 2c | `core/manifest_validator.py` | ScanManifest object | Semantic correctness of final resolved values |
+```
+quick depth, 1 category, 25 probes
+→ Step 5 returns True silently (no extra prompt)
+→ Step 6 shows config + "Proceed with scan?"
+```
 
-These layers are intentionally separate:
-- Phase 1d: validates BEFORE manifest is built
-- Phase 2b: validates DURING file loading (structural)
-- Phase 2c: validates AFTER merge (semantic -- last line of defense before scan engine)
+## Example: Heavy Scan (warning + extra confirm)
 
----
+```
+deep depth, 4 categories, 390 probes
 
-## Scan Depth Values (IMPORTANT)
+------------------------------------------------------------
+  [!] HEAVY SCAN DETECTED
+------------------------------------------------------------
 
-Valid values per TRD Section 2.1 / F-03:
-  - quick    (5-15 min, core probes, rapid iteration)
-  - standard (30-90 min, balanced coverage -- DEFAULT)
-  - deep     (2-6 hrs, full enterprise audit)
+  Total probes   : 390  (threshold: 300)
+  Est. time      : ~9.8 min  (threshold: 5 min)
 
-"basic" and "full" are NOT valid values and will be rejected by Phase 2c.
+  This scan exceeds recommended safety limits.
+  It may take significantly longer than a standard scan
+  and will send a large number of adversarial probes.
+
+  Both probe count and time thresholds exceeded.
+
+------------------------------------------------------------
+
+  Proceed with heavy scan? [yes / no]: yes
+
+  Heavy scan confirmed. Proceeding...
+
+→ Then Step 6 shows full config + "Proceed with scan?"
+```
 
 ---
 
 ## Context Notes for AI Tools
 
-- Primary technical reference: `docs/TRD.md`
-- Primary product reference: `docs/PRD.md`
-- Design decisions: `context/decisions.md`
-- `ScanManifest` is the pipeline contract -- all future phases receive it
-- `validate_manifest()` is the LAST semantic gate before Phase 3 receives control
-- Do NOT add silent value auto-correction to manifest_validator.py (D-025)
+- `check_scan_safety()` is the single CLI entry point for the guard
+- Light scans never show a warning or prompt -- returns True immediately
+- Heavy scan declined = exit code 0 (user choice, not error)
+- Boundary semantics: exactly at threshold is NOT heavy (strict `>`)
 - Do NOT commit or push to GitHub -- user handles commits manually

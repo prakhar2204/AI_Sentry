@@ -25,13 +25,15 @@ from core.validator import run_all_validations, print_validation_error
 from core.manifest import (
     get_final_manifest,
     print_manifest_load_error,
-    format_manifest_summary,
     VALID_CATEGORY_NAMES,
 )
 from core.manifest_validator import (
     validate_manifest,
     print_manifest_validation_error,
 )
+from core.manifest_display import display_and_confirm
+from core.estimator import estimate_scan
+from core.scan_guard import check_scan_safety
 
 
 # ─────────────────────────────────────────────
@@ -183,14 +185,15 @@ def handle_scan(args: argparse.Namespace) -> int:
     Entry point for the `scan` command.
 
     Pipeline:
-        1. Consent gate           (mandatory -- cannot be skipped)
-        2. Manifest loading       (Phase 2b -- file + CLI merge)
-        3. Manifest validation    (Phase 2c -- post-merge semantic check)
-        4. Connection validation  (Phase 1d -- URL format + mode rules)
-        5. Mode dispatch:
-             --mode api   -> API endpoint probe  (Phase 1b)
-             --mode local -> local server probe  (Phase 1c)
-        6. Scan orchestration     (Phase 3 -- placeholder)
+        1. Consent gate           (Phase 1a  -- legal agreement)
+        2. Manifest loading       (Phase 2b  -- file + CLI merge)
+        3. Manifest validation    (Phase 2c  -- post-merge semantic check)
+        4. Estimate + Display     (Phase 3a  -- probes, time, cost)
+        5. Safety guard           (Phase 3b  -- heavy scan warning if needed)
+        6. User confirmation      (Phase 2d  -- final yes/no)
+        7. Connection validation  (Phase 1d  -- URL format + mode rules)
+        8. Mode dispatch          (Phase 1b/c -- endpoint probe)
+        9. Scan orchestration     (Phase 3+  -- placeholder)
 
     Returns an integer exit code (0 = success, non-zero = error).
     """
@@ -225,18 +228,25 @@ def handle_scan(args: argparse.Namespace) -> int:
         print("  Scan aborted. Fix the issue above and retry.\n")
         return 1
 
-    # -- 4. Connection validation (URL format + mode rules) --------
+    # -- 4. Estimate + Display -------------------------------------
+    estimate = estimate_scan(manifest)
+
+    # -- 5. Safety guard (heavy scan warning if needed) ------------
+    if not check_scan_safety(estimate):
+        return 0  # user declined heavy scan -- clean exit
+
+    # -- 6. Display config + normal confirmation -------------------
+    if not display_and_confirm(manifest, source=result.source, estimate=estimate):
+        return 0  # user declined or gave too many invalid inputs
+
+    # -- 7. Connection validation (URL format + mode rules) --------
     validation_err = run_all_validations(mode=manifest.mode.value, target=manifest.target)
     if validation_err is not None:
         print_validation_error(validation_err)
         print("  Scan aborted. Fix the issue above and retry.\n")
         return 1
 
-    # Display manifest summary
-    print(format_manifest_summary(manifest))
-    print(f"  [Config source: {result.source}]")
-
-    # -- 5. Mode dispatch ------------------------------------------
+    # -- 8. Mode dispatch (endpoint probe) -------------------------
     mode = manifest.mode.value
 
     if mode == MODE_LOCAL:
@@ -254,7 +264,7 @@ def handle_scan(args: argparse.Namespace) -> int:
         print("  Scan aborted. Please fix the issue above and try again.\n")
         return 1
 
-    # -- 6. Scan orchestration (Phase 3) ---------------------------
+    # -- 9. Scan orchestration (Phase 3+) --------------------------
     _print_divider()
     print("  [INFO] Scan engine is not yet implemented (Phase 3).")
     print("  [INFO] Connection test passed -- the target is ready to be scanned.")

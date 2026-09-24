@@ -430,3 +430,67 @@ Phase 1d (validator.py): validates raw CLI strings before manifest creation. Pha
 **Date:** 2026-09-21  **Phase:** 2c  **Status:** Active
 
 The TRD (Section 2.1, F-03) specifies Quick/Standard/Deep. 'basic' and 'full' are NOT valid and are explicitly rejected by Phase 2c. This decision resolves a contradiction between a Phase 2c user prompt (which mentioned 'basic'/'full') and the TRD.
+
+---
+
+### D-028: Display + Confirm Before Connection Probe (not after)
+
+**Date:** 2026-09-21  **Phase:** 2d  **Status:** Active
+
+The manifest display and pre-scan confirmation (Phase 2d) runs in Step 4, BEFORE the endpoint probe (Step 6). This means no network activity occurs until the user has explicitly confirmed. Previously the display was shown after probing -- this was incorrect.
+
+---
+
+### D-029: User Declining Confirmation is Code 0 (not an error)
+
+**Date:** 2026-09-21  **Phase:** 2d  **Status:** Active
+
+If the user types 'no' or presses Ctrl-C at the pre-scan confirmation, the process exits with code 0. Declining is a deliberate user action, not an error. This keeps CI/CD pipelines from treating a user decision as a failure.
+
+---
+
+### D-030: 3-Attempt Limit on Invalid Confirmation Input
+
+**Date:** 2026-09-21  **Phase:** 2d  **Status:** Active
+
+If the user gives invalid input (not yes/no) more than _MAX_ATTEMPTS times, confirm_execution() returns False (exits cleanly). This prevents infinite loops in piped or automated contexts. Same pattern used in Phase 1a consent gate.
+
+---
+
+### D-031: Estimator Constants Are Derived From TRD Probe Taxonomy
+
+**Date:** 2026-09-21  **Phase:** 3a  **Status:** Active
+
+BASE_PROBES_PER_CATEGORY counts (45/50/55/45) are calibrated from TRD Section 2.3 probe taxonomy and Garak baseline probe set sizes. DEPTH_MULTIPLIERS (0.5/1.0/2.0) map to Quick/Standard/Deep scan profiles. TIME_PER_PROBE (1.5s API, 0.8s local) assumes sequential execution.
+
+---
+
+### D-032: Estimation Displayed Before Confirmation (Not After)
+
+**Date:** 2026-09-21  **Phase:** 3a  **Status:** Active
+
+The user's prompt positioned estimation AFTER confirmation. This was corrected: estimation is shown BEFORE the yes/no prompt so the user can make an informed decision about cost and time before committing. This matches the principle that no network activity occurs until after explicit confirmation.
+
+---
+
+### D-033: Safety Guard Uses Strict Greater-Than (Not >=)
+
+**Date:** 2026-09-24  **Phase:** 3b  **Status:** Active
+
+is_heavy_scan() uses > (not >=) to compare against thresholds. A scan with exactly 300 probes or exactly 300 seconds is NOT heavy. This prevents false warnings on scans that are right at the recommended limits.
+
+---
+
+### D-034: Heavy Scan Warning is Advisory, Never Auto-Cancel
+
+**Date:** 2026-09-24  **Phase:** 3b  **Status:** Active
+
+The safety guard NEVER auto-cancels a scan. It always asks the user. This respects user autonomy -- the warning exists to inform, not to block. Even scans with 1000+ probes can proceed if the user says yes.
+
+---
+
+### D-035: Heavy Guard is a Separate Confirmation From Normal Confirm
+
+**Date:** 2026-09-24  **Phase:** 3b  **Status:** Active
+
+Heavy scans require TWO confirmations: (1) 'Proceed with heavy scan?' from scan_guard.py (Step 5), and (2) 'Proceed with scan?' from manifest_display.py (Step 6). This is intentional -- the heavy warning fires before the user even sees the full config display, giving them an early exit point. Light scans only see confirmation (2).
