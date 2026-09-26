@@ -1,9 +1,9 @@
 # AI-SENTRY -- Current Phase
 
 **Last Updated:** 2026-09-26
-**Current Phase:** 5b -- Recommendation Engine (COMPLETE)
-**Previous Phase:** 5a -- Scoring Engine (COMPLETE)
-**Next Phase:** Phase 6 -- Report Generator
+**Current Phase:** 6a -- Report Generation System (COMPLETE)
+**Previous Phase:** 5b -- Recommendation Engine (COMPLETE)
+**Next Phase:** Phase 7 -- Deployment Advisor / Phase 8 -- Desktop UI
 
 ---
 
@@ -25,35 +25,54 @@
 | 3c | Engine Adapter System (mock engine) | COMPLETE |
 | 5a | Scoring Engine (risk assessment) | COMPLETE |
 | 5b | Recommendation Engine (remediation actions) | COMPLETE |
-| 6  | Report Generator | NOT STARTED -- READY |
+| 6a | Report Generation + Integration System | COMPLETE |
 | 7  | Deployment Advisor + AWS Deploy Engine | NOT STARTED |
-| 8  | Desktop Application UI | NOT STARTED |
+| 8  | Desktop Application UI | NOT STARTED -- READY |
 | 9  | Website | NOT STARTED |
 | 10 | Testing & Integration | NOT STARTED |
 | 11 | Launch Prep | NOT STARTED |
 
 ---
 
-## Phase 5b -- Recommendation Engine
+## Phase 6a -- Report Generation + Integration System
 
-### New file: `core/recommender.py`
+### New files
 
-**Architecture:**
-- `_ACTION_DATABASE`: severity-tiered remediation actions for all 4 categories
-  - Each category has `high`, `medium`, `low` action tiers
-  - Higher tiers have more actions (high >= 5, medium >= 3, low >= 2)
-- `get_actions_for_category(category, severity)` -- lookup + dedup
-- `prioritize_recommendations(recs)` -- sort HIGH → MEDIUM → LOW, then alphabetically
-- `generate_recommendations(risk_report)` -- orchestrator, returns frozen RecommendationReport
-- `format_recommendations(report)` -- CLI display with severity tags and numbered actions
+**`core/report_generator.py`** -- Report generation + export
+- `ScanReport` dataclass: unified report combining all pipeline outputs
+- `generate_full_report(manifest, scan_result, risk_report, rec_report)` -- merges all data
+- `serialize_report(report)` -- JSON string with 2-space indent
+- `format_txt_report(report)` -- human-readable ASCII text with sections
+- `export_report(report, path, fmt)` -- file export (JSON/TXT) with error handling
+- `ExportResult` dataclass -- success/failure tracking
+- `REPORT_VERSION = "1.0.0"`
 
-**Data types:**
-- `Recommendation` (frozen): category, severity, actions (as tuple)
-- `RecommendationReport` (frozen): recommendations, risk_level, risk_score, total_actions
+**`services/report_service.py`** -- Electron/React bridge
+- In-memory report store (dict keyed by scan_id)
+- `store_report(report)` -- store + mark as latest
+- `get_report_by_id(scan_id)` -- returns JSON-ready dict
+- `get_latest_report()` -- most recent report as dict
+- `get_latest_report_object()` -- internal use (ScanReport)
+- `list_report_ids()` / `get_report_count()` / `clear_reports()`
+
+### JSON Report Schema (for Electron UI)
+
+```json
+{
+  "report_version": "1.0.0",
+  "meta": { "target", "mode", "scan_depth", "categories", "scan_id", "timestamp", "report_generated_at" },
+  "summary": { "risk_score", "risk_level", "total_findings", "raw_score" },
+  "breakdown": { "high", "medium", "low" },
+  "categories": { "<name>": { "count", "max_severity", "avg_confidence", "raw_score" } },
+  "findings": [{ "category", "severity", "confidence", "evidence", "source", "probe_id" }],
+  "recommendations": [{ "category", "severity", "actions": [] }],
+  "engine": { "name", "total_probes", "duration_sec", "error" }
+}
+```
 
 ### Integration
-- CLI Step 11: `generate_recommendations(risk_report)` → `display_recommendations(rec_report)`
-- Follows immediately after risk scoring (Step 10)
+- CLI Step 12: `generate_full_report()` → `store_report()` → `display_txt_report()`
+- CLI Step 13: Auto-export JSON + TXT to `--output` directory
 
 ---
 
@@ -74,11 +93,12 @@
 | test_engine.py | 75 |
 | test_scorer.py | 72 |
 | test_recommender.py | 48 |
-| **Total** | **730** |
+| test_report.py | 69 |
+| **Total** | **799** |
 
 ---
 
-## Full CLI Pipeline (Phase 5b -- 11 steps)
+## Full CLI Pipeline (Phase 6a -- 13 steps)
 
 ```
 Step 1:  Consent gate          core/consent.py
@@ -92,56 +112,19 @@ Step 8:  Endpoint probe        core/input_handler.py or core/local_handler.py
 Step 9:  Scan engine           core/engine_runner.py
 Step 10: Risk scoring          core/scorer.py
 Step 11: Recommendations       core/recommender.py
-```
-
----
-
-## Example: Full 4-Category Recommendations
-
-```
-------------------------------------------------------------
-  RECOMMENDATIONS
-------------------------------------------------------------
-
-  [HIGH] data_leak
-    1. Implement output filtering to detect and redact PII...
-    2. Add a data loss prevention (DLP) layer...
-    3. Restrict verbatim text reproduction...
-    4. Audit training data for sensitive content...
-    5. Deploy differential privacy techniques...
-
-  [HIGH] jailbreak
-    1. Implement multi-layer content filter...
-    2. Deploy jailbreak detection classifier...
-    3. Add response validation layer...
-    4. Disable roleplay/persona-switching...
-    5. Conduct regular adversarial testing...
-
-  [HIGH] prompt_injection
-    1. Implement strict input sanitization...
-    2. Deploy prompt injection detection layer...
-    3. Use parameterized prompt templates...
-    4. Add system prompt integrity check...
-    5. Conduct red-team exercise...
-
-  [MED ] harmful_output
-    1. Deploy toxicity classifier...
-    2. Implement bias detection...
-    3. Add factual grounding checks...
-
-  Total actions: 18
-
-------------------------------------------------------------
+Step 12: Report generation     core/report_generator.py + services/report_service.py
+Step 13: File export           core/report_generator.py :: export_report()
 ```
 
 ---
 
 ## Context Notes for AI Tools
 
-- Recommender is PURE: no I/O, no network, no randomness
-- Recommendations are ONLY for categories present in findings (no generic padding)
-- Sorted HIGH → MEDIUM → LOW, then alphabetically within same severity
-- Each category's action tier is determined by its max_severity from the scorer
-- Unknown categories get a single generic "Review findings" action
-- JSON output via `RecommendationReport.to_dict()` ready for Phase 6
+- `ScanReport` is the SINGLE SOURCE OF TRUTH for all report data
+- JSON output is UI-ready: no transformation needed by Electron/React
+- TXT output is ASCII-safe for Windows cp1252 compatibility
+- Export creates parent directories automatically
+- Export handles PermissionError and OSError gracefully
+- report_service is in-memory only (no persistence yet)
+- Electron IPC will call get_latest_report() / get_report_by_id() in Phase 8
 - Do NOT commit or push to GitHub -- user handles commits manually

@@ -550,3 +550,27 @@ Each category has separate action lists for high/medium/low severity. The tier s
 **Date:** 2026-09-26  **Phase:** 5b  **Status:** Active
 
 If a category has zero findings, it gets zero recommendations. No generic 'best practice' padding. This keeps the output actionable and focused on what was actually detected.
+
+---
+
+### D-043: ScanReport is the Single Source of Truth for All Report Data
+
+**Date:** 2026-09-26  **Phase:** 6a  **Status:** Active
+
+All downstream consumers (CLI display, file export, Electron UI) read from the same ScanReport object. No component should reconstruct report data from lower-level objects (ScanResult, RiskReport, etc.) -- they all go through generate_full_report().
+
+---
+
+### D-044: JSON Report Schema is UI-Ready (No Frontend Transformation)
+
+**Date:** 2026-09-26  **Phase:** 6a  **Status:** Active
+
+The JSON schema returned by ScanReport.to_dict() is the exact structure the React frontend will consume. Field names, nesting, and types are designed for direct binding. No BFF (backend-for-frontend) transformation layer is needed.
+
+---
+
+### D-045: Reports Auto-Export to --output Directory
+
+**Date:** 2026-09-26  **Phase:** 6a  **Status:** Active
+
+After every scan, CLI Steps 12-13 automatically export both JSON and TXT reports to the --output directory (default: ./aisentry-report/). Files are named report_<scan_id>.json and report_<scan_id>.txt. Parent directories are created if missing.

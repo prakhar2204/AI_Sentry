@@ -37,6 +37,13 @@ from core.scan_guard import check_scan_safety
 from core.engine_runner import run_engine, display_results, print_scan_error
 from core.scorer import score_scan_result, display_risk_report
 from core.recommender import generate_recommendations, display_recommendations
+from core.report_generator import (
+    generate_full_report,
+    display_txt_report,
+    export_report,
+    print_export_result,
+)
+from services.report_service import store_report
 
 
 # ─────────────────────────────────────────────
@@ -279,15 +286,32 @@ def handle_scan(args: argparse.Namespace) -> int:
         print("  Scan engine failed. Check the error above.\n")
         return 1
 
-    display_results(scan_result)
-
     # -- 10. Risk scoring ------------------------------------------
     risk_report = score_scan_result(scan_result)
-    display_risk_report(risk_report)
 
     # -- 11. Recommendations ---------------------------------------
     rec_report = generate_recommendations(risk_report)
-    display_recommendations(rec_report)
+
+    # -- 12. Report generation + display ---------------------------
+    full_report = generate_full_report(
+        manifest=manifest,
+        scan_result=scan_result,
+        risk_report=risk_report,
+        rec_report=rec_report,
+    )
+    store_report(full_report)
+    display_txt_report(full_report)
+
+    # -- 13. File export -------------------------------------------
+    output_dir = manifest.output_dir
+    json_path = os.path.join(output_dir, f"report_{manifest.manifest_id}.json")
+    txt_path = os.path.join(output_dir, f"report_{manifest.manifest_id}.txt")
+
+    json_result = export_report(full_report, json_path, fmt="json")
+    print_export_result(json_result)
+
+    txt_result = export_report(full_report, txt_path, fmt="txt")
+    print_export_result(txt_result)
 
     return 0
 
