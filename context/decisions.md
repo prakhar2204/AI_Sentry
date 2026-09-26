@@ -518,3 +518,19 @@ Engines must never raise exceptions to the CLI. If an engine fails, it returns S
 **Date:** 2026-09-24  **Phase:** 3c  **Status:** Active
 
 engine_runner.run_engine() currently always uses MockEngine. When Garak/PyRIT/DeepTeam adapters are built, this function will select the engine based on a registry or manifest configuration. The mock engine remains as a fallback and testing tool.
+
+---
+
+### D-039: MAX_POSSIBLE_SCORE = 120 (Configurable Ceiling)
+
+**Date:** 2026-09-25  **Phase:** 5a  **Status:** Active
+
+Normalization ceiling is 4 categories * 3 findings * HIGH weight(10) * 1.0 confidence = 120. Scans with raw scores above 120 still cap at 100/100. This constant can be tuned as real engines produce different finding volumes.
+
+---
+
+### D-040: Risk Thresholds Are Inclusive on Lower Bound
+
+**Date:** 2026-09-25  **Phase:** 5a  **Status:** Active
+
+0-30 = LOW (<=30), 31-70 = MEDIUM (<=70), 71-100 = HIGH. Score of exactly 30 is LOW, exactly 70 is MEDIUM, exactly 71 is HIGH. These are the boundaries. No gaps, no overlaps.
