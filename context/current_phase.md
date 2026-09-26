@@ -1,9 +1,9 @@
 # AI-SENTRY -- Current Phase
 
 **Last Updated:** 2026-09-26
-**Current Phase:** 6a -- Report Generation System (COMPLETE)
-**Previous Phase:** 5b -- Recommendation Engine (COMPLETE)
-**Next Phase:** Phase 7 -- Deployment Advisor / Phase 8 -- Desktop UI
+**Current Phase:** Screen 2 -- Input Page (COMPLETE)
+**Previous Phase:** Screen 1 -- Agreement Page (COMPLETE)
+**Next Phase:** Screen 3 -- Configuration Page
 
 ---
 
@@ -12,93 +12,74 @@
 | Phase | Name | Status |
 |---|---|---|
 | 0a-0e | Design & Documentation Foundation | COMPLETE |
-| 1a | Consent Gate (CLI) | COMPLETE |
-| 1b | API Endpoint Input & HTTP Probe | COMPLETE |
-| 1c | Local Model Support (llama.cpp) | COMPLETE |
-| 1d | Central Validation & Rejection System | COMPLETE |
-| 2a | Manifest System (schema + enums + lifecycle) | COMPLETE |
-| 2b | Manifest Loader System (file + CLI + merge) | COMPLETE |
-| 2c | Strict Manifest Validation (post-merge semantic check) | COMPLETE |
-| 2d | Manifest Display & Pre-Scan Confirmation | COMPLETE |
-| 3a | Pre-Scan Estimation Engine | COMPLETE |
-| 3b | Safety Threshold System (heavy scan guard) | COMPLETE |
-| 3c | Engine Adapter System (mock engine) | COMPLETE |
-| 5a | Scoring Engine (risk assessment) | COMPLETE |
-| 5b | Recommendation Engine (remediation actions) | COMPLETE |
-| 6a | Report Generation + Integration System | COMPLETE |
-| 7  | Deployment Advisor + AWS Deploy Engine | NOT STARTED |
-| 8  | Desktop Application UI | NOT STARTED -- READY |
-| 9  | Website | NOT STARTED |
-| 10 | Testing & Integration | NOT STARTED |
-| 11 | Launch Prep | NOT STARTED |
+| 1a-1d | Input Layer (consent, validation, probe) | COMPLETE |
+| 2a-2d | Manifest System | COMPLETE |
+| 3a-3c | Orchestration Layer (estimation, guard, engine) | COMPLETE |
+| 5a | Scoring Engine | COMPLETE |
+| 5b | Recommendation Engine | COMPLETE |
+| 6a | Report Generation + Integration | COMPLETE |
+| 6b | UI Architecture Document | COMPLETE |
+| S1 | Agreement Screen (Screen 1) | COMPLETE |
+| S2 | Input Screen (Screen 2) | COMPLETE |
+| S3 | Configuration Screen (Screen 3) | NOT STARTED -- READY |
+| S4+ | Remaining Screens (4-11) | NOT STARTED |
 
 ---
 
-## Phase 6a -- Report Generation + Integration System
+## Screen 1 -- Agreement Page
 
-### New files
+### Files Created
 
-**`core/report_generator.py`** -- Report generation + export
-- `ScanReport` dataclass: unified report combining all pipeline outputs
-- `generate_full_report(manifest, scan_result, risk_report, rec_report)` -- merges all data
-- `serialize_report(report)` -- JSON string with 2-space indent
-- `format_txt_report(report)` -- human-readable ASCII text with sections
-- `export_report(report, path, fmt)` -- file export (JSON/TXT) with error handling
-- `ExportResult` dataclass -- success/failure tracking
-- `REPORT_VERSION = "1.0.0"`
+| File | Purpose |
+|---|---|
+| `frontend/src/store/actions.ts` | Action type constants for all 3 contexts |
+| `frontend/src/store/ScanContext.tsx` | Scan lifecycle state, consent persistence |
+| `frontend/src/hooks/useScan.ts` | ScanContext consumer hook |
+| `frontend/src/hooks/useNavigation.ts` | Step-based wizard navigation |
+| `frontend/src/components/layout/PageHeader.tsx` | Consistent page header |
+| `frontend/src/pages/AgreementPage.tsx` | Screen 1: consent gate |
+| `frontend/src/App.tsx` | Root component + screen router |
+| `frontend/src/main.tsx` | React 18 entry point |
 
-**`services/report_service.py`** -- Electron/React bridge
-- In-memory report store (dict keyed by scan_id)
-- `store_report(report)` -- store + mark as latest
-- `get_report_by_id(scan_id)` -- returns JSON-ready dict
-- `get_latest_report()` -- most recent report as dict
-- `get_latest_report_object()` -- internal use (ScanReport)
-- `list_report_ids()` / `get_report_count()` / `clear_reports()`
+### Architecture Decisions
 
-### JSON Report Schema (for Electron UI)
+- **No external UI library**: All components are vanilla React + TypeScript
+- **BEM class naming**: `agreement-page__section-title`, `button--primary`
+- **No styling code**: Only structural class names; styling deferred to design phase
+- **Consent in localStorage**: Key `aisentry_consent_given`, corruption-safe reads
+- **onAccept callback**: Page does not own navigation; parent router decides where to go
+- **In-memory router**: No URL-based routing; ScreenRouter uses switch/case on ScreenId
 
-```json
-{
-  "report_version": "1.0.0",
-  "meta": { "target", "mode", "scan_depth", "categories", "scan_id", "timestamp", "report_generated_at" },
-  "summary": { "risk_score", "risk_level", "total_findings", "raw_score" },
-  "breakdown": { "high", "medium", "low" },
-  "categories": { "<name>": { "count", "max_severity", "avg_confidence", "raw_score" } },
-  "findings": [{ "category", "severity", "confidence", "evidence", "source", "probe_id" }],
-  "recommendations": [{ "category", "severity", "actions": [] }],
-  "engine": { "name", "total_probes", "duration_sec", "error" }
-}
+### Navigation Logic
+
+```
+App Launch
+  |
+  v
+ScanContext initializes:
+  - reads localStorage("aisentry_consent_given")
+  - if "true" → phase = "consented", skip to Input (Step 2)
+  - if missing/false → phase = "idle", show Agreement (Step 1)
+
+User checks checkbox → local state (agreed = true)
+User clicks "Agree & Continue":
+  - dispatch(ACCEPT_CONSENT) → consent_given = true, phase = "consented"
+  - reducer writes to localStorage
+  - onAccept() → navigateTo("input")
+
+On reload:
+  - localStorage read → consent_given = true → auto-skip to Input
 ```
 
-### Integration
-- CLI Step 12: `generate_full_report()` → `store_report()` → `display_txt_report()`
-- CLI Step 13: Auto-export JSON + TXT to `--output` directory
+### Bypass Protection
+
+1. useNavigation refuses to navigate anywhere except "agree" when consent_given is false
+2. Button is disabled until checkbox is checked
+3. Corrupted localStorage (non-"true" values) default to false
 
 ---
 
-## Current Test Counts
-
-| Suite | Tests |
-|---|---|
-| test_consent.py | 13 |
-| test_input_handler.py | 25 |
-| test_local_handler.py | 31 |
-| test_validator.py | 66 |
-| test_manifest.py | 73 |
-| test_manifest_loader.py | 76 |
-| test_manifest_validator.py | 96 |
-| test_manifest_display.py | 47 |
-| test_estimator.py | 57 |
-| test_scan_guard.py | 51 |
-| test_engine.py | 75 |
-| test_scorer.py | 72 |
-| test_recommender.py | 48 |
-| test_report.py | 69 |
-| **Total** | **799** |
-
----
-
-## Full CLI Pipeline (Phase 6a -- 13 steps)
+## Full CLI Pipeline (unchanged -- 13 steps)
 
 ```
 Step 1:  Consent gate          core/consent.py
@@ -116,15 +97,38 @@ Step 12: Report generation     core/report_generator.py + services/report_servic
 Step 13: File export           core/report_generator.py :: export_report()
 ```
 
+## Current Test Count: 799 (backend only -- frontend tests pending)
+
+---
+
+## Frontend File Structure (current)
+
+```
+app/frontend/
++-- src/
+|   +-- main.tsx                       # React 18 entry
+|   +-- App.tsx                        # Root + ScreenRouter
+|   +-- pages/
+|   |   +-- AgreementPage.tsx          # Screen 1 (DONE)
+|   +-- store/
+|   |   +-- actions.ts                 # Action type constants
+|   |   +-- ScanContext.tsx            # Scan state + reducer
+|   +-- hooks/
+|   |   +-- useScan.ts                 # ScanContext consumer
+|   |   +-- useNavigation.ts           # Wizard navigation
+|   +-- components/
+|       +-- layout/
+|           +-- PageHeader.tsx         # Page header component
+```
+
 ---
 
 ## Context Notes for AI Tools
 
-- `ScanReport` is the SINGLE SOURCE OF TRUTH for all report data
-- JSON output is UI-ready: no transformation needed by Electron/React
-- TXT output is ASCII-safe for Windows cp1252 compatibility
-- Export creates parent directories automatically
-- Export handles PermissionError and OSError gracefully
-- report_service is in-memory only (no persistence yet)
-- Electron IPC will call get_latest_report() / get_report_by_id() in Phase 8
+- Frontend uses TypeScript + React (no external state libs, no UI frameworks)
+- Class names follow BEM convention for future styling
+- AgreementPage has unique IDs: `consent-checkbox`, `agree-continue-button` (for testing)
+- ScanContext initializer reads localStorage once at mount
+- Navigation is in-memory (useState), not URL-based
+- Placeholder pages exist for Steps 2-11 in App.tsx
 - Do NOT commit or push to GitHub -- user handles commits manually

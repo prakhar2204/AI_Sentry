@@ -574,3 +574,27 @@ The JSON schema returned by ScanReport.to_dict() is the exact structure the Reac
 **Date:** 2026-09-26  **Phase:** 6a  **Status:** Active
 
 After every scan, CLI Steps 12-13 automatically export both JSON and TXT reports to the --output directory (default: ./aisentry-report/). Files are named report_<scan_id>.json and report_<scan_id>.txt. Parent directories are created if missing.
+
+---
+
+### D-046: JSON-over-stdio for Electron-Python Bridge
+
+**Date:** 2026-09-26  **Phase:** 6b  **Status:** Active
+
+Electron main process communicates with Python backend via child_process stdin/stdout. Commands are single-line JSON objects. Responses are newline-delimited JSON. This avoids HTTP overhead and port conflicts while keeping the security boundary clean.
+
+---
+
+### D-047: useReducer + Context Over External State Library
+
+**Date:** 2026-09-26  **Phase:** 6b  **Status:** Active
+
+State management uses React's built-in useReducer + Context API split into 3 domains (ScanContext, ReportContext, DeployContext). No Redux, Zustand, or MobX. The app's state shape is small enough that built-in tools are sufficient and avoid dependency churn.
+
+---
+
+### D-048: Results Screen is the Hub
+
+**Date:** 2026-09-26  **Phase:** 6b  **Status:** Active
+
+Step 6 (Results) is the hub screen. After a scan completes, the user can branch to Actions (7), Export (8), or Deploy (9-11) from here. This avoids a strictly linear flow after the scan while keeping the pre-scan path linear.
