@@ -534,3 +534,19 @@ Normalization ceiling is 4 categories * 3 findings * HIGH weight(10) * 1.0 confi
 **Date:** 2026-09-25  **Phase:** 5a  **Status:** Active
 
 0-30 = LOW (<=30), 31-70 = MEDIUM (<=70), 71-100 = HIGH. Score of exactly 30 is LOW, exactly 70 is MEDIUM, exactly 71 is HIGH. These are the boundaries. No gaps, no overlaps.
+
+---
+
+### D-041: Recommendations Are Severity-Tiered, Not Cumulative
+
+**Date:** 2026-09-26  **Phase:** 5b  **Status:** Active
+
+Each category has separate action lists for high/medium/low severity. The tier selected matches the category's max_severity from the scorer. Higher tiers are NOT cumulative (they don't include lower-tier actions) -- they are independently curated lists that may share some actions but are designed for the specific severity context.
+
+---
+
+### D-042: Recommendations Only Include Categories With Findings
+
+**Date:** 2026-09-26  **Phase:** 5b  **Status:** Active
+
+If a category has zero findings, it gets zero recommendations. No generic 'best practice' padding. This keeps the output actionable and focused on what was actually detected.

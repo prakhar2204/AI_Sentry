@@ -36,6 +36,7 @@ from core.estimator import estimate_scan
 from core.scan_guard import check_scan_safety
 from core.engine_runner import run_engine, display_results, print_scan_error
 from core.scorer import score_scan_result, display_risk_report
+from core.recommender import generate_recommendations, display_recommendations
 
 
 # ─────────────────────────────────────────────
@@ -283,6 +284,10 @@ def handle_scan(args: argparse.Namespace) -> int:
     # -- 10. Risk scoring ------------------------------------------
     risk_report = score_scan_result(scan_result)
     display_risk_report(risk_report)
+
+    # -- 11. Recommendations ---------------------------------------
+    rec_report = generate_recommendations(risk_report)
+    display_recommendations(rec_report)
 
     return 0
 
