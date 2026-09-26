@@ -1,0 +1,427 @@
+/**
+ * AI-SENTRY -- Base Styles
+ * index.css
+ *
+ * Minimal structural styles for visual testing.
+ * No design decisions -- just enough to make the app readable.
+ * A proper design system will replace this in Phase 8.
+ */
+
+/* ── Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e0e0e0;
+  background: #1a1a2e;
+}
+
+/* ── App shell ── */
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ── Page Header ── */
+.page-header {
+  margin-bottom: 32px;
+}
+.page-header__back {
+  background: none;
+  border: none;
+  color: #8888cc;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 8px;
+  padding: 0;
+}
+.page-header__back:hover {
+  color: #aaaaee;
+}
+.page-header__title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #f0f0f0;
+}
+.page-header__subtitle {
+  font-size: 13px;
+  color: #888;
+  margin-top: 4px;
+}
+
+/* ── Sections ── */
+.agreement-page__section,
+.input-page__section,
+.config-page__section,
+.estimate-page__section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #16213e;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+}
+
+.agreement-page__section-title,
+.config-page__section-title,
+.estimate-page__section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #c0c0e0;
+  margin-bottom: 12px;
+}
+
+.agreement-page__list {
+  padding-left: 20px;
+}
+.agreement-page__list li {
+  margin-bottom: 8px;
+  color: #b0b0c0;
+  font-size: 13px;
+}
+
+/* ── Buttons ── */
+.button {
+  padding: 10px 24px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.button--primary {
+  background: #4a6fa5;
+  color: #fff;
+  border-color: #5a7fb5;
+}
+.button--primary:hover:not(:disabled) {
+  background: #5a7fb5;
+}
+.button--secondary {
+  background: #2a2a4a;
+  color: #c0c0e0;
+  border-color: #3a3a5a;
+}
+.button--secondary:hover:not(:disabled) {
+  background: #3a3a5a;
+}
+.button--ghost {
+  background: none;
+  color: #8888cc;
+  border: none;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.button--ghost:hover:not(:disabled) {
+  color: #aaaaee;
+}
+
+/* ── Forms ── */
+.text-input {
+  margin-bottom: 12px;
+}
+.text-input__label,
+.file-drop-zone__label,
+.radio-group__legend,
+.checkbox-group__legend {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #a0a0c0;
+  margin-bottom: 6px;
+}
+.text-input__field {
+  width: 100%;
+  padding: 8px 12px;
+  background: #0f0f23;
+  border: 1px solid #2a2a4a;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 14px;
+}
+.text-input__field:focus {
+  outline: none;
+  border-color: #4a6fa5;
+}
+.text-input--error .text-input__field {
+  border-color: #cc4444;
+}
+.text-input__error,
+.file-drop-zone__error,
+.checkbox-group__error {
+  color: #cc4444;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* ── Radio Group ── */
+.radio-group {
+  border: none;
+  padding: 0;
+}
+.radio-group__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.radio-group__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #b0b0c0;
+}
+.radio-group__option--selected {
+  color: #e0e0f0;
+}
+.radio-group__input {
+  accent-color: #4a6fa5;
+}
+
+/* ── Checkbox Group ── */
+.checkbox-group {
+  border: none;
+  padding: 0;
+}
+.checkbox-group__options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.checkbox-group__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #b0b0c0;
+}
+.checkbox-group__option--selected {
+  color: #e0e0f0;
+}
+.checkbox-group__input {
+  accent-color: #4a6fa5;
+}
+.checkbox-group:disabled .checkbox-group__option {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── File Drop Zone ── */
+.file-drop-zone__area {
+  border: 2px dashed #2a2a4a;
+  border-radius: 6px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.file-drop-zone__area:hover {
+  border-color: #4a6fa5;
+}
+.file-drop-zone--drag-over .file-drop-zone__area {
+  border-color: #4a6fa5;
+  background: rgba(74, 111, 165, 0.08);
+}
+.file-drop-zone--has-file .file-drop-zone__area {
+  border-color: #44aa66;
+}
+.file-drop-zone__hint {
+  color: #666;
+  font-size: 13px;
+}
+.file-drop-zone__filename {
+  color: #88cc88;
+  font-size: 13px;
+  font-weight: 500;
+}
+.file-drop-zone__input {
+  display: none;
+}
+.file-drop-zone--error .file-drop-zone__area {
+  border-color: #cc4444;
+}
+
+/* ── Alert Banner ── */
+.alert-banner {
+  padding: 12px 16px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.alert-banner--warning {
+  background: rgba(204, 170, 0, 0.12);
+  border: 1px solid #ccaa00;
+  color: #eedd44;
+}
+.alert-banner--error {
+  background: rgba(204, 68, 68, 0.12);
+  border: 1px solid #cc4444;
+  color: #ee6666;
+}
+.alert-banner--info {
+  background: rgba(74, 111, 165, 0.12);
+  border: 1px solid #4a6fa5;
+  color: #88aadd;
+}
+.alert-banner__message {
+  font-size: 13px;
+}
+.alert-banner__dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* ── Separator ── */
+.input-page__separator {
+  text-align: center;
+  color: #555;
+  font-size: 12px;
+  margin: 12px 0;
+}
+
+/* ── Consent ── */
+.agreement-page__consent {
+  margin: 24px 0;
+}
+.agreement-page__checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  color: #b0b0c0;
+  cursor: pointer;
+}
+.agreement-page__checkbox {
+  margin-top: 3px;
+  accent-color: #4a6fa5;
+}
+
+/* ── Actions ── */
+.agreement-page__actions,
+.input-page__actions,
+.config-page__actions,
+.estimate-page__actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 12px;
+}
+
+/* ── Config Summary ── */
+.config-page__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.config-page__summary-row {
+  display: flex;
+  gap: 12px;
+}
+.config-page__summary-label {
+  font-size: 13px;
+  color: #888;
+  min-width: 60px;
+}
+.config-page__summary-value {
+  font-size: 13px;
+  color: #c0c0e0;
+  font-weight: 500;
+  word-break: break-all;
+}
+.config-page__hint {
+  font-size: 12px;
+  color: #666;
+  margin-top: 8px;
+}
+
+/* ── Estimate Stats ── */
+.estimate-page__stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.estimate-page__stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #2a2a4a;
+}
+.estimate-page__stat-label {
+  font-size: 13px;
+  color: #888;
+}
+.estimate-page__stat-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e0e0f0;
+}
+
+/* ── Estimate Table ── */
+.estimate-page__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.estimate-page__th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  padding: 8px 0;
+  border-bottom: 1px solid #2a2a4a;
+}
+.estimate-page__td {
+  font-size: 13px;
+  color: #c0c0e0;
+  padding: 8px 0;
+  border-bottom: 1px solid #1a1a3a;
+}
+
+/* ── Loading ── */
+.estimate-page__loading {
+  padding: 48px 0;
+  text-align: center;
+}
+.estimate-page__loading-text {
+  color: #888;
+  font-size: 14px;
+}
+
+/* ── Error Actions ── */
+.estimate-page__error-actions {
+  margin-top: 12px;
+}
+
+/* ── Placeholder ── */
+.placeholder-page {
+  padding: 48px 0;
+  text-align: center;
+}
+.placeholder-page h1 {
+  font-size: 18px;
+  color: #888;
+}
+.placeholder-page p {
+  color: #555;
+  margin-top: 8px;
+  font-size: 13px;
+}
