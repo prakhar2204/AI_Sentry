@@ -58,6 +58,9 @@ export const SCAN_ACTIONS = {
 
   /** Set optional manifest file path */
   SET_MANIFEST_FILE: "SET_MANIFEST_FILE",
+
+  /** Set scan strategy (manifest | manual | full) */
+  SET_SCAN_STRATEGY: "SET_SCAN_STRATEGY",
 } as const;
 
 // ─────────────────────────────────────────────

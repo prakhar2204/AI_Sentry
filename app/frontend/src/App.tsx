@@ -16,6 +16,7 @@ import { ScanProvider, useScanContext } from "./store/ScanContext";
 import { useNavigation, type ScreenId } from "./hooks/useNavigation";
 import { AgreementPage } from "./pages/AgreementPage";
 import { InputPage } from "./pages/InputPage";
+import { ConfigPage } from "./pages/ConfigPage";
 
 // ─────────────────────────────────────────────
 //  Placeholder pages (to be implemented in later phases)
@@ -55,7 +56,12 @@ function ScreenRouter() {
         );
 
       case "config":
-        return <PlaceholderPage name="Configuration (Step 3)" />;
+        return (
+          <ConfigPage
+            onContinue={() => navigateTo("confirm")}
+            onBack={() => navigateTo("input")}
+          />
+        );
 
       case "confirm":
         return <PlaceholderPage name="Confirm (Step 4)" />;

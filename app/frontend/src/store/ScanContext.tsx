@@ -37,6 +37,7 @@ export type ScanPhase =
 
 export type ScanMode = "api" | "local";
 export type ScanDepth = "quick" | "standard" | "deep";
+export type ScanStrategy = "manifest" | "manual" | "full";
 
 export interface ScanProgress {
   current_probe: number;
@@ -50,6 +51,7 @@ export interface ScanState {
   target: string | null;
   mode: ScanMode | null;
   scan_depth: ScanDepth;
+  scan_strategy: ScanStrategy;
   categories: string[];
   progress: ScanProgress | null;
   error: string | null;
@@ -88,6 +90,7 @@ function createInitialState(): ScanState {
     target: null,
     mode: null,
     scan_depth: "standard",
+    scan_strategy: "manual",
     categories: [],
     progress: null,
     error: null,
@@ -116,7 +119,8 @@ type ScanAction =
   | { type: typeof SCAN_ACTIONS.RESET_SCAN }
   | { type: typeof SCAN_ACTIONS.SET_ERROR; payload: string }
   | { type: typeof SCAN_ACTIONS.CLEAR_ERROR }
-  | { type: typeof SCAN_ACTIONS.SET_MANIFEST_FILE; payload: string | null };
+  | { type: typeof SCAN_ACTIONS.SET_MANIFEST_FILE; payload: string | null }
+  | { type: typeof SCAN_ACTIONS.SET_SCAN_STRATEGY; payload: ScanStrategy };
 
 // ─────────────────────────────────────────────
 //  Reducer
@@ -187,6 +191,7 @@ function scanReducer(state: ScanState, action: ScanAction): ScanState {
         target: null,
         mode: null,
         scan_depth: "standard",
+        scan_strategy: "manual",
         categories: [],
         progress: null,
         error: null,
@@ -201,6 +206,9 @@ function scanReducer(state: ScanState, action: ScanAction): ScanState {
 
     case SCAN_ACTIONS.SET_MANIFEST_FILE:
       return { ...state, manifest_file: action.payload };
+
+    case SCAN_ACTIONS.SET_SCAN_STRATEGY:
+      return { ...state, scan_strategy: action.payload };
 
     default:
       return state;
