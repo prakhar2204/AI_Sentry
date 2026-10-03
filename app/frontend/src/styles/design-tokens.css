@@ -1,0 +1,82 @@
+/**
+ * AI-SENTRY -- Design Tokens
+ * styles/design-tokens.css
+ *
+ * Single source of truth for all visual values.
+ * Every component references these tokens — never hardcoded values.
+ *
+ * System:
+ *   Spacing: 4px base (4, 8, 12, 16, 20, 24, 32, 40, 48, 64)
+ *   Typography: 3 weights, 6 sizes, system font stack
+ *   Radius: 3 tiers (sm=4, md=6, lg=8)
+ *   Elevation: 3 levels (subtle, default, raised)
+ *   Timing: 2 speeds (fast=150ms, normal=200ms)
+ */
+
+:root {
+  /* ─── Spacing ─── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ─── Typography ─── */
+  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter",
+    Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-mono: "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas",
+    "Courier New", monospace;
+
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+
+  --line-height-tight: 1.3;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.65;
+
+  /* ─── Border Radius ─── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* ─── Elevation / Shadows ─── */
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-default: 0 2px 6px rgba(0, 0, 0, 0.12);
+  --shadow-raised: 0 4px 16px rgba(0, 0, 0, 0.18);
+
+  /* ─── Timing / Motion ─── */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+
+  /* ─── Layout ─── */
+  --content-width: 680px;
+  --content-padding: var(--space-6);
+  --page-gutter: var(--space-8);
+  --section-gap: var(--space-6);
+  --input-height: 36px;
+
+  /* ─── Z-Index ─── */
+  --z-base: 0;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-overlay: 300;
+  --z-modal: 400;
+}

@@ -61,6 +61,12 @@ export const SCAN_ACTIONS = {
 
   /** Set scan strategy (manifest | manual | full) */
   SET_SCAN_STRATEGY: "SET_SCAN_STRATEGY",
+
+  /** Phase 6d: Full scan progress event from scanService */
+  SCAN_PROGRESS_EVENT: "SCAN_PROGRESS_EVENT",
+
+  /** Phase 6d: Activity log entry from scanService */
+  SCAN_ACTIVITY_EVENT: "SCAN_ACTIVITY_EVENT",
 } as const;
 
 // ─────────────────────────────────────────────

@@ -1,0 +1,156 @@
+/**
+ * AI-SENTRY -- Theme System
+ * styles/theme.css
+ *
+ * Dark (default) and light themes via CSS custom properties.
+ * Toggle by adding data-theme="light" to <html>.
+ *
+ * Color naming:
+ *   bg-*     = backgrounds
+ *   fg-*     = text / foreground
+ *   border-* = borders
+ *   accent-* = interactive / brand
+ *   status-* = semantic (success, warning, error, info)
+ */
+
+/* ═══════════════════════════════════════════
+   DARK THEME (default)
+   ═══════════════════════════════════════════ */
+
+:root,
+[data-theme="dark"] {
+  /* ─── Backgrounds ─── */
+  --bg-app: #0f1117;
+  --bg-surface: #161922;
+  --bg-raised: #1c2030;
+  --bg-inset: #0c0e14;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* ─── Foreground / Text ─── */
+  --fg-default: #d1d5e0;
+  --fg-muted: #8b92a8;
+  --fg-faint: #5a6178;
+  --fg-inverse: #0f1117;
+  --fg-on-accent: #ffffff;
+
+  /* ─── Borders ─── */
+  --border-default: #262b3a;
+  --border-strong: #363d52;
+  --border-focus: #5b8def;
+
+  /* ─── Accent / Brand ─── */
+  --accent-primary: #5b8def;
+  --accent-primary-hover: #6d9bff;
+  --accent-primary-pressed: #4a7bdd;
+  --accent-secondary: #2a3248;
+  --accent-secondary-hover: #333d55;
+
+  /* ─── Status Colors ─── */
+  --status-success: #3dbc6a;
+  --status-success-bg: rgba(61, 188, 106, 0.10);
+  --status-success-border: rgba(61, 188, 106, 0.25);
+
+  --status-warning: #e0a030;
+  --status-warning-bg: rgba(224, 160, 48, 0.10);
+  --status-warning-border: rgba(224, 160, 48, 0.25);
+
+  --status-error: #e05454;
+  --status-error-bg: rgba(224, 84, 84, 0.10);
+  --status-error-border: rgba(224, 84, 84, 0.25);
+
+  --status-info: #5b8def;
+  --status-info-bg: rgba(91, 141, 239, 0.10);
+  --status-info-border: rgba(91, 141, 239, 0.25);
+
+  /* ─── Interactive States ─── */
+  --input-bg: #0c0e14;
+  --input-border: #262b3a;
+  --input-border-hover: #363d52;
+  --input-border-focus: #5b8def;
+  --input-placeholder: #5a6178;
+
+  /* ─── Step Nav ─── */
+  --step-bg: transparent;
+  --step-active-bg: rgba(91, 141, 239, 0.12);
+  --step-active-border: #5b8def;
+  --step-complete-fg: var(--status-success);
+  --step-disabled-fg: var(--fg-faint);
+
+  /* ─── Progress ─── */
+  --progress-track: #1c2030;
+  --progress-fill: #5b8def;
+
+  /* ─── Scrollbar ─── */
+  --scrollbar-thumb: #2a3248;
+  --scrollbar-track: transparent;
+
+  color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════
+   LIGHT THEME
+   ═══════════════════════════════════════════ */
+
+[data-theme="light"] {
+  --bg-app: #f5f6f8;
+  --bg-surface: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-inset: #eef0f4;
+  --bg-overlay: rgba(0, 0, 0, 0.3);
+
+  --fg-default: #1a1e2c;
+  --fg-muted: #5a6178;
+  --fg-faint: #8b92a8;
+  --fg-inverse: #ffffff;
+  --fg-on-accent: #ffffff;
+
+  --border-default: #dce0e8;
+  --border-strong: #c4c9d4;
+  --border-focus: #4a7bdd;
+
+  --accent-primary: #4a7bdd;
+  --accent-primary-hover: #3a6bcd;
+  --accent-primary-pressed: #2a5bbd;
+  --accent-secondary: #eef0f4;
+  --accent-secondary-hover: #e2e5ec;
+
+  --status-success: #2a9d50;
+  --status-success-bg: rgba(42, 157, 80, 0.08);
+  --status-success-border: rgba(42, 157, 80, 0.20);
+
+  --status-warning: #c08820;
+  --status-warning-bg: rgba(192, 136, 32, 0.08);
+  --status-warning-border: rgba(192, 136, 32, 0.20);
+
+  --status-error: #cc3838;
+  --status-error-bg: rgba(204, 56, 56, 0.08);
+  --status-error-border: rgba(204, 56, 56, 0.20);
+
+  --status-info: #4a7bdd;
+  --status-info-bg: rgba(74, 123, 221, 0.08);
+  --status-info-border: rgba(74, 123, 221, 0.20);
+
+  --input-bg: #ffffff;
+  --input-border: #dce0e8;
+  --input-border-hover: #c4c9d4;
+  --input-border-focus: #4a7bdd;
+  --input-placeholder: #8b92a8;
+
+  --step-bg: transparent;
+  --step-active-bg: rgba(74, 123, 221, 0.08);
+  --step-active-border: #4a7bdd;
+  --step-complete-fg: var(--status-success);
+  --step-disabled-fg: var(--fg-faint);
+
+  --progress-track: #eef0f4;
+  --progress-fill: #4a7bdd;
+
+  --scrollbar-thumb: #c4c9d4;
+  --scrollbar-track: transparent;
+
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-default: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-raised: 0 4px 20px rgba(0, 0, 0, 0.10);
+
+  color-scheme: light;
+}

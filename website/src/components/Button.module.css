@@ -1,0 +1,100 @@
+/* ── Button Component ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--text-body);
+  line-height: 1;
+  border-radius: var(--radius-md);
+  padding: 14px var(--space-lg);
+  transition:
+    transform var(--duration-fast) ease-out,
+    filter var(--duration-fast) ease-out,
+    box-shadow var(--duration-fast) ease-out,
+    border-color var(--duration-fast) ease-out,
+    background-color var(--duration-fast) ease-out;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn:hover {
+  transform: scale(1.02);
+  filter: brightness(1.1);
+}
+
+.btn:active {
+  transform: scale(0.99);
+}
+
+/* Primary */
+.btnPrimary {
+  composes: btn;
+  background-color: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-cta);
+}
+
+.btnPrimary:hover {
+  background-color: var(--accent-hover);
+  color: #fff;
+}
+
+/* Secondary */
+.btnSecondary {
+  composes: btn;
+  background-color: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+
+.btnSecondary:hover {
+  background-color: var(--accent-glow);
+  color: var(--accent-hover);
+}
+
+/* Ghost */
+.btnGhost {
+  composes: btn;
+  background-color: transparent;
+  color: var(--text-secondary);
+  padding: 10px var(--space-md);
+}
+
+.btnGhost:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-raised);
+}
+
+/* Large variant */
+.btnLg {
+  padding: 16px 32px;
+  font-size: var(--text-body-lg);
+}
+
+/* Small variant */
+.btnSm {
+  padding: 8px var(--space-md);
+  font-size: var(--text-sm);
+}
+
+/* Arrow icon nudge on hover */
+.btnArrow {
+  display: inline-block;
+  transition: transform var(--duration-fast) ease-out;
+}
+
+.btn:hover .btnArrow {
+  transform: translateX(4px);
+}
+
+.btnDownloadArrow {
+  display: inline-block;
+  transition: transform var(--duration-fast) ease-out;
+}
+
+.btn:hover .btnDownloadArrow {
+  transform: translateY(2px);
+}
