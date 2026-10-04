@@ -1,3 +1,4 @@
+import { Logo } from './Logo';
 import styles from './Footer.module.css';
 
 const PRODUCT_LINKS = [
@@ -5,7 +6,7 @@ const PRODUCT_LINKS = [
   { label: 'How It Works', href: '#how-it-works' },
   { label: 'Download', href: '/download' },
   { label: 'Changelog', href: '#' },
-  { label: 'Roadmap', href: '#' },
+  { label: 'Roadmap', href: '#roadmap' },
 ];
 
 const DEV_LINKS = [
@@ -28,9 +29,12 @@ export function Footer() {
       <div className={styles.footerInner}>
         <div className={styles.footerGrid}>
           <div className={styles.footerBrand}>
-            <div className={styles.footerBrandName}>AI Sentry</div>
+            <div className={styles.footerBrandName}>
+              <Logo size={22} />
+              AI Sentry
+            </div>
             <p className={styles.footerBrandDesc}>
-              LLM Vulnerability Scanner and Pre-Deployment Security Platform. 
+              Pre-deployment security platform for LLMs.
               Free and open source.
             </p>
           </div>
@@ -65,7 +69,6 @@ export function Footer() {
 
         <div className={styles.footerBottom}>
           <div className={styles.footerCopy}>© 2026 AI-SENTRY. MIT Licensed.</div>
-          <div className={styles.footerEngines}>Built on Garak · PyRIT · DeepTeam</div>
         </div>
       </div>
     </footer>

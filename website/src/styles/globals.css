@@ -1,16 +1,12 @@
 /* ─────────────────────────────────────────────
-   AI-SENTRY Website — Global Styles
+   AI-SENTRY Website — Global Styles v2
    ───────────────────────────────────────────── */
 
 @import url('./tokens.css');
-
-/* ── Google Fonts for development (self-host in production) ── */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 /* ── Reset ── */
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -38,15 +34,9 @@ a {
   text-decoration: none;
   transition: color var(--duration-fast) var(--ease-default);
 }
+a:hover { color: var(--accent-hover); }
 
-a:hover {
-  color: var(--accent-hover);
-}
-
-img, svg {
-  display: block;
-  max-width: 100%;
-}
+img, svg { display: block; max-width: 100%; }
 
 button {
   font-family: inherit;
@@ -56,73 +46,20 @@ button {
   font-size: inherit;
 }
 
-ul, ol {
-  list-style: none;
-}
+ul, ol { list-style: none; }
 
-/* ── Focus visible ── */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+:focus:not(:focus-visible) { outline: none; }
 
-:focus:not(:focus-visible) {
-  outline: none;
-}
-
-/* ── Selection ── */
 ::selection {
-  background-color: var(--accent-glow);
+  background-color: rgba(61, 126, 255, 0.2);
   color: var(--text-primary);
 }
 
-/* ── Utility: container ── */
-.container {
-  width: 100%;
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 var(--space-lg);
-}
-
-@media (max-width: 768px) {
-  .container {
-    padding: 0 var(--space-md);
-  }
-}
-
-/* ── Utility: section padding ── */
-.section {
-  padding: var(--space-3xl) 0;
-}
-
-@media (max-width: 768px) {
-  .section {
-    padding: var(--space-2xl) 0;
-  }
-}
-
-/* ── Scroll-triggered animation ── */
-.animate-in {
-  opacity: 0;
-  transform: translateY(20px);
-  transition:
-    opacity var(--duration-entry) var(--ease-out),
-    transform var(--duration-entry) var(--ease-out);
-}
-
-.animate-in.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Stagger children */
-.stagger > .animate-in:nth-child(1) { transition-delay: 0ms; }
-.stagger > .animate-in:nth-child(2) { transition-delay: 100ms; }
-.stagger > .animate-in:nth-child(3) { transition-delay: 200ms; }
-.stagger > .animate-in:nth-child(4) { transition-delay: 300ms; }
-.stagger > .animate-in:nth-child(5) { transition-delay: 400ms; }
-
-/* ── Code blocks ── */
+/* ── Code ── */
 code, pre {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
@@ -138,17 +75,89 @@ pre {
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-subtle);
+  background: rgba(255,255,255,0.08);
   border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--border-default);
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.14); }
+
+/* ══════════════════════════════════════════
+   ANIMATION SYSTEM v2
+   Scroll-reveal with staggered directional entry
+   ══════════════════════════════════════════ */
+
+/* Base state: invisible, shifted down */
+.animate-in {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity var(--duration-entry) var(--ease-out),
+    transform var(--duration-entry) var(--ease-out);
+  will-change: opacity, transform;
+}
+
+.animate-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Directional variants */
+.animate-left {
+  opacity: 0;
+  transform: translateX(-32px);
+  transition:
+    opacity var(--duration-entry) var(--ease-out),
+    transform var(--duration-entry) var(--ease-out);
+}
+
+.animate-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.animate-right {
+  opacity: 0;
+  transform: translateX(32px);
+  transition:
+    opacity var(--duration-entry) var(--ease-out),
+    transform var(--duration-entry) var(--ease-out);
+}
+
+.animate-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Scale variant for cards */
+.animate-scale {
+  opacity: 0;
+  transform: scale(0.95);
+  transition:
+    opacity var(--duration-entry) var(--ease-out),
+    transform var(--duration-entry) var(--ease-out);
+}
+
+.animate-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger delays (children of .stagger parent) */
+.stagger > *:nth-child(1) { transition-delay: 0ms; }
+.stagger > *:nth-child(2) { transition-delay: 80ms; }
+.stagger > *:nth-child(3) { transition-delay: 160ms; }
+.stagger > *:nth-child(4) { transition-delay: 240ms; }
+.stagger > *:nth-child(5) { transition-delay: 320ms; }
+.stagger > *:nth-child(6) { transition-delay: 400ms; }
+
+/* Logo scan animation */
+.logo-scan-line {
+  animation: logoScan 3s ease-in-out infinite;
+}
+
+@keyframes logoScan {
+  0%, 100% { opacity: 0.3; transform: translateY(-2px); }
+  50%      { opacity: 0.9; transform: translateY(2px); }
 }

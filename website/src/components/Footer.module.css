@@ -38,8 +38,11 @@
 }
 
 .footerBrandName {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
-  font-size: var(--text-body-lg);
+  font-size: var(--text-body);
   color: var(--text-primary);
   letter-spacing: -0.3px;
 }
@@ -81,18 +84,11 @@
   border-top: 1px solid var(--border-subtle);
   padding-top: var(--space-lg);
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-md);
 }
 
 .footerCopy {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
-
-.footerEngines {
   font-size: var(--text-xs);
   color: var(--text-muted);
 }

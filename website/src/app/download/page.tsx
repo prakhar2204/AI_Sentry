@@ -194,8 +194,7 @@ export default function DownloadPage() {
             </div>
           </div>
           <div className={s.engineVersions}>
-            Bundled engine versions (v1.0.0): &nbsp;
-            Garak v0.9.0.14 &nbsp;·&nbsp; PyRIT v0.5.0 &nbsp;·&nbsp; DeepTeam v1.4.0
+            Analysis engine v1.0.0 — includes multi-layer probing, adversarial simulation, and behavioral evaluation
           </div>
         </div>
 

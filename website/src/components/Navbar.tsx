@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Logo } from './Logo';
 import styles from './Navbar.module.css';
-import btnStyles from './Button.module.css';
 
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
   { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Capabilities', href: '#capabilities' },
+  { label: 'Security', href: '#capabilities' },
   { label: 'Download', href: '/download' },
 ];
 
@@ -17,7 +17,7 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    const onScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener('scroll', onScroll);
@@ -28,8 +28,8 @@ export function Navbar() {
       <nav className={`${styles.nav} ${scrolled ? styles.navScrolled : ''}`}>
         <div className={styles.navInner}>
           <Link href="/" className={styles.brand}>
-            <span className={styles.brandIcon}>S</span>
-            AI Sentry
+            <Logo size={26} />
+            <span className={styles.brandText}>AI Sentry</span>
           </Link>
 
           <div className={styles.links}>
@@ -41,9 +41,9 @@ export function Navbar() {
           </div>
 
           <div className={styles.cta}>
-            <a href="/download" className={btnStyles.btnPrimary} style={{ padding: '10px 20px', fontSize: '14px' }}>
-              <span className={btnStyles.btnDownloadArrow}>↓</span>
-              Download
+            <a href="/download" className={styles.ctaBtn}>
+              Get Started
+              <span className={styles.ctaArrow}>→</span>
             </a>
           </div>
 
@@ -70,8 +70,8 @@ export function Navbar() {
             {link.label}
           </a>
         ))}
-        <a href="/download" className={btnStyles.btnPrimary} style={{ textAlign: 'center', padding: '12px' }}>
-          Download
+        <a href="/download" className={styles.mobileCta}>
+          Get Started →
         </a>
       </div>
     </>

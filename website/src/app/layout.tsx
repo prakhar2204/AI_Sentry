@@ -4,15 +4,15 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'AI-SENTRY — LLM Security Scanner | Scan Before You Ship',
+  title: 'AI Sentry — Pre-Deployment Security Platform for LLMs',
   description:
-    'AI-SENTRY runs Garak, PyRIT, and DeepTeam to find LLM vulnerabilities before you deploy. Free, open source. Download for Windows and Linux.',
+    'AI Sentry scans your LLMs for vulnerabilities before deployment. Multi-layer security analysis, adaptive vulnerability detection, and actionable remediation. Free, open source.',
   keywords: [
     'LLM security scanner',
     'AI red teaming',
     'LLM vulnerability assessment',
     'jailbreak testing',
-    'Garak PyRIT scanner',
+    'AI security platform',
     'OWASP LLM Top 10',
   ],
   robots: 'index, follow',
