@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@netlify/plugin-nextjs": "^5.16.1"
+  }
+}
