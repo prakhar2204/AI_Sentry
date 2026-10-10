@@ -1,15 +1,6 @@
-name = 'ai-sentry'
+name = "ai-sentry"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "out"
 
-[build]
-command = "npm run build"
-
-# Environment variables
 [vars]
 NODE_VERSION = "20"
-
-# ...
-[observability]
-enabled = false
-# ...
