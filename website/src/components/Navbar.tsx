@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Logo } from './Logo';
+import { Logo, BrandTitle } from './Logo';
 import styles from './Navbar.module.css';
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Security', href: '#capabilities' },
+  { label: 'Features', href: '/#features' },
+  { label: 'How It Works', href: '/#how-it-works' },
+  { label: 'Docs', href: '/docs' },
+  { label: 'Blog', href: '/blog' },
   { label: 'Download', href: '/download' },
 ];
 
@@ -28,8 +29,8 @@ export function Navbar() {
       <nav className={`${styles.nav} ${scrolled ? styles.navScrolled : ''}`}>
         <div className={styles.navInner}>
           <Link href="/" className={styles.brand}>
-            <Logo size={26} />
-            <span className={styles.brandText}>Sentryɸ</span>
+            <Logo size={30} />
+            <BrandTitle size="sm" />
           </Link>
 
           <div className={styles.links}>

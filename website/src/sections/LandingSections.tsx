@@ -651,3 +651,103 @@ export function FinalCTA() {
     </section>
   );
 }
+
+/* ════════════════════════════════════════════════
+   STATS / METRICS — Social Proof
+   ════════════════════════════════════════════════ */
+const STAT_ITEMS = [
+  { value: '100+', label: 'Security Probes', sub: 'Across all analysis layers' },
+  { value: '10', label: 'OWASP Categories', sub: 'LLM Top 10 coverage mapped' },
+  { value: '3', label: 'Analysis Layers', sub: 'Probing · Adversarial · Behavioral' },
+  { value: '<5min', label: 'Quick Scan', sub: 'From install to first report' },
+  { value: '0', label: 'Data Collected', sub: 'Zero telemetry, zero tracking' },
+  { value: '∞', label: 'Models Supported', sub: 'Any OpenAI-compatible API' },
+];
+
+export function StatsSection() {
+  return (
+    <section className={s.stats} id="stats">
+      <div className={s.statsInner}>
+        <div className={`${s.sectionHeader} animate-in`}>
+          <span className={s.sectionLabel}>By The Numbers</span>
+          <h2 className={s.sectionTitle}>Built for thoroughness.</h2>
+        </div>
+        <div className={`${s.statsGrid} stagger`}>
+          {STAT_ITEMS.map((stat) => (
+            <div key={stat.label} className={`${s.statCard} animate-in`}>
+              <div className={s.statValue}>{stat.value}</div>
+              <div className={s.statLabel}>{stat.label}</div>
+              <div className={s.statSub}>{stat.sub}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ════════════════════════════════════════════════
+   FAQ — SEO-rich content for "People Also Ask"
+   ════════════════════════════════════════════════ */
+const FAQ_ITEMS = [
+  {
+    q: 'What is Sentryɸ?',
+    a: 'Sentryɸ is a free, open-source pre-deployment security platform for large language models (LLMs). It runs multi-layer vulnerability scans — including prompt injection detection, jailbreak resistance testing, data leakage assessment, and behavioral evaluation — and produces a unified risk report with actionable remediation.',
+  },
+  {
+    q: 'How is Sentryɸ different from running a single security scanner?',
+    a: 'A single scanner tests one failure mode. Sentryɸ orchestrates three independent analysis layers — probe-based testing, adversarial dialogue simulation, and metric-driven behavioral evaluation — then cross-correlates findings to produce higher-confidence results with fewer false positives.',
+  },
+  {
+    q: 'Does Sentryɸ work with any LLM?',
+    a: 'Yes. Sentryɸ works with any model accessible via an OpenAI-compatible API endpoint (including OpenAI, Anthropic via proxy, Azure OpenAI, and self-hosted models). It also supports local GGUF models via built-in llama.cpp integration.',
+  },
+  {
+    q: 'Is Sentryɸ free to use?',
+    a: 'Sentryɸ is 100% free and open source under the MIT license. The only cost is API usage when scanning remote models — Sentryɸ estimates this cost before you approve any scan.',
+  },
+  {
+    q: 'Does Sentryɸ collect any data or telemetry?',
+    a: 'No. Sentryɸ collects zero telemetry, requires no account registration, and stores all scan data locally on your machine. API keys are stored in your operating system\'s native secure keychain.',
+  },
+  {
+    q: 'What vulnerabilities does Sentryɸ detect?',
+    a: 'Sentryɸ covers the OWASP LLM Top 10 including: prompt injection (LLM01), insecure output handling (LLM02), training data poisoning indicators (LLM03), denial of service vectors (LLM04), sensitive information disclosure (LLM06), excessive agency (LLM08), and overreliance patterns (LLM09).',
+  },
+  {
+    q: 'What operating systems are supported?',
+    a: 'Sentryɸ is available for Windows 10+ and Ubuntu 20.04+. The application is packaged as a standalone installer with all dependencies included — no Python, Node.js, or terminal setup required.',
+  },
+  {
+    q: 'Can I use Sentryɸ in my CI/CD pipeline?',
+    a: 'The v1.0 release includes a CLI interface (sentryphi scan) and JSON report export, which can be integrated into CI/CD pipelines. Native GitHub Actions integration is planned for v1.5.',
+  },
+];
+
+export function FAQSection() {
+  return (
+    <section className={s.faq} id="faq">
+      <div className={s.faqInner}>
+        <div className={`${s.sectionHeader} animate-in`}>
+          <span className={s.sectionLabel}>FAQ</span>
+          <h2 className={s.sectionTitle}>Frequently asked questions.</h2>
+          <p className={s.sectionSub}>
+            Everything you need to know about Sentryɸ.
+          </p>
+        </div>
+        <div className={`${s.faqList} stagger`}>
+          {FAQ_ITEMS.map((item) => (
+            <details key={item.q} className={`${s.faqItem} animate-in`}>
+              <summary className={s.faqQuestion}>
+                {item.q}
+                <span className={s.faqChevron}>+</span>
+              </summary>
+              <p className={s.faqAnswer}>{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+

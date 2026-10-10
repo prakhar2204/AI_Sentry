@@ -339,7 +339,7 @@
 
 /* ══════════ PROBLEM / SOLUTION ══════════ */
 .problemSolution {
-  padding: var(--space-4xl) 0;
+  padding: 96px 0;
 }
 
 .psInner {
@@ -487,7 +487,7 @@
 
 /* ══════════ FEATURES ══════════ */
 .features {
-  padding: var(--space-4xl) 0;
+  padding: 96px 0;
   background-color: var(--bg-surface);
   position: relative;
 }
@@ -581,7 +581,7 @@
 
 /* ══════════ HOW IT WORKS ══════════ */
 .howItWorks {
-  padding: var(--space-4xl) 0;
+  padding: 96px 0;
 }
 
 .hiwInner {
@@ -656,7 +656,7 @@
 
 /* ══════════ CAPABILITIES ══════════ */
 .capabilities {
-  padding: var(--space-4xl) 0;
+  padding: 96px 0;
   background-color: var(--bg-surface);
 }
 
@@ -1207,3 +1207,134 @@
   font-size: var(--text-xs);
   color: var(--text-muted);
 }
+
+/* ══════════ STATS / METRICS ══════════ */
+.stats {
+  padding: 96px 0;
+  background-color: var(--bg-surface);
+}
+
+.statsInner {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background-color: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+@media (max-width: 960px) {
+  .statsGrid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.statCard {
+  background-color: var(--bg-page);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  transition: background-color var(--duration-normal) ease;
+}
+
+.statCard:hover {
+  background-color: var(--bg-raised);
+}
+
+.statValue {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: var(--space-sm);
+}
+
+.statLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.statSub {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  line-height: var(--leading-normal);
+}
+
+/* ══════════ FAQ ══════════ */
+.faq {
+  padding: 96px 0;
+}
+
+.faqInner {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.faqList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.faqItem {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.faqItem:first-child {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.faqQuestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) 0;
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--text-primary);
+  cursor: pointer;
+  list-style: none;
+  transition: color var(--duration-fast) ease;
+  user-select: none;
+}
+
+.faqQuestion::-webkit-details-marker { display: none; }
+
+.faqQuestion:hover {
+  color: var(--accent);
+}
+
+.faqChevron {
+  font-size: 20px;
+  color: var(--text-muted);
+  transition: transform var(--duration-normal) var(--ease-out);
+  flex-shrink: 0;
+  margin-left: var(--space-md);
+}
+
+.faqItem[open] .faqChevron {
+  transform: rotate(45deg);
+}
+
+.faqAnswer {
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  padding: 0 0 var(--space-lg) 0;
+  max-width: 640px;
+}
+

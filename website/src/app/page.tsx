@@ -8,9 +8,11 @@ import {
   FeaturesSection,
   HowItWorksSection,
   CapabilitiesSection,
+  StatsSection,
   CloudSection,
   ProductPreview,
   OwaspSection,
+  FAQSection,
   FutureSection,
   FinalCTA,
 } from '@/sections/LandingSections';
@@ -25,10 +27,12 @@ export default function HomePage() {
       <ProblemSolution />
       <FeaturesSection />
       <HowItWorksSection />
+      <StatsSection />
       <CapabilitiesSection />
       <CloudSection />
       <ProductPreview />
       <OwaspSection />
+      <FAQSection />
       <FutureSection />
       <FinalCTA />
     </main>

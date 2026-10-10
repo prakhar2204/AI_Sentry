@@ -1,4 +1,4 @@
-import { Logo } from './Logo';
+import { Logo, BrandTitle } from './Logo';
 import styles from './Footer.module.css';
 
 const PRODUCT_LINKS = [
@@ -10,16 +10,15 @@ const PRODUCT_LINKS = [
 ];
 
 const DEV_LINKS = [
-  { label: 'Documentation', href: '#' },
+  { label: 'Documentation', href: '/docs' },
   { label: 'GitHub', href: '#' },
-  { label: 'Schema Reference', href: '#' },
-  { label: 'Blog', href: '#' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'About', href: '/about' },
 ];
 
 const LEGAL_LINKS = [
-  { label: 'Privacy Policy', href: '#' },
-  { label: 'Terms of Service', href: '#' },
-  { label: 'Cookie Policy', href: '#' },
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Terms of Service', href: '/terms' },
   { label: 'Contact', href: '#' },
 ];
 
@@ -30,8 +29,8 @@ export function Footer() {
         <div className={styles.footerGrid}>
           <div className={styles.footerBrand}>
             <div className={styles.footerBrandName}>
-              <Logo size={22} />
-              Sentryɸ
+              <Logo size={24} />
+              <BrandTitle size="sm" />
             </div>
             <p className={styles.footerBrandDesc}>
               Pre-deployment security platform for LLMs.

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_next/
+
+User-agent: GPTBot
+Disallow: /
+
+Sitemap: https://sentryphi.dev/sitemap.xml
