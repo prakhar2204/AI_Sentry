@@ -29,7 +29,7 @@ export function Navbar() {
         <div className={styles.navInner}>
           <Link href="/" className={styles.brand}>
             <Logo size={26} />
-            <span className={styles.brandText}>AI Sentry</span>
+            <span className={styles.brandText}>Sentryɸ</span>
           </Link>
 
           <div className={styles.links}>

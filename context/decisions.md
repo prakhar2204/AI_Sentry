@@ -1,4 +1,4 @@
-﻿# AI-SENTRY — Architecture & Design Decisions
+﻿# Sentry\u0278 — Architecture & Design Decisions
 
 **Last Updated:** 2026-09-13  
 **Format:** Decision Log — each entry is permanent. Decisions are never deleted, only superseded.
@@ -15,7 +15,7 @@
 **Phase:** 0a  
 **Status:** Active
 
-**Decision:** AI-SENTRY v1 is delivered as a desktop application, not a web/SaaS product.
+**Decision:** Sentry\u0278 v1 is delivered as a desktop application, not a web/SaaS product.
 
 **Rationale:**
 - Local model scanning requires filesystem access and co-location with the model file — impossible in a browser
@@ -39,18 +39,18 @@
 **Phase:** 0a  
 **Status:** Active
 
-**Decision:** AI-SENTRY does not reimplement LLM probe or detection logic. It orchestrates Garak, PyRIT, and DeepTeam as external dependencies.
+**Decision:** Sentry\u0278 does not reimplement LLM probe or detection logic. It orchestrates Garak, PyRIT, and DeepTeam as external dependencies.
 
 **Rationale:**
 - Probe research is expensive and specialized — duplicating it wastes resources
 - Existing engines are maintained by expert teams (NVIDIA, Microsoft, Confident AI)
-- AI-SENTRY's unique value is in orchestration, normalization, and intelligence — not probe design
-- New probe research automatically benefits AI-SENTRY through engine updates
+- Sentry\u0278's unique value is in orchestration, normalization, and intelligence — not probe design
+- New probe research automatically benefits Sentry\u0278 through engine updates
 
 **Trade-offs accepted:**
-- AI-SENTRY is dependent on upstream engine health and API stability
+- Sentry\u0278 is dependent on upstream engine health and API stability
 - Version pinning is required to prevent unexpected breakage
-- New attack types must wait for engine support before AI-SENTRY can detect them
+- New attack types must wait for engine support before Sentry\u0278 can detect them
 
 ---
 
@@ -77,7 +77,7 @@
 **Phase:** 0a  
 **Status:** Active
 
-**Decision:** Severity (how harmful if exploited) and Confidence (how certain AI-SENTRY is that the finding is real) are never collapsed into a single score.
+**Decision:** Severity (how harmful if exploited) and Confidence (how certain Sentry\u0278 is that the finding is real) are never collapsed into a single score.
 
 **Rationale:**
 - A Critical-severity finding with Low confidence (detected once, not reproduced) communicates very different risk than Critical + High confidence
@@ -97,8 +97,8 @@
 **Decision:** No scan can begin without an explicit, non-bypassable consent screen that shows: probe categories, estimated cost, adversarial content warning, and authorization confirmation.
 
 **Rationale:**
-- AI-SENTRY is a dual-use tool — the same probes that test defenses could be misused offensively
-- Without explicit authorization confirmation, AI-SENTRY could be used to scan models the user doesn't own
+- Sentry\u0278 is a dual-use tool — the same probes that test defenses could be misused offensively
+- Without explicit authorization confirmation, Sentry\u0278 could be used to scan models the user doesn't own
 - For API models, cost transparency before execution is an ethical requirement
 - Legal protection for the platform depends on clear documented consent
 
@@ -148,7 +148,7 @@
 **Phase:** 0b  
 **Status:** Active — complexity acknowledged, solution pending Phase 3
 
-**Decision:** AI-SENTRY will default to a small local model (e.g., Phi-3 Mini) as the PyRIT attacker LLM. Users can override with their own API key.
+**Decision:** Sentry\u0278 will default to a small local model (e.g., Phi-3 Mini) as the PyRIT attacker LLM. Users can override with their own API key.
 
 **Rationale:**
 - PyRIT's multi-turn red-teaming orchestration requires an LLM to generate adversarial follow-up prompts
@@ -169,7 +169,7 @@
 **Decision:** Every generated report must include a coverage map that explicitly shows which OWASP LLM Top 10 categories were tested, which were not, and why.
 
 **Rationale:**
-- Without a coverage map, users may believe AI-SENTRY tested everything when it did not
+- Without a coverage map, users may believe Sentry\u0278 tested everything when it did not
 - False completeness is worse than acknowledged incompleteness
 - Regulated users need to know the scope boundaries of any security assessment
 
@@ -228,7 +228,7 @@
 - The notification is non-blocking — users can dismiss and continue working
 - Engine dependency updates (Garak, PyRIT, DeepTeam versions) are bundled in each release; users do not separately update engines
 
-**Implementation:** App polls https://ai-sentry.dev/api/version/latest on launch (if network available). If newer version found: non-blocking notification bar with [Download Update] link to website.
+**Implementation:** App polls https://Sentry\u0278.dev/api/version/latest on launch (if network available). If newer version found: non-blocking notification bar with [Download Update] link to website.
 
 ---
 
@@ -280,7 +280,7 @@ No cookie consent banner is displayed.
 **Rationale:**
 - Plausible uses no cookies and collects no personal data — GDPR-compliant without consent
 - No consent banner removes friction and is honest (a banner would imply cookies exist when they do not)
-- EU-hosted, open-source, auditable — consistent with AI-SENTRY's privacy positioning
+- EU-hosted, open-source, auditable — consistent with Sentry\u0278's privacy positioning
 - Google Analytics would require a cookie consent banner and would be hypocritical for a privacy-focused security tool
 
 ---
@@ -373,7 +373,7 @@ advance_status() enforces legal transitions. Terminal states are immutable. Cann
 
 **Date:** 2026-09-20  **Phase:** 2a  **Status:** Active
 
-Priority: CLI flag > JSON file > built-in default. Enables: ai-sentry scan --manifest base.json --target \
+Priority: CLI flag > JSON file > built-in default. Enables: Sentry\u0278 scan --manifest base.json --target \
 
 ---
 
@@ -573,7 +573,7 @@ The JSON schema returned by ScanReport.to_dict() is the exact structure the Reac
 
 **Date:** 2026-09-26  **Phase:** 6a  **Status:** Active
 
-After every scan, CLI Steps 12-13 automatically export both JSON and TXT reports to the --output directory (default: ./aisentry-report/). Files are named report_<scan_id>.json and report_<scan_id>.txt. Parent directories are created if missing.
+After every scan, CLI Steps 12-13 automatically export both JSON and TXT reports to the --output directory (default: ./SentryPhi-report/). Files are named report_<scan_id>.json and report_<scan_id>.txt. Parent directories are created if missing.
 
 ---
 
@@ -598,3 +598,4 @@ State management uses React's built-in useReducer + Context API split into 3 dom
 **Date:** 2026-09-26  **Phase:** 6b  **Status:** Active
 
 Step 6 (Results) is the hub screen. After a scan completes, the user can branch to Actions (7), Export (8), or Deploy (9-11) from here. This avoids a strictly linear flow after the scan while keeping the pre-scan path linear.
+

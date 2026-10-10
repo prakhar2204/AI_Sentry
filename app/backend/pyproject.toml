@@ -7,13 +7,13 @@ build-backend = "setuptools.backends.legacy:build"
 # ─────────────────────────────────────────────────────────────
 
 [project]
-name            = "aisentry"
+name            = "sentryphi"
 version         = "0.1.0-dev"
-description     = "AI-SENTRY — LLM Security Orchestration Platform"
+description     = "Sentryɸ — LLM Pre-Deployment Security Platform"
 readme          = "README.md"
 requires-python = ">=3.10"
 license         = { text = "Apache-2.0" }
-keywords        = ["llm", "security", "red-teaming", "ai-safety"]
+keywords        = ["llm", "security", "red-teaming", "ai-safety", "sentryphi"]
 
 # Core runtime dependencies — always installed.
 dependencies = [
@@ -60,8 +60,9 @@ dev = [
 # ─────────────────────────────────────────────────────────────
 
 [project.scripts]
-ai-sentry = "cli.main:main"    # matches the command users type
-aisentry  = "cli.main:main"    # alias — works without the hyphen too
+sentryphi = "cli.main:main"    # canonical command for Sentryɸ
+ai-sentry = "cli.main:main"    # legacy alias — preserved for compatibility
+aisentry  = "cli.main:main"    # legacy alias — preserved for compatibility
 
 # ─────────────────────────────────────────────────────────────
 #  Package discovery

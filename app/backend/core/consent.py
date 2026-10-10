@@ -1,5 +1,5 @@
 """
-AI-SENTRY — Responsible Use Consent Gate
+Sentryɸ — Responsible Use Consent Gate
 core/consent.py
 
 Enforces user consent before any scan begins.
@@ -17,7 +17,7 @@ import textwrap
 _DIVIDER = "-" * 60
 
 _RESPONSIBLE_USE_NOTICE = """
-AI-SENTRY -- RESPONSIBLE USE NOTICE
+Sentryɸ -- RESPONSIBLE USE NOTICE
 
 This tool performs active adversarial security testing on
 AI language models. Before proceeding, you must confirm
@@ -42,7 +42,7 @@ that ALL of the following apply to your situation:
      ensuring this is acceptable under your agreements.
 
   5. NO LIABILITY
-     The creators and contributors of AI-SENTRY are not
+     The creators and contributors of Sentryɸ are not
      responsible for any direct or indirect consequences
      of its use. This tool is provided for defensive
      security research only.

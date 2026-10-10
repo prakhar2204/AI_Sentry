@@ -18,7 +18,7 @@ export function HeroSection() {
             <span className={s.heroAccent}>before it ships.</span>
           </h1>
           <p className={s.heroSub}>
-            AI Sentry runs multi-layer security analysis, adaptive vulnerability
+            Sentryɸ runs multi-layer security analysis, adaptive vulnerability
             detection, and model behavior stress testing — in a single scan.
             One report. Every risk. Actionable fixes.
           </p>
@@ -134,7 +134,7 @@ export function ProblemSolution() {
           <div className={s.psSolveLabel}>The Solution</div>
           <h2 className={s.psTitle}>One platform.<br />Complete coverage.</h2>
           <p className={s.psBody}>
-            AI Sentry orchestrates multiple security analysis layers into a single,
+            Sentryɸ orchestrates multiple security analysis layers into a single,
             automated pipeline. Input your model endpoint. Get a unified, scored,
             and actionable security report — in minutes, not days.
           </p>
@@ -233,7 +233,7 @@ const STEPS = [
   {
     num: '01',
     title: 'Connect',
-    body: 'Paste your API endpoint and key — or drop a local model file. AI Sentry validates the connection and estimates cost before anything runs.',
+    body: 'Paste your API endpoint and key — or drop a local model file. Sentryɸ validates the connection and estimates cost before anything runs.',
   },
   {
     num: '02',
@@ -416,7 +416,7 @@ export function ProductPreview() {
               <span className={s.ppDot} />
               <span className={s.ppDot} />
             </div>
-            <span className={s.ppWindowTitle}>AI Sentry — Security Scan</span>
+            <span className={s.ppWindowTitle}>Sentryɸ — Security Scan</span>
             <div />
           </div>
 

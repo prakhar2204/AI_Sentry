@@ -1,4 +1,4 @@
-﻿# AI-SENTRY — Known Issues & Open Questions
+# Sentryɸ — Known Issues & Open Questions
 
 **Last Updated:** 2026-09-13  
 **Phase:** 0b — Documentation Foundation  
@@ -44,7 +44,7 @@ PyRIT's red-teaming orchestration requires a secondary "attacker LLM" to generat
 **Affects:** Phase 3 (Garak Adapter)
 
 **Description:**  
-Garak is an actively developed research tool. Its JSONL output format and CLI interface have changed between versions. AI-SENTRY pins to a specific version, but the pinned version may have known bugs or missing probe categories.
+Garak is an actively developed research tool. Its JSONL output format and CLI interface have changed between versions. Sentryɸ pins to a specific version, but the pinned version may have known bugs or missing probe categories.
 
 **Risk:** The adapter must be designed for a specific Garak version. The "best current version" must be evaluated before Phase 3 begins.
 
@@ -125,7 +125,7 @@ Deep scans can take 2–6 hours. If the application crashes, the machine sleeps,
 **Resolution Path:**  
 - The ScanManifest lifecycle (CREATED → RUNNING → COMPLETED) provides the checkpoint mechanism
 - Each engine adapter writes progress checkpoints to disk
-- On restart, AI-SENTRY detects an interrupted scan and offers to resume or discard
+- On restart, Sentryɸ detects an interrupted scan and offers to resume or discard
 - This must be designed into the orchestration layer from Phase 2 onward, not retrofitted
 
 ---
@@ -154,6 +154,6 @@ The website must comply with GDPR and other privacy regulations for cookie conse
 | OQ-002 | Which version of Garak should be pinned for v1? | High | Phase 3 |
 | OQ-003 | What is the exact minimum IAM policy for AWS deployment? | High | Phase 7 |
 | OQ-004 | Should the confidence score weights be hardcoded or user-configurable? | Medium | Phase 5 |
-| OQ-005 | How should AI-SENTRY handle a model that returns empty responses to all probes? | Medium | Phase 2 |
+| OQ-005 | How should Sentryɸ handle a model that returns empty responses to all probes? | Medium | Phase 2 |
 | OQ-006 | Should probe payloads be stored by default, or only on explicit user opt-in? | Medium | Phase 1 |
 | OQ-007 | What is the right default scan depth for first-time users? | Low | Phase 8 (UI) |

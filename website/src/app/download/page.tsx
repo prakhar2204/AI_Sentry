@@ -32,7 +32,7 @@ export default function DownloadPage() {
       <div className={s.inner}>
         {/* ── Header ── */}
         <div className={s.header}>
-          <h1 className={s.title}>Download AI-SENTRY</h1>
+          <h1 className={s.title}>Download Sentryɸ</h1>
           <p className={s.subtitle}>
             Free. Open Source. No setup required.
           </p>
@@ -45,7 +45,7 @@ export default function DownloadPage() {
         <div className={s.platforms}>
           {/* Windows */}
           <div className={s.platformCard}>
-            <h2 className={s.platformName}>AI-SENTRY for Windows</h2>
+            <h2 className={s.platformName}>Sentryɸ for Windows</h2>
             <div className={s.platformMeta}>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Version</span>
@@ -53,7 +53,7 @@ export default function DownloadPage() {
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Filename</span>
-                <span>AI-Sentry-Setup-1.0.0.exe</span>
+                <span>SentryPhi-Setup-1.0.0.exe</span>
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Size</span>
@@ -84,7 +84,7 @@ export default function DownloadPage() {
 
           {/* Linux */}
           <div className={s.platformCard}>
-            <h2 className={s.platformName}>AI-SENTRY for Linux</h2>
+            <h2 className={s.platformName}>Sentryɸ for Linux</h2>
             <div className={s.platformMeta}>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Version</span>
@@ -92,7 +92,7 @@ export default function DownloadPage() {
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Filename</span>
-                <span>AI-Sentry-1.0.0.AppImage</span>
+                <span>SentryPhi-1.0.0.AppImage</span>
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Size</span>
@@ -208,7 +208,7 @@ export default function DownloadPage() {
             </div>
             <div className={s.postStep}>
               <span className={s.postStepNum}>2.</span>
-              Launch AI-SENTRY from your desktop shortcut
+              Launch Sentryɸ from your desktop shortcut
             </div>
             <div className={s.postStep}>
               <span className={s.postStepNum}>3.</span>

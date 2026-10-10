@@ -1,4 +1,4 @@
-﻿# AI-SENTRY — Technical Requirements Document (TRD)
+﻿# Sentry\u0278 — Technical Requirements Document (TRD)
 
 **Document Version:** 1.0  
 **Phase:** 0b — Documentation Foundation  
@@ -25,7 +25,7 @@
 
 ### Architectural Style
 
-AI-SENTRY follows a **layered pipeline architecture** with strict unidirectional data flow. Each layer has a single responsibility. No layer calls backward into a previous layer. Components within the same layer may communicate, but cross-layer communication is always downward through defined interfaces.
+Sentry\u0278 follows a **layered pipeline architecture** with strict unidirectional data flow. Each layer has a single responsibility. No layer calls backward into a previous layer. Components within the same layer may communicate, but cross-layer communication is always downward through defined interfaces.
 
 This design enables:
 - Independent testing of each layer
@@ -73,7 +73,7 @@ This design enables:
 - **UI:** Desktop application shell (Electron or Tauri pattern)
 - **Engine execution:** Subprocess invocation or Python SDK calls
 - **Storage:** Local filesystem (encrypted for sensitive data)
-- **Cloud communication:** AWS SDK (boto3) for deployment only; no AI-SENTRY server
+- **Cloud communication:** AWS SDK (boto3) for deployment only; no Sentry\u0278 server
 
 ---
 
@@ -212,7 +212,7 @@ CREATED → CONSENT_PENDING → APPROVED → RUNNING → COMPLETED | FAILED | CA
 **Integration approach:**
 - PyRIT is invoked as a Python library (not subprocess)
 - The adapter configures PyRIT's `PromptSendingOrchestrator` and `RedTeamingOrchestrator` with the target model as a `PromptTarget`
-- PyRIT requires a "scorer" model to evaluate responses — AI-SENTRY provides a configured lightweight scorer
+- PyRIT requires a "scorer" model to evaluate responses — Sentry\u0278 provides a configured lightweight scorer
 - PyRIT persists results to its own SQLite database; the adapter queries this for results
 
 **Key attack strategies used from PyRIT:**
@@ -222,7 +222,7 @@ CREATED → CONSENT_PENDING → APPROVED → RUNNING → COMPLETED | FAILED | CA
 - PII extraction probes
 - System prompt extraction attempts
 
-**Critical dependency:** PyRIT requires its own "attacker LLM" for red-teaming orchestration. AI-SENTRY must configure this dependency:
+**Critical dependency:** PyRIT requires its own "attacker LLM" for red-teaming orchestration. Sentry\u0278 must configure this dependency:
 - Default: Use a small local model (e.g., Phi-3 Mini) as the attacker LLM
 - Alternative: User provides a separate API key for the attacker model
 - This dependency must be documented clearly in the auto-configuration wizard
@@ -357,7 +357,7 @@ Deduplication key: `(vulnerability_class, probe_semantic_hash)` — semantic sim
 
 #### Confidence Scorer
 
-**Confidence Score:** A value from 0.0 to 1.0 expressing how certain AI-SENTRY is that a finding is genuine, reproducible, and correctly characterized.
+**Confidence Score:** A value from 0.0 to 1.0 expressing how certain Sentry\u0278 is that a finding is genuine, reproducible, and correctly characterized.
 
 **Contributing Factors and Weights (conceptual):**
 
@@ -485,7 +485,7 @@ DeploymentRecommendation {
    - Configure Bedrock Guardrails (mapped from vulnerability findings)
    - Set up CloudWatch log groups and metric alarms
    - Set AWS Budgets alert at user-specified threshold
-   - Tag all resources: { "created-by": "ai-sentry", "scan-id": "<uuid>" }
+   - Tag all resources: { "created-by": "Sentry\u0278", "scan-id": "<uuid>" }
 
 3. VERIFY PHASE:
    - Health check endpoint
@@ -655,13 +655,13 @@ DeploymentRecommendation {
 
 ### 5.2 Compute Constraints
 
-- **Local model scanning** is hardware-bound. AI-SENTRY cannot make a machine more capable; it can only fail safely and clearly when hardware is insufficient.
-- **Deep scans** against expensive API endpoints can cost $50–$500+ depending on model. This is not a limitation of AI-SENTRY but must be communicated clearly.
+- **Local model scanning** is hardware-bound. Sentry\u0278 cannot make a machine more capable; it can only fail safely and clearly when hardware is insufficient.
+- **Deep scans** against expensive API endpoints can cost $50–$500+ depending on model. This is not a limitation of Sentry\u0278 but must be communicated clearly.
 - **Long scan durations** (Deep level: 2–6 hours) require the application to support graceful background operation and scan resumption.
 
 ### 5.3 Coverage Limitations
 
-- AI-SENTRY can only test for vulnerabilities covered by Garak, PyRIT, and DeepTeam probe libraries. Novel attacks not yet in these libraries will not be detected.
+- Sentry\u0278 can only test for vulnerabilities covered by Garak, PyRIT, and DeepTeam probe libraries. Novel attacks not yet in these libraries will not be detected.
 - Multi-modal vulnerabilities (image injection, audio manipulation) are not covered in v1.
 - Supply chain vulnerabilities (model provenance, training data integrity) cannot be assessed without model internals access.
 - Runtime vulnerabilities (prompt injection via user input at runtime) require production traffic — out of scope for pre-deployment scanning.
@@ -676,7 +676,7 @@ DeploymentRecommendation {
 ## 6. Design Principles
 
 ### P-01: Wrap, Don't Rebuild
-AI-SENTRY does not reimplement scanning logic. It orchestrates existing, research-grade tools. All probe and detection logic lives in Garak, PyRIT, and DeepTeam. AI-SENTRY's value is in orchestration, normalization, and intelligence.
+Sentry\u0278 does not reimplement scanning logic. It orchestrates existing, research-grade tools. All probe and detection logic lives in Garak, PyRIT, and DeepTeam. Sentry\u0278's value is in orchestration, normalization, and intelligence.
 
 **Implication:** When a new engine is added, only a new adapter is written. The normalization layer, scoring layer, and output layer are unchanged.
 
@@ -743,7 +743,7 @@ The system is designed to grow:
 - All AWS API calls use the minimum required IAM permissions (documented)
 - A dry-run plan is generated and shown before any real AWS API call
 - All provisioned resources are tagged for identification
-- AI-SENTRY provides a "cleanup" function that destroys all resources it created
+- Sentry\u0278 provides a "cleanup" function that destroys all resources it created
 
 ### 7.4 Probe Content Security
 
@@ -775,7 +775,7 @@ The following assumptions underpin the architecture. If any prove false, the rel
 |---|---|---|
 | A-01 | Garak, PyRIT, and DeepTeam remain available as pip-installable packages | Engine adapter breaks; must find alternative |
 | A-02 | Garak's CLI output format is stable within a pinned major version | Adapter output parsing breaks |
-| A-03 | PyRIT can be used without a commercial license for the use cases AI-SENTRY targets | Legal and integration risk |
+| A-03 | PyRIT can be used without a commercial license for the use cases Sentry\u0278 targets | Legal and integration risk |
 | A-04 | Target model responds to text prompts within a reasonable timeout (30s default) | Scan stalls; timeout handling required |
 | A-05 | The user's machine has internet connectivity for API-based models | Local model only fallback; no cloud features |
 | A-06 | AWS IAM permissions provided by the user are sufficient for the provisioning plan | Deployment fails at runtime |
@@ -787,3 +787,4 @@ The following assumptions underpin the architecture. If any prove false, the rel
 ---
 
 *End of TRD v1.0*
+

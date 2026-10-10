@@ -1,5 +1,5 @@
 /**
- * AI-SENTRY -- App Root
+ * Sentryɸ -- App Root
  * App.tsx
  *
  * Root component that:
@@ -179,7 +179,7 @@ export default function App() {
         <header className="app-shell__header">
           <div className="app-shell__brand">
             <div className="app-shell__brand-icon">S</div>
-            AI Sentry
+            Sentryɸ
           </div>
           <div className="app-shell__controls">
             <ThemeToggle />

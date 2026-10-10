@@ -1,4 +1,4 @@
-# AI SENTRY -- UI Architecture Document
+﻿# Sentry\u0278 -- UI Architecture Document
 
 **Phase 6b Deliverable**
 **Last Updated:** 2026-09-26
@@ -678,3 +678,4 @@ Responses from Python via stdout (newline-delimited JSON):
 
 > [!IMPORTANT]
 > The ScanReport JSON schema (defined in Phase 6a) is the contract between backend and frontend. If the backend schema changes, this document must be updated to match. The renderer must never reshape or re-derive data that already exists in the report.
+

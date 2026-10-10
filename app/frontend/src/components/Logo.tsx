@@ -6,9 +6,9 @@ interface LogoProps {
 }
 
 /**
- * AI-SENTRY Shield Logo
+ * Sentryɸ Shield Logo
  * A geometric shield with integrated scan-line motif.
- * Used in both the website navbar and the desktop app.
+ * Used in the desktop app header.
  */
 export function Logo({ size = 28, className }: LogoProps) {
   return (
@@ -19,7 +19,7 @@ export function Logo({ size = 28, className }: LogoProps) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="AI Sentry"
+      aria-label="Sentryɸ"
     >
       {/* Outer shield */}
       <path
@@ -68,7 +68,7 @@ export function LogoFull({ size = 28, className }: LogoProps) {
         letterSpacing: '-0.3px',
         color: 'var(--text-primary, #F0F2F8)',
       }}>
-        AI Sentry
+        Sentryɸ
       </span>
     </span>
   );

@@ -31,7 +31,7 @@ export function Footer() {
           <div className={styles.footerBrand}>
             <div className={styles.footerBrandName}>
               <Logo size={22} />
-              AI Sentry
+              Sentryɸ
             </div>
             <p className={styles.footerBrandDesc}>
               Pre-deployment security platform for LLMs.
@@ -68,7 +68,7 @@ export function Footer() {
         </div>
 
         <div className={styles.footerBottom}>
-          <div className={styles.footerCopy}>© 2026 AI-SENTRY. MIT Licensed.</div>
+          <div className={styles.footerCopy}>© 2026 Sentryɸ. MIT Licensed.</div>
         </div>
       </div>
     </footer>

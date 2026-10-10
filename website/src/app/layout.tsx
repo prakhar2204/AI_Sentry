@@ -4,9 +4,9 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
-  title: 'AI Sentry — Pre-Deployment Security Platform for LLMs',
+  title: 'Sentryɸ — Pre-Deployment LLM Security Platform',
   description:
-    'AI Sentry scans your LLMs for vulnerabilities before deployment. Multi-layer security analysis, adaptive vulnerability detection, and actionable remediation. Free, open source.',
+    'Sentryɸ scans your LLMs for vulnerabilities before deployment. Multi-layer security analysis, adaptive vulnerability detection, and actionable remediation. Free, open source.',
   keywords: [
     'LLM security scanner',
     'AI red teaming',
@@ -14,7 +14,22 @@ export const metadata: Metadata = {
     'jailbreak testing',
     'AI security platform',
     'OWASP LLM Top 10',
+    'SentryPhi',
   ],
+  applicationName: 'Sentryɸ',
+  openGraph: {
+    title: 'Sentryɸ — Pre-Deployment LLM Security Platform',
+    description:
+      'Scan your LLMs for vulnerabilities before deployment. Multi-layer security analysis, risk scoring, and actionable remediation.',
+    siteName: 'Sentryɸ',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sentryɸ — Pre-Deployment LLM Security Platform',
+    description:
+      'Scan your LLMs for vulnerabilities before deployment. Free and open source.',
+  },
   robots: 'index, follow',
 };
 

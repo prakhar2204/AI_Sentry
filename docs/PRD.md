@@ -1,4 +1,4 @@
-﻿# AI-SENTRY — Product Requirements Document (PRD)
+﻿# Sentry\u0278 — Product Requirements Document (PRD)
 
 **Document Version:** 1.0  
 **Phase:** 0b — Documentation Foundation  
@@ -25,9 +25,9 @@
 
 ## 1. Product Overview
 
-### What Is AI-SENTRY?
+### What Is Sentry\u0278?
 
-AI-SENTRY is a **multi-engine LLM security orchestration platform** delivered as a desktop application. It enables developers, AI engineers, and security teams to:
+Sentry\u0278 is a **multi-engine LLM security orchestration platform** delivered as a desktop application. It enables developers, AI engineers, and security teams to:
 
 - Connect any LLM (via API endpoint or local model file)
 - Run systematic vulnerability scans using three industry-grade adversarial testing engines simultaneously: **Garak**, **PyRIT**, and **DeepTeam**
@@ -38,7 +38,7 @@ AI-SENTRY is a **multi-engine LLM security orchestration platform** delivered as
 
 ### One-Line Description
 
-> *AI-SENTRY is the pre-deployment security gate for LLMs — scan before you ship.*
+> *Sentry\u0278 is the pre-deployment security gate for LLMs — scan before you ship.*
 
 ### Product Positioning
 
@@ -72,7 +72,7 @@ The result: most teams either test inadequately (one tool, partially) or skip LL
 
 ### The Gap in Specific Terms
 
-| Current State | Desired State (AI-SENTRY) |
+| Current State | Desired State (Sentry\u0278) |
 |---|---|
 | 3 separate tools with separate setups | One tool that orchestrates all three |
 | 3 incompatible output formats | One unified normalized report |
@@ -150,7 +150,7 @@ The result: most teams either test inadequately (one tool, partially) or skip LL
 ### UC-04: Local Model Assessment (P2)
 **Scenario:** Security researcher evaluates a locally-hosted Mistral 7B GGUF before recommending to a client.
 
-**Flow:** User selects Local Model → provides GGUF path → AI-SENTRY spawns llama.cpp server → full scan against localhost → no data leaves machine → full evidence report exported.
+**Flow:** User selects Local Model → provides GGUF path → Sentry\u0278 spawns llama.cpp server → full scan against localhost → no data leaves machine → full evidence report exported.
 
 **Value:** Complete assessment with zero external API calls or data exposure.
 
@@ -168,7 +168,7 @@ The result: most teams either test inadequately (one tool, partially) or skip LL
 ### UC-06: CI/CD Pipeline Integration (P1, P2) — v1.5 Target
 **Scenario:** Team wants automatic LLM security checks on every model update.
 
-**Flow:** AI-SENTRY CLI runs as GitHub Actions step → compares results against configurable threshold → blocks PR if Critical finding detected → security report uploaded as CI artifact.
+**Flow:** Sentry\u0278 CLI runs as GitHub Actions step → compares results against configurable threshold → blocks PR if Critical finding detected → security report uploaded as CI artifact.
 
 **Value:** LLM security becomes a mandatory pipeline gate, not an afterthought.
 
@@ -224,7 +224,7 @@ Provisions: IAM roles (least-privilege), VPC, SageMaker endpoint or API Gateway+
 | Multi-modal scanning (images, audio) | v2 |
 | CI/CD pipeline integration | v1.5 (CLI first) |
 | SaaS / cloud-hosted version | v2 |
-| Model training / fine-tuning | Never — AI-SENTRY tests, not trains |
+| Model training / fine-tuning | Never — Sentry\u0278 tests, not trains |
 | Comparison reports across scan runs | v1.5 |
 | Certification / badge system | v2+ post peer review |
 | Custom probe authoring | v1.5 |
@@ -317,7 +317,7 @@ Full findings, evidence, scoring rationale, deployment rec.
 |---|---|
 | v1 is desktop-only, no server | No server infrastructure in v1; limits team collaboration |
 | AWS-only one-click deployment | Azure/GCP users get advisory only |
-| Relies on upstream probe libraries | New attack research requires engine updates, not AI-SENTRY updates |
+| Relies on upstream probe libraries | New attack research requires engine updates, not Sentry\u0278 updates |
 
 ---
 
@@ -361,9 +361,10 @@ Full findings, evidence, scoring rationale, deployment rec.
 ### Strategic Success (Long-Term)
 
 - Cited in at least one published AI security paper or blog post
-- At least one enterprise team uses AI-SENTRY in their formal AI deployment process
+- At least one enterprise team uses Sentry\u0278 in their formal AI deployment process
 - The unified vulnerability schema referenced by a third-party tool
 
 ---
 
 *End of PRD v1.0*
+

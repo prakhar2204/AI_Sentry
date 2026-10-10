@@ -1,8 +1,8 @@
-# AI-SENTRY — Final System Consolidation & Gap Analysis
+﻿# Sentry\u0278 â€” Final System Consolidation & Gap Analysis
 
 **Document Version:** 1.0
-**Phase:** 0e — Pre-Implementation Review
-**Status:** FINAL — This document supersedes all previous phase summaries as the source of truth
+**Phase:** 0e â€” Pre-Implementation Review
+**Status:** FINAL â€” This document supersedes all previous phase summaries as the source of truth
 **Last Updated:** 2026-09-14
 **Author Role:** Senior System Architect / Technical Reviewer
 **Depends On:** PRD v1.0, TRD v1.0, SYSTEM_EXECUTION_LAYER.md, WEBSITE_DESIGN.md
@@ -23,11 +23,11 @@
 
 ---
 
-# SECTION 1 — SYSTEM SUMMARY
+# SECTION 1 â€” SYSTEM SUMMARY
 
-## What AI-SENTRY Is
+## What Sentry\u0278 Is
 
-AI-SENTRY is a desktop application for Windows and Linux that allows developers, security
+Sentry\u0278 is a desktop application for Windows and Linux that allows developers, security
 engineers, and AI teams to perform adversarial security scanning on large language models before
 deploying them to production. It wraps three existing open-source scanning engines (Garak, PyRIT,
 DeepTeam), orchestrates them in parallel against a target model, normalizes their heterogeneous
@@ -38,20 +38,20 @@ audit-ready reports, and then connects the scan results to a secure cloud deploy
 
 ### Documentation Layer (Complete)
 ```
-docs/PRD.md                    — Product Requirements Document
-docs/TRD.md                    — Technical Requirements Document
-docs/SYSTEM_EXECUTION_LAYER.md — App flow, backend modules, schemas, UI, 11-phase impl plan
-docs/WEBSITE_DESIGN.md         — Website structure, design system, SEO, analytics, tech stack
+docs/PRD.md                    â€” Product Requirements Document
+docs/TRD.md                    â€” Technical Requirements Document
+docs/SYSTEM_EXECUTION_LAYER.md â€” App flow, backend modules, schemas, UI, 11-phase impl plan
+docs/WEBSITE_DESIGN.md         â€” Website structure, design system, SEO, analytics, tech stack
 ```
 
 ### Context / Memory Layer (Complete)
 ```
-context/project_overview.md    — What AI-SENTRY is (AI memory file)
-context/architecture.md        — 5-layer architecture decisions
-context/current_phase.md       — Phase tracker
-context/decisions.md           — 17 documented architectural decisions
-context/known_issues.md        — KI-001 through KI-005
-context/next_steps.md          — Phase 1 readiness checklist
+context/project_overview.md    â€” What Sentry\u0278 is (AI memory file)
+context/architecture.md        â€” 5-layer architecture decisions
+context/current_phase.md       â€” Phase tracker
+context/decisions.md           â€” 17 documented architectural decisions
+context/known_issues.md        â€” KI-001 through KI-005
+context/next_steps.md          â€” Phase 1 readiness checklist
 ```
 
 ## How the Product Works End-to-End
@@ -64,39 +64,39 @@ USER
 [TAURI DESKTOP APP]
   |
   | 1. User connects their LLM (API key or local GGUF file)
-  |    → InputHandler validates, estimates cost
+  |    â†’ InputHandler validates, estimates cost
   |
   | 2. User selects scan depth (Quick / Standard / Deep / Custom)
-  |    → ManifestProcessor builds scan specification
+  |    â†’ ManifestProcessor builds scan specification
   |
   | 3. User reviews summary and consents (cost + adversarial content warning)
-  |    → ConsentRecord stamped on manifest
+  |    â†’ ConsentRecord stamped on manifest
   |
   | 4. Scan executes
-  |    → EngineOrchestrator dispatches in parallel:
-  |         GarakAdapter    → subprocess → Garak CLI → localhost proxy → LLM
-  |         PyRITAdapter    → PyRIT orchestrator → attacker LLM → target LLM
-  |         DeepTeamAdapter → deepeval evaluate() → target LLM
-  |    → RateLimiter governs API token consumption
-  |    → CostTracker halts if ceiling approached
-  |    → Live findings feed displayed to user in real-time
+  |    â†’ EngineOrchestrator dispatches in parallel:
+  |         GarakAdapter    â†’ subprocess â†’ Garak CLI â†’ localhost proxy â†’ LLM
+  |         PyRITAdapter    â†’ PyRIT orchestrator â†’ attacker LLM â†’ target LLM
+  |         DeepTeamAdapter â†’ deepeval evaluate() â†’ target LLM
+  |    â†’ RateLimiter governs API token consumption
+  |    â†’ CostTracker halts if ceiling approached
+  |    â†’ Live findings feed displayed to user in real-time
   |
   | 5. Normalization runs (after all engines complete)
-  |    → SchemaMapper:   engine-specific output → VulnerabilityFinding draft
-  |    → Deduplicator:   merge same finding from multiple engines
-  |    → EvidenceStore:  encrypt and store probe/response pairs
+  |    â†’ SchemaMapper:   engine-specific output â†’ VulnerabilityFinding draft
+  |    â†’ Deduplicator:   merge same finding from multiple engines
+  |    â†’ EvidenceStore:  encrypt and store probe/response pairs
   |
   | 6. Intelligence layer runs
-  |    → SeverityClassifier: base severity + attack_success_rate + context modifiers
-  |    → ConfidenceScorer:   five-factor weighted score with explanation
-  |    → RemediationEngine:  knowledge-base lookup → three-level action plan
+  |    â†’ SeverityClassifier: base severity + attack_success_rate + context modifiers
+  |    â†’ ConfidenceScorer:   five-factor weighted score with explanation
+  |    â†’ RemediationEngine:  knowledge-base lookup â†’ three-level action plan
   |
   | 7. Report assembled
-  |    → DeploymentAdvisor: platform recommendation from vulnerability profile
-  |    → ReportGenerator:   PDF (local render) + HTML + JSON
+  |    â†’ DeploymentAdvisor: platform recommendation from vulnerability profile
+  |    â†’ ReportGenerator:   PDF (local render) + HTML + JSON
   |
   | 8. (Optional) Deploy to AWS
-  |    → AWSDeployEngine: plan → user review → provision → verify
+  |    â†’ AWSDeployEngine: plan â†’ user review â†’ provision â†’ verify
   |       Creates: IAM role, VPC, API Gateway, Lambda, Bedrock Guardrails,
   |                CloudWatch alarms, Budget alerts
   |
@@ -107,47 +107,47 @@ USER receives: scan report + optional live secure endpoint URL
 
 ```
 UI Layer (Tauri WebView)
-     ↕  Tauri IPC (invoke/event)
+     â†•  Tauri IPC (invoke/event)
 Rust Backend (process management, OS keychain, file system)
-     ↕  Local JSON socket (stdin/stdout or named pipe)
+     â†•  Local JSON socket (stdin/stdout or named pipe)
 Python Backend (all scan logic)
-     ├─ InputHandler ─────────────────────────── ModelAdapters
-     ├─ ManifestProcessor ────────────────────── ScanManifest (disk)
-     ├─ EngineOrchestrator ───────────────────── GarakAdapter
-     │                                           PyRITAdapter
-     │                                           DeepTeamAdapter
-     ├─ NormalizationPipeline ────────────────── SchemaMapper
-     │                                           Deduplicator
-     │                                           EvidenceStore (encrypted, disk)
-     ├─ ScoringEngine ────────────────────────── SeverityClassifier
-     │                                           ConfidenceScorer
-     ├─ RemediationEngine ────────────────────── RemediationKnowledgeBase (static)
-     ├─ ReportGenerator ──────────────────────── PDF/HTML/JSON output
-     └─ DeploymentEngine ─────────────────────── AWS boto3 → AWS APIs
+     â”œâ”€ InputHandler â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ModelAdapters
+     â”œâ”€ ManifestProcessor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ ScanManifest (disk)
+     â”œâ”€ EngineOrchestrator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ GarakAdapter
+     â”‚                                           PyRITAdapter
+     â”‚                                           DeepTeamAdapter
+     â”œâ”€ NormalizationPipeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SchemaMapper
+     â”‚                                           Deduplicator
+     â”‚                                           EvidenceStore (encrypted, disk)
+     â”œâ”€ ScoringEngine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ SeverityClassifier
+     â”‚                                           ConfidenceScorer
+     â”œâ”€ RemediationEngine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ RemediationKnowledgeBase (static)
+     â”œâ”€ ReportGenerator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ PDF/HTML/JSON output
+     â””â”€ DeploymentEngine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ AWS boto3 â†’ AWS APIs
 ```
 
 ---
 
-# SECTION 2 — GAP ANALYSIS
+# SECTION 2 â€” GAP ANALYSIS
 
 This section identifies every significant gap, unclear assumption, and implementation risk
 discovered during cross-review of all Phase 0 documents. Each gap is rated:
-- **CRITICAL** — blocks implementation if unresolved
-- **HIGH** — will cause significant problems if deferred past Phase 3
-- **MEDIUM** — needs a decision before the relevant phase
-- **LOW** — can be resolved during implementation without risk
+- **CRITICAL** â€” blocks implementation if unresolved
+- **HIGH** â€” will cause significant problems if deferred past Phase 3
+- **MEDIUM** â€” needs a decision before the relevant phase
+- **LOW** â€” can be resolved during implementation without risk
 
 ---
 
-## GAP-001: PyRIT Attacker LLM — Size and UX (CRITICAL)
+## GAP-001: PyRIT Attacker LLM â€” Size and UX (CRITICAL)
 
 **Problem:** PyRIT's `RedTeamingOrchestrator` requires a separate "attacker" LLM that generates
 adversarial prompts to send to the target LLM. The design specifies "local:phi3-mini" as the
-default. Phi-3 Mini GGUF weights are approximately 2.2–3.8 GB depending on quantization.
+default. Phi-3 Mini GGUF weights are approximately 2.2â€“3.8 GB depending on quantization.
 
 **Why it matters:**
-- The installer cannot bundle Phi-3 Mini (would make the installer 4–6 GB — unacceptable)
-- On first PyRIT scan, the app would need to download Phi-3 Mini — potentially 2.2 GB on first run
+- The installer cannot bundle Phi-3 Mini (would make the installer 4â€“6 GB â€” unacceptable)
+- On first PyRIT scan, the app would need to download Phi-3 Mini â€” potentially 2.2 GB on first run
 - Users on slow connections or restricted networks would experience a very poor first scan
 - The download needs progress UI, resumability on failure, verification, and disk-space pre-check
 
@@ -183,14 +183,14 @@ its metrics without a judge LLM source.
 - Add a "DeepTeam Evaluator LLM" configuration field to the scan setup screen
 - Default: OpenAI GPT-4o Mini (cheap and capable judge) if an OpenAI key is available
 - Fallback: If no judge LLM is configured, DeepTeam runs in "passthrough mode" where metric
-  scoring uses keyword/pattern heuristics only (reduced accuracy — flagged in the report)
+  scoring uses keyword/pattern heuristics only (reduced accuracy â€” flagged in the report)
 - Local scan path: warn user that DeepTeam accuracy is reduced without an external judge
 
-**Decision needed before:** Phase 3 (Engine Adapters) — specifically DeepTeam track
+**Decision needed before:** Phase 3 (Engine Adapters) â€” specifically DeepTeam track
 
 ---
 
-## GAP-003: Garak Localhost Proxy — Authentication Handling (HIGH)
+## GAP-003: Garak Localhost Proxy â€” Authentication Handling (HIGH)
 
 **Problem:** The Garak adapter design calls for a "localhost proxy server" that Garak calls (via its
 model driver), which then forwards to the actual model. Garak does not natively support OpenAI-auth
@@ -198,8 +198,8 @@ models with custom system prompts or Azure-specific authentication.
 
 **The gap:** The proxy must handle:
 - Model-type-specific authentication (Bearer token vs. Azure API key + deployment name)
-- Request transformation (Garak's format → provider's expected format)
-- Response transformation (provider format → Garak's expected format)
+- Request transformation (Garak's format â†’ provider's expected format)
+- Response transformation (provider format â†’ Garak's expected format)
 - Session management (some models require session warm-up)
 
 **Why this is harder than it looks:** The proxy must essentially be a complete model-agnostic
@@ -212,7 +212,7 @@ stdout do not always clearly attribute failures to the proxy vs. the model vs. t
 - The proxy must report its own health to the EngineOrchestrator (separate from Garak's status)
 - Integration test required: a mock target LLM that records requests for proxy validation
 
-**Decision needed before:** Phase 3, Garak track — proxy architecture must be designed before coding
+**Decision needed before:** Phase 3, Garak track â€” proxy architecture must be designed before coding
 
 ---
 
@@ -223,7 +223,7 @@ the `EvidenceStore`. However, the key management strategy is not defined.
 
 **Questions not yet answered:**
 - What encryption algorithm? (AES-256-GCM is appropriate but not specified)
-- Where is the encryption key stored? (Cannot be hardcoded — that's not encryption)
+- Where is the encryption key stored? (Cannot be hardcoded â€” that's not encryption)
 - Is the key derived from a user-provided passphrase? (Adds friction, forgotten keys = data loss)
 - Is the key generated at install time and stored in the OS keychain? (Best balance of security + UX)
 - How does the Python backend access the key if it's in the OS keychain (managed by Rust)?
@@ -233,14 +233,14 @@ the `EvidenceStore`. However, the key management strategy is not defined.
 - Key generation: Random 256-bit key generated once on first launch
 - Key storage: OS keychain (Windows Credential Manager, Linux libsecret), written by Rust backend
 - Key access: Rust backend passes the key to Python backend via the secure IPC channel at startup
-  (key lives in Python process memory for the session — never written to disk in plaintext)
+  (key lives in Python process memory for the session â€” never written to disk in plaintext)
 - Key rotation: Not in v1. Future enhancement.
 
-**Decision needed before:** Phase 4 (Normalization Layer — EvidenceStore)
+**Decision needed before:** Phase 4 (Normalization Layer â€” EvidenceStore)
 
 ---
 
-## GAP-005: Rust ↔ Python IPC Protocol — Not Specified (HIGH)
+## GAP-005: Rust â†” Python IPC Protocol â€” Not Specified (HIGH)
 
 **Problem:** The architecture states that Tauri's Rust backend communicates with the Python backend
 via "a local IPC socket using a simple JSON-based command/response protocol." This is not
@@ -259,32 +259,32 @@ Message schema:
   { "id": UUID, "type": "command"|"event"|"response"|"error",
     "name": string, "payload": object, "timestamp": ISO8601 }
 
-Commands (Rust → Python): validate_model, build_manifest, start_scan,
+Commands (Rust â†’ Python): validate_model, build_manifest, start_scan,
   pause_scan, cancel_scan, generate_report, start_deployment, get_status
 
-Events (Python → Rust, pushed asynchronously): engine_progress, finding_detected,
+Events (Python â†’ Rust, pushed asynchronously): engine_progress, finding_detected,
   cost_update, scan_complete, deployment_progress, error
 
 Response: same id as the command that triggered it + result payload or error
 
-Transport: Named pipe on Windows (\\.\pipe\aisentry-ipc), Unix socket on Linux (/tmp/aisentry.sock)
+Transport: Named pipe on Windows (\\.\pipe\SentryPhi-ipc), Unix socket on Linux (/tmp/SentryPhi.sock)
 ```
 
 This IPC contract must be agreed on and documented before Phase 8 (but the Python side must
 implement it starting Phase 2, and the Rust side in Phase 8).
 
-**Decision needed before:** Phase 2 (Model Adapter Layer — first Python commands needed)
+**Decision needed before:** Phase 2 (Model Adapter Layer â€” first Python commands needed)
 
 ---
 
-## GAP-006: SeverityMatrix and ConfidenceWeights — Values Not Defined (HIGH)
+## GAP-006: SeverityMatrix and ConfidenceWeights â€” Values Not Defined (HIGH)
 
 **Problem:** The design defines the scoring system's structure (SeverityMatrix, ConfidenceFactors,
 ConfidenceWeights) but does not define the actual values.
 
 **What is missing:**
 - The base severity tier for each of the 18 VulnClass entries
-  (e.g., JAILBREAK_DAN → HIGH? CRITICAL? This determines whether users take action.)
+  (e.g., JAILBREAK_DAN â†’ HIGH? CRITICAL? This determines whether users take action.)
 - The five confidence weight values (must sum to 1.0)
 - The modifier magnitude for attack_success_rate and deployment_context adjustments
 - The threshold at which a confidence score is considered "actionable" vs. "review only"
@@ -299,7 +299,7 @@ changing user expectations.
 - Define a severity calibration table with rationale for each VulnClass
 - Pilot the weights against 3 known-vulnerable models to validate output is reasonable
 - Lock values into the `severity_matrix.json` and `confidence_weights.json` config files
-  before Phase 5 begins — but design them during Phase 1/2
+  before Phase 5 begins â€” but design them during Phase 1/2
 
 **Proposed starting point (to be validated during pilot testing):**
 
@@ -315,7 +315,7 @@ INFO:     EXCESSIVE_AGENCY
 
 Confidence weights (starting point):
 ```
-corroboration_score: 0.35  (highest weight — cross-engine agreement is strongest signal)
+corroboration_score: 0.35  (highest weight â€” cross-engine agreement is strongest signal)
 success_rate_score:  0.30  (reproducibility of the attack is strong evidence)
 diversity_score:     0.15  (probe variation reduces false positives)
 maturity_score:      0.12  (established probe classes are more reliable)
@@ -324,7 +324,7 @@ noise_penalty:       0.08  (penalize known-noisy probes)
 
 ---
 
-## GAP-007: GenericRESTAdapter "Schema Inference Wizard" — Too Complex for v1 (MEDIUM)
+## GAP-007: GenericRESTAdapter "Schema Inference Wizard" â€” Too Complex for v1 (MEDIUM)
 
 **Problem:** The design includes a `GenericRESTAdapter` with "schema inference wizard for unknown
 endpoints." This means the app must dynamically determine the request/response format of an
@@ -339,9 +339,9 @@ corrupts all scan results without any error.
 **v1 replacement:** Provide a "Custom REST" option that shows a minimal configuration form:
 ```
 Endpoint URL:   [required]
-Auth header:    [required — format: "Authorization: Bearer {key}"]
-Request body:   [required — JSON template with {prompt} placeholder]
-Response path:  [required — JSONPath to extract response text, e.g., "$.choices[0].message.content"]
+Auth header:    [required â€” format: "Authorization: Bearer {key}"]
+Request body:   [required â€” JSON template with {prompt} placeholder]
+Response path:  [required â€” JSONPath to extract response text, e.g., "$.choices[0].message.content"]
 ```
 
 This is a manual configuration (user fills in the format), not automatic inference. It covers
@@ -351,9 +351,9 @@ This is a manual configuration (user fills in the format), not automatic inferen
 
 ---
 
-## GAP-008: PDF Renderer — Library Not Chosen (MEDIUM)
+## GAP-008: PDF Renderer â€” Library Not Chosen (MEDIUM)
 
-**Problem:** The design says "local PDF rendering (bundled renderer library — no server, no internet)."
+**Problem:** The design says "local PDF rendering (bundled renderer library â€” no server, no internet)."
 No specific library is named. This matters because the choice affects installer size, report quality,
 and platform compatibility.
 
@@ -367,16 +367,16 @@ and platform compatibility.
 | Playwright (headless Chrome) | Binary | ~150 MB | Highest | Very High |
 
 **Resolution Required:** WeasyPrint is recommended for v1.
-- Pure Python (no external binary) — fits the bundled Python runtime
-- CSS-based — the HTML report can be the same source as the PDF (single rendering path)
+- Pure Python (no external binary) â€” fits the bundled Python runtime
+- CSS-based â€” the HTML report can be the same source as the PDF (single rendering path)
 - Good quality for tabular data and structured reports
-- Already available via pip — no separate bundling complexity
+- Already available via pip â€” no separate bundling complexity
 
 **Decision needed before:** Phase 6 (Report Generator)
 
 ---
 
-## GAP-009: Local GGUF Model Serving — llama.cpp Build (MEDIUM)
+## GAP-009: Local GGUF Model Serving â€” llama.cpp Build (MEDIUM)
 
 **Problem:** The design relies on llama.cpp for local GGUF model serving. llama.cpp must be
 pre-compiled for the target platform and bundled in the installer.
@@ -388,9 +388,9 @@ pre-compiled for the target platform and bundled in the installer.
 - What is the maximum context length for local serving (affects probe design)?
 
 **Resolution Required:**
-- v1 bundles CPU-only llama.cpp build (no GPU dependency — covers all hardware)
+- v1 bundles CPU-only llama.cpp build (no GPU dependency â€” covers all hardware)
 - GPU acceleration: optional, detected at runtime. If CUDA is available, llama.cpp respects it
-  automatically with the CPU build via OpenBLAS — no separate GPU binary needed
+  automatically with the CPU build via OpenBLAS â€” no separate GPU binary needed
 - Version pin: lock to a specific llama.cpp release tag before Phase 2 begins
 - Context length: default 4096 tokens for local models (safe baseline)
 - Port management: use a fixed port (default 8080) with auto-increment on conflict (8081, 8082...)
@@ -445,7 +445,7 @@ EngineOrchestrator. The checkpoint format is not defined.
 
 ---
 
-## GAP-012: Onboarding Environment Check — What Is Being Checked? (LOW)
+## GAP-012: Onboarding Environment Check â€” What Is Being Checked? (LOW)
 
 **Problem:** The onboarding sequence shows an "Environment Check" screen that verifies engines
 are installed. But since engines are bundled in the installer, this check is trivially expected
@@ -458,9 +458,9 @@ The Environment Check verifies:
 3. The OS keychain is accessible (write + read a test credential)
 4. The llama.cpp binary is present and executable
 5. Available disk space is sufficient for scan artifacts (>500 MB free)
-6. Available RAM (report if <8 GB — warn about local model limitations)
+6. Available RAM (report if <8 GB â€” warn about local model limitations)
 
-This check is NOT verifying internet connectivity — scanning can work offline (local models).
+This check is NOT verifying internet connectivity â€” scanning can work offline (local models).
 It IS the right place to detect post-install corruption or OS permission issues.
 
 ---
@@ -473,9 +473,9 @@ will contain content that some search engines or hosting providers might flag.
 
 **Resolution Required:**
 - Blog posts about adversarial techniques use research framing ("how to test for X" not "how to do X")
-- Actual adversarial prompt examples in the blog are never written out verbatim — they are
+- Actual adversarial prompt examples in the blog are never written out verbatim â€” they are
   described and categorized without being reproducible from the blog alone
-- Vercel's ToS covers security research content — this is not a risk with the chosen host
+- Vercel's ToS covers security research content â€” this is not a risk with the chosen host
 - Add a disclaimer at the top of each security research blog post:
   "This post describes vulnerability patterns for defensive security testing purposes."
 
@@ -489,7 +489,7 @@ will contain content that some search engines or hosting providers might flag.
 | GAP-002 | DeepTeam judge LLM | CRITICAL | Phase 3 | Before Phase 3 |
 | GAP-003 | Garak proxy auth handling | HIGH | Phase 3 | Before Phase 3 |
 | GAP-004 | EvidenceStore key management | HIGH | Phase 4 | Before Phase 4 |
-| GAP-005 | Rust↔Python IPC protocol | HIGH | Phase 2+ | Before Phase 2 |
+| GAP-005 | Rustâ†”Python IPC protocol | HIGH | Phase 2+ | Before Phase 2 |
 | GAP-006 | SeverityMatrix values | HIGH | Phase 5 | During Phase 1 |
 | GAP-007 | GenericRESTAdapter complexity | MEDIUM | Phase 2 | Before Phase 2 |
 | GAP-008 | PDF renderer not chosen | MEDIUM | Phase 6 | Before Phase 6 |
@@ -501,19 +501,19 @@ will contain content that some search engines or hosting providers might flag.
 
 ---
 
-# SECTION 3 — ARCHITECTURE VALIDATION
+# SECTION 3 â€” ARCHITECTURE VALIDATION
 
 ## 3.1 Modularity Assessment
 
 **Finding: Architecture is correctly modular. Each module has a single responsibility.**
 
 Evidence:
-- InputHandler owns all connection validation — nothing downstream re-validates
-- ManifestProcessor owns the scan spec — engines read from it, never write to it
+- InputHandler owns all connection validation â€” nothing downstream re-validates
+- ManifestProcessor owns the scan spec â€” engines read from it, never write to it
 - Each EngineAdapter is self-contained behind the `EngineAdapter` interface
-- NormalizationPipeline consumes raw outputs, produces normalized findings — no business logic
-- ScoringEngine consumes normalized findings, produces scored findings — no I/O
-- ReportGenerator assembles from scored findings — no scanning logic
+- NormalizationPipeline consumes raw outputs, produces normalized findings â€” no business logic
+- ScoringEngine consumes normalized findings, produces scored findings â€” no I/O
+- ReportGenerator assembles from scored findings â€” no scanning logic
 
 **One concern:** The `EngineOrchestrator` has too many responsibilities in the current design.
 It manages: thread dispatch, rate limiting, cost tracking, progress emission, pause/resume, and
@@ -521,7 +521,7 @@ partial result preservation. This should be subdivided:
 - `EngineOrchestrator`: dispatch and coordination only
 - `RateLimiter`: token bucket, separate class (already planned)
 - `CostTracker`: accumulation and ceiling enforcement, separate class (already planned)
-- `ScanCheckpointer`: pause/resume checkpoint management (new class — resolves GAP-011)
+- `ScanCheckpointer`: pause/resume checkpoint management (new class â€” resolves GAP-011)
 
 **Verdict:** Modular. One minor split recommended in EngineOrchestrator.
 
@@ -532,48 +532,48 @@ partial result preservation. This should be subdivided:
 **Finding: Dependencies are mostly clear. Three gaps identified.**
 
 **CLEAR dependencies (well-specified):**
-- Phase 2 → Phase 1 (adapters need the scaffold)
-- Phase 3 → Phase 2 (orchestrator needs adapters)
-- Phase 4 → Phase 3 (normalization needs raw outputs)
-- Phase 5 → Phase 4 (scoring needs normalized findings)
-- Phases 6+7 → Phase 5 (report and deployment need scored findings)
-- Phase 8 → Phases 2–7 (UI needs all backend modules)
+- Phase 2 â†’ Phase 1 (adapters need the scaffold)
+- Phase 3 â†’ Phase 2 (orchestrator needs adapters)
+- Phase 4 â†’ Phase 3 (normalization needs raw outputs)
+- Phase 5 â†’ Phase 4 (scoring needs normalized findings)
+- Phases 6+7 â†’ Phase 5 (report and deployment need scored findings)
+- Phase 8 â†’ Phases 2â€“7 (UI needs all backend modules)
 
 **UNCLEAR dependencies requiring resolution:**
 1. Phase 2 needs the IPC contract (GAP-005) to implement the Python side of the communication layer
 2. Phase 3 (Garak) needs the proxy authentication design (GAP-003) before the adapter can be built
-3. Phase 5 needs the SeverityMatrix values (GAP-006) — cannot implement SeverityClassifier without them
+3. Phase 5 needs the SeverityMatrix values (GAP-006) â€” cannot implement SeverityClassifier without them
 
 ---
 
 ## 3.3 Integration Realism Assessment
 
-**Garak Integration — REALISTIC with caveats**
+**Garak Integration â€” REALISTIC with caveats**
 Garak is a mature tool with subprocess invocation and JSONL output. The proxy pattern is
 established (Garak supports custom model backends). Risk: Garak's API changes between versions.
 The version pin (D-002 decision) mitigates this. The proxy must be integration-tested before Phase 3 closes.
 
-**PyRIT Integration — REALISTIC with the GAP-001 resolution adopted**
+**PyRIT Integration â€” REALISTIC with the GAP-001 resolution adopted**
 If PyRIT uses the target API as the attacker LLM (Option A from GAP-001), the integration is
 straightforward. PyRIT's Python API is well-documented. Risk: PyRIT's orchestrator has
-configuration complexity — the adapter must abstract this cleanly.
+configuration complexity â€” the adapter must abstract this cleanly.
 
-**DeepTeam Integration — REALISTIC with the GAP-002 resolution adopted**
+**DeepTeam Integration â€” REALISTIC with the GAP-002 resolution adopted**
 deepeval has a clean Python API. The key is correctly implementing the custom LLM wrapper that
 adapts the `ModelAdapter` to deepeval's expected interface. Risk: deepeval's evaluator LLM
 requirement (GAP-002) must be handled gracefully.
 
-**Tauri + Python IPC — REALISTIC but requires careful implementation**
+**Tauri + Python IPC â€” REALISTIC but requires careful implementation**
 The pattern (Rust backend spawning a Python subprocess, communicating via a local socket) is
 well-established. Tauri has examples of subprocess management. Risk: On Windows, process spawning
 and socket creation have platform-specific quirks that require testing early.
 
-**AWS boto3 Integration — REALISTIC with minimal risk**
-boto3 is stable and well-documented. The provisioning sequence (IAM → VPC → Lambda → API Gateway
-→ Bedrock Guardrails) is predictable. Risk: IAM permissions for the user's AWS account (KI-005).
+**AWS boto3 Integration â€” REALISTIC with minimal risk**
+boto3 is stable and well-documented. The provisioning sequence (IAM â†’ VPC â†’ Lambda â†’ API Gateway
+â†’ Bedrock Guardrails) is predictable. Risk: IAM permissions for the user's AWS account (KI-005).
 The pre-flight permission check must be comprehensive.
 
-**WeasyPrint PDF — REALISTIC with known limitations**
+**WeasyPrint PDF â€” REALISTIC with known limitations**
 WeasyPrint produces good quality PDFs from HTML/CSS. Limitation: complex print layouts (multi-page
 tables, headers/footers) require careful CSS. The report template must be designed for print media
 from the start, not retrofitted.
@@ -585,9 +585,9 @@ from the start, not retrofitted.
 **Flaw 1: No inter-session scan history mechanism is defined**
 The current architecture treats each scan as completely independent. The manifest and results are
 stored in the scan's working directory, but there is no index or database of past scans. The UI
-shows "Scan History" in the dashboard — this history must be stored somewhere.
+shows "Scan History" in the dashboard â€” this history must be stored somewhere.
 
-Improvement: Add a `ScanRegistry` — a simple SQLite database in the app data directory that
+Improvement: Add a `ScanRegistry` â€” a simple SQLite database in the app data directory that
 indexes all past scans: {scan_id, manifest_id, model_name, date, risk_tier, report_paths}.
 This enables the Scan History dashboard panel and scan comparison (v1.5 feature).
 
@@ -598,9 +598,9 @@ expensive). It must be a template-based system.
 
 Improvement: Define a `ConfidenceExplanationTemplate` system where each factor contributes
 a sentence fragment based on its score range:
-- corroboration_score > 0.8 → "Detected by multiple scanning engines."
-- corroboration_score < 0.4 → "Detected by a single engine only."
-- success_rate_score > 0.7 → "Attack succeeded in {n}% of probe attempts."
+- corroboration_score > 0.8 â†’ "Detected by multiple scanning engines."
+- corroboration_score < 0.4 â†’ "Detected by a single engine only."
+- success_rate_score > 0.7 â†’ "Attack succeeded in {n}% of probe attempts."
 The final explanation is an assembly of these fragments.
 
 **Flaw 3: Report generation depends on DeploymentAdvisor completion**
@@ -616,14 +616,14 @@ recommendation as an optional addition.
 
 ---
 
-# SECTION 4 — SCOPE CONTROL
+# SECTION 4 â€” SCOPE CONTROL
 
 ## What Is IN v1 (Hard Boundaries)
 
 ### Desktop Application
-- Windows (x64) and Linux (AppImage + .deb) — both at launch
+- Windows (x64) and Linux (AppImage + .deb) â€” both at launch
 - Tauri desktop framework with bundled Python runtime
-- All Python dependencies bundled — zero user-facing terminal setup
+- All Python dependencies bundled â€” zero user-facing terminal setup
 
 ### Model Input Types (v1)
 - OpenAI-compatible API (covers most providers)
@@ -638,9 +638,9 @@ recommendation as an optional addition.
 - DeepTeam: version-pinned, Python API, judge LLM configurable (GPT-4o-mini default for API users)
 
 ### Scan Depth Profiles (v1)
-- Quick (5–15 min): core jailbreak + toxicity only
-- Standard (30–90 min): all categories, balanced coverage — default
-- Deep (2–6 hours): full suite
+- Quick (5â€“15 min): core jailbreak + toxicity only
+- Standard (30â€“90 min): all categories, balanced coverage â€” default
+- Deep (2â€“6 hours): full suite
 
 ### Vulnerability Coverage (v1)
 - All 18 VulnClass entries are detected if present
@@ -683,7 +683,7 @@ recommendation as an optional addition.
 - SaaS browser-based version
 - Native GitHub App
 - Multi-modal scanning (vision-language models)
-- AI-SENTRY Certification mark
+- Sentry\u0278 Certification mark
 - Runtime monitoring companion
 - EU AI Act compliance report templates
 - LLM security knowledge graph API
@@ -715,7 +715,7 @@ recommendation as an optional addition.
 
 ---
 
-# SECTION 5 — FINAL DECISION LOG
+# SECTION 5 â€” FINAL DECISION LOG
 
 This is the complete, authoritative decision record. Supersedes all per-phase decision logs.
 
@@ -734,7 +734,7 @@ This is the complete, authoritative decision record. Supersedes all per-phase de
 | ID | Decision | Value | Rationale |
 |---|---|---|---|
 | D-006 | Supported input types | OpenAI-compat, Azure OpenAI, HuggingFace, GGUF local, Custom REST (manual) | Covers >95% of real-world LLM deployments |
-| D-007 | GenericRESTAdapter | Deferred — manual template config in v1 | Auto schema inference is too risky for v1 |
+| D-007 | GenericRESTAdapter | Deferred â€” manual template config in v1 | Auto schema inference is too risky for v1 |
 | D-008 | Local model serving | llama.cpp, CPU-only build bundled | GPU is auto-used if available but not required |
 | D-009 | PyRIT attacker LLM | Default = target API model (no separate download) | Zero-friction first scan; local attacker deferred to v1.5 |
 
@@ -742,7 +742,7 @@ This is the complete, authoritative decision record. Supersedes all per-phase de
 
 | ID | Decision | Value | Rationale |
 |---|---|---|---|
-| D-010 | Severity system | Two-axis: Severity (tier) + Confidence (0.0–1.0) | Matches real security reporting; prevents conflation of danger and certainty |
+| D-010 | Severity system | Two-axis: Severity (tier) + Confidence (0.0â€“1.0) | Matches real security reporting; prevents conflation of danger and certainty |
 | D-011 | Confidence factors | corroboration (0.35), success_rate (0.30), diversity (0.15), maturity (0.12), noise_penalty (0.08) | Weights calibrated to prioritize cross-engine agreement and attack reproducibility |
 | D-012 | Explanation generation | Template-based (no LLM) | Reproducible, fast, no API dependency, auditable |
 | D-013 | SeverityMatrix | Static config file (severity_matrix.json), validated against pilot test | Inspectable and editable without code changes |
@@ -751,7 +751,7 @@ This is the complete, authoritative decision record. Supersedes all per-phase de
 
 | ID | Decision | Value | Rationale |
 |---|---|---|---|
-| D-014 | Desktop framework | Tauri (Rust + OS WebView) | 5–15 MB installer vs 150–300 MB Electron; lower attack surface |
+| D-014 | Desktop framework | Tauri (Rust + OS WebView) | 5â€“15 MB installer vs 150â€“300 MB Electron; lower attack surface |
 | D-015 | Frontend language | HTML + CSS + JavaScript (no React in Tauri frontend for v1) | Reduces complexity; Tauri WebView handles standard web tech |
 | D-016 | Python-Rust IPC | JSON messages over named pipe (Windows) / Unix socket (Linux) | Standard, auditable, language-agnostic |
 | D-017 | Credential storage | OS keychain only (Rust backend) | API keys never in files or environment variables |
@@ -770,8 +770,8 @@ This is the complete, authoritative decision record. Supersedes all per-phase de
 | ID | Decision | Value | Rationale |
 |---|---|---|---|
 | D-022 | Cloud deployment v1 scope | AWS only (provisioning); Azure + GCP (config docs only) | Focus depth over breadth; AWS has strongest Bedrock Guardrail alignment |
-| D-023 | AWS provisioning pattern | Plan → User review → Provision → Verify → Rollback on failure | User always sees and approves before any cloud resource is created |
-| D-024 | AWS resource tagging | All resources tagged {"created-by": "ai-sentry", "scan-id": UUID} | Clean cleanup; easy identification in AWS console |
+| D-023 | AWS provisioning pattern | Plan â†’ User review â†’ Provision â†’ Verify â†’ Rollback on failure | User always sees and approves before any cloud resource is created |
+| D-024 | AWS resource tagging | All resources tagged {"created-by": "Sentry\u0278", "scan-id": UUID} | Clean cleanup; easy identification in AWS console |
 
 ## Website Decisions
 
@@ -787,14 +787,14 @@ This is the complete, authoritative decision record. Supersedes all per-phase de
 
 | ID | Decision | Value | Rationale |
 |---|---|---|---|
-| D-030 | Consent gate | Mandatory before every scan — cannot be skipped | Legal and ethical requirement; user must authorize adversarial content |
+| D-030 | Consent gate | Mandatory before every scan â€” cannot be skipped | Legal and ethical requirement; user must authorize adversarial content |
 | D-031 | Cost tracking | Real-time accumulation; halt at 110% of approved estimate | User approved an estimate; exceeding it requires re-consent |
 | D-032 | Partial results | Always preserved on pause/cancel/failure | User never loses work; partial reports are clearly marked |
 | D-033 | Telemetry | Opt-in only, default OFF | Privacy-first; scan data never transmitted |
 
 ---
 
-# SECTION 6 — IMPLEMENTATION READINESS CHECK
+# SECTION 6 â€” IMPLEMENTATION READINESS CHECK
 
 ## Can Phase 1 Start Immediately?
 
@@ -809,85 +809,85 @@ None of these require any of the unresolved gaps to be closed first.
 
 ## Prerequisite Checklist for Each Phase
 
-### Before Phase 1 (Project Scaffold) — ALL CLEAR
+### Before Phase 1 (Project Scaffold) â€” ALL CLEAR
 - [x] Documentation complete
 - [x] Target directory structure defined (SYSTEM_EXECUTION_LAYER.md Section 6)
 - [x] Python version: 3.11.x (specified)
 - [x] Dependency management: pyproject.toml with groups (specified)
 - [x] Key decisions documented
 
-### Before Phase 2 (Model Adapters) — 3 ACTIONS REQUIRED
-- [ ] **ACTION: Define IPC protocol formally** (GAP-005) — write IPC_PROTOCOL.md before Phase 2 coding
-- [ ] **ACTION: Choose llama.cpp version to pin** (GAP-009) — check current stable release
-- [ ] **ACTION: Finalize Custom REST adapter spec** (GAP-007) — confirm manual template approach
+### Before Phase 2 (Model Adapters) â€” 3 ACTIONS REQUIRED
+- [ ] **ACTION: Define IPC protocol formally** (GAP-005) â€” write IPC_PROTOCOL.md before Phase 2 coding
+- [ ] **ACTION: Choose llama.cpp version to pin** (GAP-009) â€” check current stable release
+- [ ] **ACTION: Finalize Custom REST adapter spec** (GAP-007) â€” confirm manual template approach
 - [x] ModelAdapter interface designed
 - [x] All supported model types listed
 
-### Before Phase 3 (Engine Adapters) — 4 ACTIONS REQUIRED
-- [ ] **ACTION: Resolve PyRIT attacker LLM** (GAP-001) — confirm Option A (target API as attacker)
-- [ ] **ACTION: Resolve DeepTeam judge LLM** (GAP-002) — design the judge config flow
-- [ ] **ACTION: Design Garak proxy auth handlers** (GAP-003) — per-adapter-type proxy class design
-- [ ] **ACTION: Specify checkpoint serialization** (GAP-011) — JSONL format with fields defined
+### Before Phase 3 (Engine Adapters) â€” 4 ACTIONS REQUIRED
+- [ ] **ACTION: Resolve PyRIT attacker LLM** (GAP-001) â€” confirm Option A (target API as attacker)
+- [ ] **ACTION: Resolve DeepTeam judge LLM** (GAP-002) â€” design the judge config flow
+- [ ] **ACTION: Design Garak proxy auth handlers** (GAP-003) â€” per-adapter-type proxy class design
+- [ ] **ACTION: Specify checkpoint serialization** (GAP-011) â€” JSONL format with fields defined
 - [x] Engine interfaces defined
 - [x] All three engines version-pinned
 
-### Before Phase 4 (Normalization) — 1 ACTION REQUIRED
-- [ ] **ACTION: Finalize EvidenceStore encryption design** (GAP-004) — AES-256-GCM + keychain flow
+### Before Phase 4 (Normalization) â€” 1 ACTION REQUIRED
+- [ ] **ACTION: Finalize EvidenceStore encryption design** (GAP-004) â€” AES-256-GCM + keychain flow
 - [x] VulnClass taxonomy defined (18 classes)
 - [x] VulnerabilityFinding schema defined
 
-### Before Phase 5 (Intelligence Layer) — 1 ACTION REQUIRED
-- [ ] **ACTION: Lock SeverityMatrix values** (GAP-006) — finalize and write severity_matrix.json
+### Before Phase 5 (Intelligence Layer) â€” 1 ACTION REQUIRED
+- [ ] **ACTION: Lock SeverityMatrix values** (GAP-006) â€” finalize and write severity_matrix.json
 - [x] ConfidenceScorer structure defined
 - [x] RemediationKnowledgeBase structure defined
 
-### Before Phase 6 (Report Generator) — 1 ACTION REQUIRED
-- [ ] **ACTION: Confirm WeasyPrint** (GAP-008) — test WeasyPrint rendering of a prototype report
+### Before Phase 6 (Report Generator) â€” 1 ACTION REQUIRED
+- [ ] **ACTION: Confirm WeasyPrint** (GAP-008) â€” test WeasyPrint rendering of a prototype report
 - [x] Report schema defined
 - [x] All three output formats specified
 
-### Before Phase 7 (Deployment) — 1 ACTION REQUIRED
-- [ ] **ACTION: Document credential handoff** (GAP-010) — add to IPC_PROTOCOL.md
+### Before Phase 7 (Deployment) â€” 1 ACTION REQUIRED
+- [ ] **ACTION: Document credential handoff** (GAP-010) â€” add to IPC_PROTOCOL.md
 - [x] AWS provisioning sequence defined
 - [x] PlatformCapabilityMaps structure defined
 
-### Before Phase 8 (Desktop UI) — ALL CLEAR
+### Before Phase 8 (Desktop UI) â€” ALL CLEAR
 - [ ] All backend phases complete
 - [x] All 9 screens designed (SYSTEM_EXECUTION_LAYER.md Section 5)
 - [x] Tauri framework decision confirmed
 
-### Before Phase 9 (Website) — ALL CLEAR
+### Before Phase 9 (Website) â€” ALL CLEAR
 - [x] Full website design complete (WEBSITE_DESIGN.md)
 - [x] Tech stack confirmed (Next.js + Vercel)
 - [x] SEO strategy defined
 
 ## What Should Be Done Before Coding (Phase 1 Week 1)
 
-1. **Write IPC_PROTOCOL.md** — formal specification of the Rust↔Python message format.
+1. **Write IPC_PROTOCOL.md** â€” formal specification of the Rustâ†”Python message format.
    This is the contract that Phase 2 and Phase 8 both implement against. (~2 hours)
 
-2. **Pin all three engine versions** — check current PyPI versions of garak, pyrit-ai, deepeval.
+2. **Pin all three engine versions** â€” check current PyPI versions of garak, pyrit-ai, deepeval.
    Document in a `pinned_versions.md` or directly in `pyproject.toml` comments. (~30 minutes)
 
-3. **Write severity_matrix.json (first draft)** — using the proposed values from GAP-006.
+3. **Write severity_matrix.json (first draft)** â€” using the proposed values from GAP-006.
    This draft is subject to change after pilot testing but gives Phase 5 something to implement against.
    (~1 hour)
 
-4. **Confirm WeasyPrint can render a sample report structure** — a quick local test (not in the
+4. **Confirm WeasyPrint can render a sample report structure** â€” a quick local test (not in the
    project, just a proof of concept) to verify WeasyPrint renders tables and severity badges correctly
    before committing to it. (~1 hour)
 
-5. **Resolve KI-001 (PyRIT attacker LLM)** — formally adopt Option A. Update context/known_issues.md.
+5. **Resolve KI-001 (PyRIT attacker LLM)** â€” formally adopt Option A. Update context/known_issues.md.
    (~15 minutes)
 
-6. **Create the GitHub repository** — with the agreed branching strategy (Section 8). (~30 minutes)
+6. **Create the GitHub repository** â€” with the agreed branching strategy (Section 8). (~30 minutes)
 
-Total pre-coding overhead: approximately 5–6 hours. This is the minimum necessary to avoid
+Total pre-coding overhead: approximately 5â€“6 hours. This is the minimum necessary to avoid
 expensive rework during implementation.
 
 ---
 
-# SECTION 7 — RISK MITIGATION PLAN
+# SECTION 7 â€” RISK MITIGATION PLAN
 
 ## RISK-001: Engine API Breaking Changes
 
@@ -909,7 +909,7 @@ and v1 launch that changes the Python API or output format. The adapter breaks s
 
 ## RISK-002: Windows Defender / Antivirus False Positives
 
-**What can go wrong:** The AI-SENTRY installer or bundled Python runtime is flagged by Windows
+**What can go wrong:** The Sentry\u0278 installer or bundled Python runtime is flagged by Windows
 Defender or third-party AV as malicious. This happens because: (a) the installer bundles a Python
 runtime, (b) the scanning engines generate adversarial content, (c) the subprocess spawning behavior
 resembles malware patterns.
@@ -924,7 +924,7 @@ resembles malware patterns.
 - Test the installer against Windows Defender + common third-party AV tools (Malwarebytes, CrowdStrike)
   before each release
 - Document the safe-listing submission process as a mandatory release checklist item
-- Include in the documentation: "If your AV flags AI-SENTRY, here is how to add an exclusion"
+- Include in the documentation: "If your AV flags Sentry\u0278, here is how to add an exclusion"
 
 ---
 
@@ -945,7 +945,7 @@ finding the vulnerability.
 - The PyRIT adapter includes a "verbose mode" that logs every turn of every conversation to disk
   for debugging during development
 - If PyRIT produces zero findings on a known-vulnerable model after 10+ minutes, the adapter
-  is failing — alert the developer immediately (not silently continue)
+  is failing â€” alert the developer immediately (not silently continue)
 
 ---
 
@@ -983,18 +983,18 @@ alarm deletion fails), the user is left with orphaned, potentially billable AWS 
 
 **Mitigation:**
 - Every resource created is immediately logged to a local `deployment_manifest.json` file
-- This file exists before provisioning starts — resources are added to it as they are created
-- The rollback function reads from this file — it can always attempt cleanup even after an app crash
-- The deployment completion screen prominently shows: "Tag: created-by=ai-sentry" with a
-  link to the AWS console filtered to that tag — user can always manually verify and clean up
+- This file exists before provisioning starts â€” resources are added to it as they are created
+- The rollback function reads from this file â€” it can always attempt cleanup even after an app crash
+- The deployment completion screen prominently shows: "Tag: created-by=Sentry\u0278" with a
+  link to the AWS console filtered to that tag â€” user can always manually verify and clean up
 - After any failed deployment, the UI shows explicit cleanup instructions
-- A `destroy_deployment` command (Phase 7) allows one-click teardown of any tagged AI-SENTRY deployment
+- A `destroy_deployment` command (Phase 7) allows one-click teardown of any tagged Sentry\u0278 deployment
 
 ---
 
 ## RISK-006: Cost Estimate Accuracy
 
-**What can go wrong:** The pre-scan cost estimate shows "$0.54–0.81" but the actual scan costs
+**What can go wrong:** The pre-scan cost estimate shows "$0.54â€“0.81" but the actual scan costs
 $3.20 because the model produces unusually long responses (many output tokens) or because the
 pricing table is outdated.
 
@@ -1003,13 +1003,13 @@ pricing table is outdated.
 **Impact:** MEDIUM (user is surprised by API bill; trust is damaged)
 
 **Mitigation:**
-- The cost estimate is clearly labeled "estimate — may vary by ±30%" in the UI
+- The cost estimate is clearly labeled "estimate â€” may vary by Â±30%" in the UI
 - The CostTracker halts the scan at 120% of the approved estimate ceiling (D-031 decision)
 - The pricing tables in the `CostEstimator` are configurable and versioned
 - When actual cost exceeds estimate by >20%, the scan summary screen displays a prominent note:
   "This scan cost more than estimated. The estimate assumed average response length of ~200 tokens,
   but your model averaged ~580 tokens per response."
-- Users can set an absolute cost ceiling in Settings (default: $10 — prevents runaway costs)
+- Users can set an absolute cost ceiling in Settings (default: $10 â€” prevents runaway costs)
 
 ---
 
@@ -1047,28 +1047,28 @@ by deepeval. Or the judge LLM key has insufficient quota for the scan volume.
 - The scan configuration screen explicitly shows: "DeepTeam requires an evaluator LLM."
 - If the target model is an OpenAI API, default the judge to the same OpenAI key (GPT-4o Mini)
 - If the target model is local or non-OpenAI: prompt for a separate judge key during setup
-- "Skip evaluator — run in heuristic mode" is a visible option (with a coverage warning)
+- "Skip evaluator â€” run in heuristic mode" is a visible option (with a coverage warning)
 - The report clearly states which metrics ran with a judge LLM vs. heuristic mode
 
 ---
 
-# SECTION 8 — TEAM WORKFLOW
+# SECTION 8 â€” TEAM WORKFLOW
 
 ## Repository Structure
 
-One GitHub repository: `github.com/ai-sentry/ai-sentry`
+One GitHub repository: `github.com/Sentry\u0278/Sentry\u0278`
 
 Structure:
 ```
 /                     Repository root
-├── app/              Tauri + Rust backend + Python backend (main desktop app)
-│   ├── src-tauri/    Rust backend code
-│   ├── frontend/     HTML + CSS + JS UI
-│   └── backend/      Python scanning backend
-├── website/          Next.js website (ai-sentry.dev)
-├── docs/             Design documents (PRD, TRD, etc.)
-├── context/          AI memory files
-└── tests/            Integration tests
+â”œâ”€â”€ app/              Tauri + Rust backend + Python backend (main desktop app)
+â”‚   â”œâ”€â”€ src-tauri/    Rust backend code
+â”‚   â”œâ”€â”€ frontend/     HTML + CSS + JS UI
+â”‚   â””â”€â”€ backend/      Python scanning backend
+â”œâ”€â”€ website/          Next.js website (Sentry\u0278.dev)
+â”œâ”€â”€ docs/             Design documents (PRD, TRD, etc.)
+â”œâ”€â”€ context/          AI memory files
+â””â”€â”€ tests/            Integration tests
 ```
 
 Two separate repos is NOT recommended for v1. The tight dependency between app releases and website
@@ -1079,19 +1079,19 @@ Two separate repos is NOT recommended for v1. The tight dependency between app r
 ## Branch Strategy (Simple)
 
 ```
-main              — Always deployable. Protected. Requires PR to merge.
-dev               — Active development integration branch.
-feature/[name]    — Feature branches off dev (e.g., feature/garak-adapter)
-fix/[name]        — Bug fix branches off dev (e.g., fix/cost-tracker-overflow)
-release/[version] — Release preparation off dev (e.g., release/1.0.0)
+main              â€” Always deployable. Protected. Requires PR to merge.
+dev               â€” Active development integration branch.
+feature/[name]    â€” Feature branches off dev (e.g., feature/garak-adapter)
+fix/[name]        â€” Bug fix branches off dev (e.g., fix/cost-tracker-overflow)
+release/[version] â€” Release preparation off dev (e.g., release/1.0.0)
 ```
 
 **Rules:**
 1. `main` is never committed to directly. Ever.
 2. Every merge to `main` is via a PR with at least one review.
-3. Feature branches are short-lived: merged within 1–2 days of opening.
+3. Feature branches are short-lived: merged within 1â€“2 days of opening.
 4. `dev` is kept green (passing tests) at all times.
-5. Release branches freeze `dev` → fix-only → merge to `main` when ready.
+5. Release branches freeze `dev` â†’ fix-only â†’ merge to `main` when ready.
 
 ---
 
@@ -1107,12 +1107,12 @@ Refs: #issue-number (if applicable)
 
 Types:
 ```
-feat     — new feature
-fix      — bug fix
-refactor — code change that is neither feat nor fix
-test     — adding tests
-docs     — documentation only
-chore    — build/dependency changes
+feat     â€” new feature
+fix      â€” bug fix
+refactor â€” code change that is neither feat nor fix
+test     â€” adding tests
+docs     â€” documentation only
+chore    â€” build/dependency changes
 ```
 
 Examples:
@@ -1133,7 +1133,7 @@ chore(deps): pin deepeval to v1.4.0 per D-002
 2. **Description:** What changed, why, how to test it
 3. **Size:** PRs should be small. If a PR touches more than 400 lines, split it.
 4. **Tests:** Every PR that adds a feature must include at least one test.
-5. **Review:** Both developers review all PRs. Reviewer approves or requests changes — no silent merges.
+5. **Review:** Both developers review all PRs. Reviewer approves or requests changes â€” no silent merges.
 6. **Merge strategy:** Squash merge to `dev` (clean linear history). Merge commit to `main` (preserve PR).
 
 ---
@@ -1162,12 +1162,12 @@ Each phase follows this micro-cycle:
 Use GitHub Issues with labels:
 
 ```
-phase-1 through phase-11    — which implementation phase
-bug                         — something broken
-enhancement                 — improvement to existing feature
-gap                         — a gap identified from this document
-blocker                     — must be resolved before the labeled phase begins
-documentation               — docs-only work
+phase-1 through phase-11    â€” which implementation phase
+bug                         â€” something broken
+enhancement                 â€” improvement to existing feature
+gap                         â€” a gap identified from this document
+blocker                     â€” must be resolved before the labeled phase begins
+documentation               â€” docs-only work
 ```
 
 Create an issue for each of the 13 gaps in Section 2 immediately. Label them `gap` + the relevant
@@ -1181,7 +1181,7 @@ Create an issue for each of the 13 gaps in Section 2 immediately. Label them `ga
 2. Update version numbers in all relevant files
 3. Generate SHA256 checksums for the compiled binaries
 4. Run full integration test suite
-5. Create PR to `main` — final review
+5. Create PR to `main` â€” final review
 6. Merge to `main`
 7. Tag the commit: `git tag v1.0.0`
 8. GitHub Actions creates the GitHub Release with the compiled binaries
@@ -1191,27 +1191,27 @@ Create an issue for each of the 13 gaps in Section 2 immediately. Label them `ga
 
 ---
 
-# SECTION 9 — FINAL PROJECT STATE
+# SECTION 9 â€” FINAL PROJECT STATE
 
 ## Current State: All Design Phases Complete
 
 ```
-✅  Phase 0a — Idea and System Design
+âœ…  Phase 0a â€” Idea and System Design
     Deliverable: Complete system architecture, 10 core components, design principles
 
-✅  Phase 0b — Documentation Foundation
+âœ…  Phase 0b â€” Documentation Foundation
     Deliverable: PRD.md, TRD.md, 6 context/memory files
 
-✅  Phase 0c — System Execution Layer
+âœ…  Phase 0c â€” System Execution Layer
     Deliverable: SYSTEM_EXECUTION_LAYER.md (68 KB)
                  App flow, backend architecture, data schemas, UI design, 11-phase plan
 
-✅  Phase 0d — Website Design
+âœ…  Phase 0d â€” Website Design
     Deliverable: WEBSITE_DESIGN.md (62 KB)
                  11 sections: structure, pages, design system, SEO, analytics, tech stack, brand
 
-✅  Phase 0e — Gap Analysis and Final Consolidation
-    Deliverable: This document — FINAL_CONSOLIDATION.md
+âœ…  Phase 0e â€” Gap Analysis and Final Consolidation
+    Deliverable: This document â€” FINAL_CONSOLIDATION.md
                  13 gaps identified and resolved, architecture validated, scope locked,
                  27 decisions logged, risk mitigation defined, team workflow established
 ```
@@ -1219,14 +1219,14 @@ Create an issue for each of the 13 gaps in Section 2 immediately. Label them `ga
 ## The 5 Pre-Coding Actions (Priority Order)
 
 ```
-1.  WRITE  IPC_PROTOCOL.md           — Rust↔Python message contract (resolves GAP-005)
-2.  WRITE  severity_matrix.json      — First draft (resolves GAP-006 partially)
-3.  DECIDE PyRIT attacker LLM        — Adopt Option A formally (resolves GAP-001)
-4.  TEST   WeasyPrint rendering      — Quick proof of concept (resolves GAP-008)
-5.  CREATE GitHub repository         — Initialize with team workflow (Section 8)
+1.  WRITE  IPC_PROTOCOL.md           â€” Rustâ†”Python message contract (resolves GAP-005)
+2.  WRITE  severity_matrix.json      â€” First draft (resolves GAP-006 partially)
+3.  DECIDE PyRIT attacker LLM        â€” Adopt Option A formally (resolves GAP-001)
+4.  TEST   WeasyPrint rendering      â€” Quick proof of concept (resolves GAP-008)
+5.  CREATE GitHub repository         â€” Initialize with team workflow (Section 8)
 ```
 
-## Next Phase: Phase 1 — Project Scaffold and Environment
+## Next Phase: Phase 1 â€” Project Scaffold and Environment
 
 **Goal:** A runnable project skeleton with no business logic but all structural foundations in place.
 
@@ -1240,14 +1240,14 @@ Create an issue for each of the 13 gaps in Section 2 immediately. Label them `ga
 - Placeholder modules for all 8 backend components (interface definitions only)
 - Initial unit test infrastructure
 
-**Phase 1 is complete when:** `python -m aisentry healthcheck` runs successfully and reports
+**Phase 1 is complete when:** `python -m SentryPhi healthcheck` runs successfully and reports
 all three engines installed at pinned versions, OS keychain accessible, and sufficient disk space.
 
 ---
 
 ## Readiness Declaration
 
-The AI-SENTRY system design is **complete and ready for implementation**.
+The Sentry\u0278 system design is **complete and ready for implementation**.
 
 All critical architectural decisions have been made and documented.
 All 13 identified gaps have resolution paths defined.
@@ -1271,7 +1271,7 @@ Phase 8:  3 weeks   Desktop UI (wiring backend to UI)
 Phase 9:  2 weeks   Website (parallel with Phase 8)
 Phase 10: 1 week    Integration testing
 Phase 11: 1 week    Launch preparation
-──────────────────
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 Total:    ~21 weeks (~5 months) for 2 developers
 ```
 
@@ -1280,5 +1280,6 @@ This estimate assumes full-time work on the project. Part-time development exten
 ---
 
 *End of Final Consolidation Document v1.0*
-*This document represents the complete, validated, implementation-ready state of the AI-SENTRY project.*
+*This document represents the complete, validated, implementation-ready state of the Sentry\u0278 project.*
 *No further design phases are required. Phase 1 implementation begins next.*
+

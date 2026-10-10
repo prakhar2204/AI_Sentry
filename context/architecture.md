@@ -1,4 +1,4 @@
-﻿# AI-SENTRY — Architecture Reference
+# Sentryɸ — Architecture Reference
 
 **Last Updated:** 2026-09-13  
 **Phase:** 0b — Documentation Foundation  

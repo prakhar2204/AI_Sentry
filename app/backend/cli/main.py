@@ -1,5 +1,5 @@
 """
-AI-SENTRY -- CLI Entry Point
+Sentryɸ -- CLI Entry Point
 app/backend/cli/main.py
 
 Parses top-level commands and dispatches to the appropriate
@@ -68,17 +68,17 @@ VALID_MODES = (MODE_API, MODE_LOCAL)
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="ai-sentry",
+        prog="sentryphi",
         description=(
-            "AI-SENTRY -- LLM Security Orchestration Platform\n"
-            "Run multi-engine adversarial scans on language models."
+            "Sentryɸ -- LLM Pre-Deployment Security Platform\n"
+            "Run multi-layer adversarial scans on language models."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         "--version",
         action="version",
-        version=f"AI-SENTRY {__version__}",
+        version=f"Sentryɸ {__version__}",
     )
 
     subparsers = parser.add_subparsers(
@@ -180,7 +180,7 @@ def build_parser() -> argparse.ArgumentParser:
     # ── version ───────────────────────────────
     subparsers.add_parser(
         "version",
-        help="Print the AI-SENTRY version and exit.",
+        help="Print the Sentryɸ version and exit.",
     )
 
     return parser
@@ -322,14 +322,14 @@ def handle_healthcheck() -> int:
     No consent required -- read-only operation.
     """
     # TODO (Phase 1d): Replace with real EnvironmentChecker implementation.
-    print("\nAI-SENTRY -- Environment Health Check\n")
+    print("\nSentryɸ -- Environment Health Check\n")
     print("  [Phase 1 placeholder] Health check logic will be implemented")
     print("  as part of the EnvironmentChecker module in Phase 1d.\n")
     return 0
 
 
 def handle_version() -> int:
-    print(f"\nAI-SENTRY {__version__}\n")
+    print(f"\nSentryɸ {__version__}\n")
     return 0
 
 

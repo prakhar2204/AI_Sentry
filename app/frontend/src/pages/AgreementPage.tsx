@@ -1,5 +1,5 @@
 /**
- * AI-SENTRY -- Agreement Page (Screen 1)
+ * Sentryɸ -- Agreement Page (Screen 1)
  * pages/AgreementPage.tsx
  *
  * Entry point of the application. Displays:
@@ -75,7 +75,7 @@ export function AgreementPage({ onAccept }: AgreementPageProps) {
           <h2 className="agreement-page__section-title">Terms of Use</h2>
           <div className="agreement-page__section-body">
             <p>
-              By using AI Sentry, you agree to the following terms:
+              By using Sentryɸ, you agree to the following terms:
             </p>
             <ol className="agreement-page__list">
               <li>
@@ -84,7 +84,7 @@ export function AgreementPage({ onAccept }: AgreementPageProps) {
                 Unauthorized scanning may violate applicable laws.
               </li>
               <li>
-                <strong>Accuracy Disclaimer.</strong> AI Sentry provides
+                <strong>Accuracy Disclaimer.</strong> Sentryɸ provides
                 automated security assessments. Results are advisory and do
                 not constitute a guarantee of security or compliance.
               </li>
@@ -113,7 +113,7 @@ export function AgreementPage({ onAccept }: AgreementPageProps) {
                 or findings are transmitted to external servers.
               </li>
               <li>
-                <strong>No Data Collection.</strong> AI Sentry does not collect
+                <strong>No Data Collection.</strong> Sentryɸ does not collect
                 personal information, usage analytics, or telemetry data.
               </li>
               <li>
@@ -131,7 +131,7 @@ export function AgreementPage({ onAccept }: AgreementPageProps) {
           <div className="agreement-page__section-body">
             <ol className="agreement-page__list">
               <li>
-                <strong>Security Scanning Tool.</strong> AI Sentry performs
+                <strong>Security Scanning Tool.</strong> Sentryɸ performs
                 automated security probes against AI and LLM systems to
                 identify vulnerabilities such as prompt injection, jailbreak
                 susceptibility, data leakage, and harmful output generation.

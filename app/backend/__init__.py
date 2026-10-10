@@ -1,1 +1,1 @@
-"""AI-SENTRY backend package."""
+"""Sentryɸ backend package."""

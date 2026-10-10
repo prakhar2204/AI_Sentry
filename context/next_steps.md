@@ -1,4 +1,4 @@
-# AI-SENTRY — Next Steps
+# Sentryɸ — Next Steps
 
 **Last Updated:** 2026-10-03
 **Current Phase:** Phase 6d COMPLETE — Scan Progress Screen (Screen 5)

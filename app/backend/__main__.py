@@ -1,8 +1,8 @@
 """
-AI-SENTRY — Package entry point.
+Sentryɸ — Package entry point.
 
 Allows running the CLI with:
-    python -m aisentry <command> [options]
+    python -m sentryphi <command> [options]
 """
 
 from cli.main import main
