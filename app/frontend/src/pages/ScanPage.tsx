@@ -29,7 +29,9 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useScanContext } from "../store/ScanContext";
-import { SCAN_ACTIONS } from "../store/actions";
+import { useReportContext } from "../store/ReportContext";
+import { SCAN_ACTIONS, REPORT_ACTIONS } from "../store/actions";
+import { buildSimulatedReport } from "../store/ReportContext";
 import { PageHeader } from "../components/layout/PageHeader";
 import { AlertBanner } from "../components/feedback/AlertBanner";
 import { startScan, buildScanConfig } from "../services/scanService";
@@ -85,6 +87,7 @@ function statusLabel(status: CategoryState["status"]): string {
 
 export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
   const { state, dispatch } = useScanContext();
+  const { dispatch: reportDispatch } = useReportContext();
   const exec = state.scan_execution;
 
   // ── Local UI state ──
@@ -197,6 +200,28 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
   const handleCancelDismiss = useCallback(() => {
     setShowCancelConfirm(false);
   }, []);
+
+  // ── DEV: Skip scan — injects simulated report and navigates to results ──
+  const handleDevSkip = useCallback(() => {
+    // Cancel any running scan controller
+    if (controllerRef.current) {
+      controllerRef.current.cancel();
+    }
+    // Build and inject a simulated report
+    const FALLBACK_CATEGORIES = ["prompt_injection", "jailbreak", "data_leak", "harmful_output"];
+    const effectiveCats = state.categories && state.categories.length > 0
+      ? state.categories
+      : FALLBACK_CATEGORIES;
+    const simReport = buildSimulatedReport(
+      state.target || "https://dev-bypass.example.com",
+      state.mode || "api",
+      state.scan_depth || "standard",
+      effectiveCats
+    );
+    reportDispatch({ type: REPORT_ACTIONS.SET_REPORT, payload: simReport });
+    dispatch({ type: SCAN_ACTIONS.SCAN_COMPLETE });
+    onComplete();
+  }, [state.target, state.mode, state.scan_depth, state.categories, reportDispatch, dispatch, onComplete]);
 
   // ── Retry after failure ──
   const handleRetry = useCallback(() => {
@@ -380,6 +405,23 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
                 >
                   Cancel Scan
                 </button>
+
+                {/* ── DEV MODE: Skip scan bypass ── */}
+                <div className="scan-page__dev-bypass" id="scan-dev-bypass">
+                  <div className="scan-page__dev-bypass-label">DEV MODE</div>
+                  <button
+                    type="button"
+                    className="button scan-page__dev-bypass-btn"
+                    onClick={handleDevSkip}
+                    id="scan-dev-skip-btn"
+                    title="Inject simulated report and skip to results (development only)"
+                  >
+                    ⚡ Skip Scan (inject simulated report)
+                  </button>
+                  <div className="scan-page__dev-bypass-note">
+                    For testing only. Injects a simulated assessment report and navigates to results.
+                  </div>
+                </div>
               </div>
             )}
 

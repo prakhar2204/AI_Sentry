@@ -103,6 +103,19 @@ export const REPORT_ACTIONS = {
 
   /** Reset export status */
   EXPORT_RESET: "EXPORT_RESET",
+
+  /**
+   * Toggle a recommendation's reviewed state.
+   * Payload: category string (the recommendation key).
+   * Session-only — does not survive app restart.
+   */
+  TOGGLE_REC_REVIEW: "TOGGLE_REC_REVIEW",
+
+  /** Mark a recommendation as reviewed (explicit user action). */
+  SET_REC_REVIEWED: "SET_REC_REVIEWED",
+
+  /** Clear all review marks (reset checklist). */
+  CLEAR_REC_REVIEWS: "CLEAR_REC_REVIEWS",
 } as const;
 
 // ─────────────────────────────────────────────

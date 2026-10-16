@@ -15,12 +15,20 @@
 
 import React, { useState, useCallback } from "react";
 import { ScanProvider, useScanContext } from "./store/ScanContext";
+import { ReportProvider } from "./store/ReportContext";
 import { useNavigation, type ScreenId } from "./hooks/useNavigation";
 import { AgreementPage } from "./pages/AgreementPage";
 import { InputPage } from "./pages/InputPage";
 import { ConfigPage } from "./pages/ConfigPage";
 import { EstimatePage } from "./pages/EstimatePage";
 import { ScanPage } from "./pages/ScanPage";
+import { ResultsPage } from "./pages/ResultsPage";
+import { ActionsPage } from "./pages/ActionsPage";
+import { ExportPage } from "./pages/ExportPage";
+import { DeployConfigPage } from "./pages/DeployConfigPage";
+import { CloudComparePage } from "./pages/CloudComparePage";
+import { DeployExecutePage } from "./pages/DeployExecutePage";
+import { DeployProvider } from "./store/DeployContext";
 import { StepNav, WIZARD_STEPS } from "./components/layout/StepNav";
 import { ThemeToggle } from "./components/layout/ThemeToggle";
 
@@ -43,7 +51,7 @@ function PlaceholderPage({ name }: { name: string }) {
 
 const STEP_NAV_SCREENS = new Set([
   "input", "config", "confirm", "scan", "results",
-  "actions", "export",
+  "actions", "export", "deploy-config", "deploy-compare", "deploy-execute",
 ]);
 
 // ─────────────────────────────────────────────
@@ -123,22 +131,54 @@ function ScreenRouter() {
         );
 
       case "results":
-        return <PlaceholderPage name="Results Dashboard" />;
+        return (
+          <ResultsPage
+            onViewActions={() => handleNavigate("actions")}
+            onExport={() => handleNavigate("export")}
+            onNewScan={() => navigateTo("input")}
+          />
+        );
 
       case "actions":
-        return <PlaceholderPage name="Recommendations" />;
+        return (
+          <ActionsPage
+            onBack={() => navigateTo("results")}
+            onExport={() => handleNavigate("export")}
+          />
+        );
 
       case "export":
-        return <PlaceholderPage name="Export Report" />;
+        return (
+          <ExportPage
+            onBackToResults={() => navigateTo("results")}
+            onBackToActions={() => navigateTo("actions")}
+            onProceedToDeploy={() => handleNavigate("deploy-config")}
+          />
+        );
 
       case "deploy-config":
-        return <PlaceholderPage name="Deploy Configuration" />;
+        return (
+          <DeployConfigPage
+            onBack={() => navigateTo("export")}
+            onProceed={() => navigateTo("deploy-compare")}
+          />
+        );
 
       case "deploy-compare":
-        return <PlaceholderPage name="Cloud Comparison" />;
+        return (
+          <CloudComparePage
+            onBack={() => navigateTo("deploy-config")}
+            onProceed={() => navigateTo("deploy-execute")}
+          />
+        );
 
       case "deploy-execute":
-        return <PlaceholderPage name="Deploy Execution" />;
+        return (
+          <DeployExecutePage
+            onBack={() => navigateTo("deploy-compare")}
+            onBackToConfig={() => navigateTo("deploy-config")}
+          />
+        );
 
       default:
         return <PlaceholderPage name="Unknown Screen" />;
@@ -174,21 +214,25 @@ function ScreenRouter() {
 export default function App() {
   return (
     <ScanProvider>
-      <div className="app-shell">
-        {/* ── Header ── */}
-        <header className="app-shell__header">
-          <div className="app-shell__brand">
-            <div className="app-shell__brand-icon">S</div>
-            Sentryɸ
-          </div>
-          <div className="app-shell__controls">
-            <ThemeToggle />
-          </div>
-        </header>
+      <ReportProvider>
+        <DeployProvider>
+        <div className="app-shell">
+          {/* ── Header ── */}
+          <header className="app-shell__header">
+            <div className="app-shell__brand">
+              <div className="app-shell__brand-icon">S</div>
+              Sentryɸ
+            </div>
+            <div className="app-shell__controls">
+              <ThemeToggle />
+            </div>
+          </header>
 
-        {/* ── Content ── */}
-        <ScreenRouter />
-      </div>
+          {/* ── Content ── */}
+          <ScreenRouter />
+        </div>
+        </DeployProvider>
+      </ReportProvider>
     </ScanProvider>
   );
 }
