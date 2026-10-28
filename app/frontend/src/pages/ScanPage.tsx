@@ -35,6 +35,8 @@ import { buildSimulatedReport } from "../store/ReportContext";
 import { PageHeader } from "../components/layout/PageHeader";
 import { AlertBanner } from "../components/feedback/AlertBanner";
 import { startScan, buildScanConfig } from "../services/scanService";
+import { startIpcScan } from "../services/ipcScanService";
+import { isElectron } from "../utils/platform";
 import {
   type ScanController,
   type ScanLifecycleStage,
@@ -138,15 +140,16 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
       effectiveCategories
     );
 
-    const controller = startScan(config, {
-      onProgress(event) {
+    // Shared event handlers (same for IPC and simulator)
+    const sharedHandlers = {
+      onProgress(event: Parameters<typeof startScan>[1]["onProgress"] extends (e: infer E) => void ? E : never) {
         if (!mountedRef.current) return;
         dispatch({
           type: SCAN_ACTIONS.SCAN_PROGRESS_EVENT,
           payload: event,
         });
       },
-      onActivity(entry) {
+      onActivity(entry: Parameters<typeof startScan>[1]["onActivity"] extends (e: infer E) => void ? E : never) {
         if (!mountedRef.current) return;
         dispatch({
           type: SCAN_ACTIONS.SCAN_ACTIVITY_EVENT,
@@ -157,7 +160,7 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
         if (!mountedRef.current) return;
         setIsCompleting(true);
       },
-      onError(error, details) {
+      onError(error: string, details?: string) {
         if (!mountedRef.current) return;
         dispatch({
           type: SCAN_ACTIONS.SCAN_FAILED,
@@ -165,7 +168,46 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
           details,
         } as any);
       },
-    });
+    };
+
+    let controller: ScanController;
+
+    if (isElectron() && window.electronAPI) {
+      // ── Electron mode: real Python scan via IPC ──────────────────────────
+      controller = startIpcScan(
+        config,
+        sharedHandlers,
+        (report) => {
+          // Wire the real Python report into ReportContext
+          if (mountedRef.current) {
+            reportDispatch({
+              type: REPORT_ACTIONS.SET_REPORT,
+              payload: report,
+            });
+          }
+        }
+      );
+    } else {
+      // ── Browser mode: deterministic simulator ────────────────────────────
+      controller = startScan(config, {
+        ...sharedHandlers,
+        onComplete() {
+          if (!mountedRef.current) return;
+          // Build synthetic report for browser-mode results screens
+          const simulatedReport = buildSimulatedReport(
+            state.target || "https://api.example.com",
+            state.mode || "api",
+            state.scan_depth || "standard",
+            effectiveCategories
+          );
+          reportDispatch({
+            type: REPORT_ACTIONS.SET_REPORT,
+            payload: simulatedReport,
+          });
+          setIsCompleting(true);
+        },
+      });
+    }
 
     controllerRef.current = controller;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

@@ -1,16 +1,16 @@
 /**
- * AI-SENTRY -- Theme System
+ * Sentryɸ — Theme System
  * styles/theme.css
  *
  * Dark (default) and light themes via CSS custom properties.
  * Toggle by adding data-theme="light" to <html>.
  *
- * Color naming:
- *   bg-*     = backgrounds
- *   fg-*     = text / foreground
- *   border-* = borders
- *   accent-* = interactive / brand
- *   status-* = semantic (success, warning, error, info)
+ * Design philosophy:
+ *   - Near-black backgrounds, not blue-tinted
+ *   - Foreground via rgba for natural opacity hierarchy
+ *   - ONE accent color (blue), used sparingly for interactive elements
+ *   - Hairline borders via rgba overlays
+ *   - Status colors (green/amber/red) for meaning only
  */
 
 /* ═══════════════════════════════════════════
@@ -20,68 +20,70 @@
 :root,
 [data-theme="dark"] {
   /* ─── Backgrounds ─── */
-  --bg-app: #0f1117;
-  --bg-surface: #161922;
-  --bg-raised: #1c2030;
-  --bg-inset: #0c0e14;
+  --bg-app: #0a0a0b;
+  --bg-surface: #141415;
+  --bg-raised: #1a1a1c;
+  --bg-inset: #0e0e0f;
+  --bg-hover: #1f1f22;
   --bg-overlay: rgba(0, 0, 0, 0.6);
 
   /* ─── Foreground / Text ─── */
-  --fg-default: #d1d5e0;
-  --fg-muted: #8b92a8;
-  --fg-faint: #5a6178;
-  --fg-inverse: #0f1117;
+  --fg-default: rgba(255, 255, 255, 0.88);
+  --fg-muted: rgba(255, 255, 255, 0.55);
+  --fg-faint: rgba(255, 255, 255, 0.35);
+  --fg-inverse: #0a0a0b;
   --fg-on-accent: #ffffff;
 
-  /* ─── Borders ─── */
-  --border-default: #262b3a;
-  --border-strong: #363d52;
+  /* ─── Borders (hairline, rgba-based) ─── */
+  --border-default: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.10);
   --border-focus: #5b8def;
 
-  /* ─── Accent / Brand ─── */
+  /* ─── Accent / Brand (ONE color, used sparingly) ─── */
   --accent-primary: #5b8def;
-  --accent-primary-hover: #6d9bff;
-  --accent-primary-pressed: #4a7bdd;
-  --accent-secondary: #2a3248;
-  --accent-secondary-hover: #333d55;
+  --accent-primary-hover: #4a7bdd;
+  --accent-primary-pressed: #3a6bcd;
+  --accent-primary-subtle: rgba(91, 141, 239, 0.08);
+  --accent-secondary: #1f1f22;
+  --accent-secondary-hover: #262628;
 
-  /* ─── Status Colors ─── */
+  /* ─── Status Colors (semantic only) ─── */
   --status-success: #3dbc6a;
-  --status-success-bg: rgba(61, 188, 106, 0.10);
-  --status-success-border: rgba(61, 188, 106, 0.25);
+  --status-success-bg: rgba(61, 188, 106, 0.08);
+  --status-success-border: rgba(61, 188, 106, 0.15);
 
   --status-warning: #e0a030;
-  --status-warning-bg: rgba(224, 160, 48, 0.10);
-  --status-warning-border: rgba(224, 160, 48, 0.25);
+  --status-warning-bg: rgba(224, 160, 48, 0.08);
+  --status-warning-border: rgba(224, 160, 48, 0.15);
 
   --status-error: #e05454;
-  --status-error-bg: rgba(224, 84, 84, 0.10);
-  --status-error-border: rgba(224, 84, 84, 0.25);
+  --status-error-bg: rgba(224, 84, 84, 0.08);
+  --status-error-border: rgba(224, 84, 84, 0.15);
 
   --status-info: #5b8def;
-  --status-info-bg: rgba(91, 141, 239, 0.10);
-  --status-info-border: rgba(91, 141, 239, 0.25);
+  --status-info-bg: rgba(91, 141, 239, 0.08);
+  --status-info-border: rgba(91, 141, 239, 0.15);
 
   /* ─── Interactive States ─── */
-  --input-bg: #0c0e14;
-  --input-border: #262b3a;
-  --input-border-hover: #363d52;
+  --input-bg: #0e0e0f;
+  --input-border: rgba(255, 255, 255, 0.08);
+  --input-border-hover: rgba(255, 255, 255, 0.12);
   --input-border-focus: #5b8def;
-  --input-placeholder: #5a6178;
+  --input-placeholder: rgba(255, 255, 255, 0.25);
 
   /* ─── Step Nav ─── */
   --step-bg: transparent;
-  --step-active-bg: rgba(91, 141, 239, 0.12);
+  --step-active-bg: rgba(91, 141, 239, 0.08);
   --step-active-border: #5b8def;
   --step-complete-fg: var(--status-success);
   --step-disabled-fg: var(--fg-faint);
 
   /* ─── Progress ─── */
-  --progress-track: #1c2030;
+  --progress-track: #1a1a1c;
   --progress-fill: #5b8def;
 
   /* ─── Scrollbar ─── */
-  --scrollbar-thumb: #2a3248;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.08);
   --scrollbar-track: transparent;
 
   color-scheme: dark;
@@ -92,65 +94,67 @@
    ═══════════════════════════════════════════ */
 
 [data-theme="light"] {
-  --bg-app: #f5f6f8;
+  --bg-app: #f8f8f8;
   --bg-surface: #ffffff;
   --bg-raised: #ffffff;
-  --bg-inset: #eef0f4;
+  --bg-inset: #f0f0f2;
+  --bg-hover: #f0f0f2;
   --bg-overlay: rgba(0, 0, 0, 0.3);
 
-  --fg-default: #1a1e2c;
-  --fg-muted: #5a6178;
-  --fg-faint: #8b92a8;
+  --fg-default: rgba(0, 0, 0, 0.85);
+  --fg-muted: rgba(0, 0, 0, 0.50);
+  --fg-faint: rgba(0, 0, 0, 0.30);
   --fg-inverse: #ffffff;
   --fg-on-accent: #ffffff;
 
-  --border-default: #dce0e8;
-  --border-strong: #c4c9d4;
+  --border-default: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.10);
   --border-focus: #4a7bdd;
 
   --accent-primary: #4a7bdd;
   --accent-primary-hover: #3a6bcd;
   --accent-primary-pressed: #2a5bbd;
-  --accent-secondary: #eef0f4;
-  --accent-secondary-hover: #e2e5ec;
+  --accent-primary-subtle: rgba(74, 123, 221, 0.06);
+  --accent-secondary: #f0f0f2;
+  --accent-secondary-hover: #e6e6ea;
 
   --status-success: #2a9d50;
-  --status-success-bg: rgba(42, 157, 80, 0.08);
-  --status-success-border: rgba(42, 157, 80, 0.20);
+  --status-success-bg: rgba(42, 157, 80, 0.06);
+  --status-success-border: rgba(42, 157, 80, 0.12);
 
   --status-warning: #c08820;
-  --status-warning-bg: rgba(192, 136, 32, 0.08);
-  --status-warning-border: rgba(192, 136, 32, 0.20);
+  --status-warning-bg: rgba(192, 136, 32, 0.06);
+  --status-warning-border: rgba(192, 136, 32, 0.12);
 
   --status-error: #cc3838;
-  --status-error-bg: rgba(204, 56, 56, 0.08);
-  --status-error-border: rgba(204, 56, 56, 0.20);
+  --status-error-bg: rgba(204, 56, 56, 0.06);
+  --status-error-border: rgba(204, 56, 56, 0.12);
 
   --status-info: #4a7bdd;
-  --status-info-bg: rgba(74, 123, 221, 0.08);
-  --status-info-border: rgba(74, 123, 221, 0.20);
+  --status-info-bg: rgba(74, 123, 221, 0.06);
+  --status-info-border: rgba(74, 123, 221, 0.12);
 
   --input-bg: #ffffff;
-  --input-border: #dce0e8;
-  --input-border-hover: #c4c9d4;
+  --input-border: rgba(0, 0, 0, 0.10);
+  --input-border-hover: rgba(0, 0, 0, 0.15);
   --input-border-focus: #4a7bdd;
-  --input-placeholder: #8b92a8;
+  --input-placeholder: rgba(0, 0, 0, 0.25);
 
   --step-bg: transparent;
-  --step-active-bg: rgba(74, 123, 221, 0.08);
+  --step-active-bg: rgba(74, 123, 221, 0.06);
   --step-active-border: #4a7bdd;
   --step-complete-fg: var(--status-success);
   --step-disabled-fg: var(--fg-faint);
 
-  --progress-track: #eef0f4;
+  --progress-track: #f0f0f2;
   --progress-fill: #4a7bdd;
 
-  --scrollbar-thumb: #c4c9d4;
+  --scrollbar-thumb: rgba(0, 0, 0, 0.10);
   --scrollbar-track: transparent;
 
-  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.05);
-  --shadow-default: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-raised: 0 4px 20px rgba(0, 0, 0, 0.10);
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-default: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-raised: 0 4px 12px rgba(0, 0, 0, 0.08);
 
   color-scheme: light;
 }

@@ -44,6 +44,8 @@ app/src-tauri/WixTools/
 website/node_modules/
 website/.next/
 website/out/
+app/frontend/node_modules/
+app/frontend/release/
 
 # Scan artifacts (never committed — may contain sensitive probe data)
 scan_artifacts/

@@ -31,6 +31,8 @@ import { DeployExecutePage } from "./pages/DeployExecutePage";
 import { DeployProvider } from "./store/DeployContext";
 import { StepNav, WIZARD_STEPS } from "./components/layout/StepNav";
 import { ThemeToggle } from "./components/layout/ThemeToggle";
+import { Logo } from "./components/Logo";
+import { isElectron } from "./utils/platform";
 
 // ─────────────────────────────────────────────
 //  Placeholder pages (to be implemented)
@@ -220,12 +222,40 @@ export default function App() {
           {/* ── Header ── */}
           <header className="app-shell__header">
             <div className="app-shell__brand">
-              <div className="app-shell__brand-icon">S</div>
+              <div className="app-shell__brand-icon"><Logo size={22} animate={false} /></div>
               Sentryɸ
             </div>
             <div className="app-shell__controls">
-              <ThemeToggle />
-            </div>
+            {/* Mode indicator — Desktop (Electron) or Browser (simulated) */}
+            <span
+              className="mode-indicator"
+              title={isElectron() ? "Running with Python backend" : "Running in browser simulation mode"}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.03em",
+                padding: "3px 10px",
+                borderRadius: "20px",
+                background: isElectron()
+                  ? "rgba(34,197,94,0.12)"
+                  : "rgba(99,102,241,0.12)",
+                color: isElectron() ? "var(--success, #22c55e)" : "var(--accent-primary, #6366f1)",
+                border: isElectron()
+                  ? "1px solid rgba(34,197,94,0.3)"
+                  : "1px solid rgba(99,102,241,0.3)",
+                cursor: "default",
+                userSelect: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span style={{ fontSize: "8px" }}>{isElectron() ? "🟢" : "🔵"}</span>
+              {isElectron() ? "Desktop Mode" : "Browser Mode"}
+            </span>
+            <ThemeToggle />
+          </div>
           </header>
 
           {/* ── Content ── */}

@@ -40,6 +40,7 @@ import { useReportContext } from "../store/ReportContext";
 import { REPORT_ACTIONS } from "../store/actions";
 import { PageHeader } from "../components/layout/PageHeader";
 import { AlertBanner } from "../components/feedback/AlertBanner";
+import { isElectron } from "../utils/platform";
 import type { ScanReport } from "../services/reportTypes";
 import {
   categoryLabel,
@@ -64,7 +65,7 @@ interface ExportPageProps {
 //  Export format definitions
 // ─────────────────────────────────────────────
 
-type ExportFormat = "json" | "txt" | "html";
+type ExportFormat = "json" | "txt" | "html" | "pdf";
 
 interface FormatDef {
   id:        ExportFormat;
@@ -72,6 +73,7 @@ interface FormatDef {
   ext:       string;
   mime:      string;
   purpose:   string;
+  electronOnly?: boolean;  // true = requires Electron/Python
 }
 
 const FORMATS: FormatDef[] = [
@@ -95,6 +97,14 @@ const FORMATS: FormatDef[] = [
     ext:     "html",
     mime:    "text/html",
     purpose: "Standalone readable document. Viewable offline in any browser, no external assets.",
+  },
+  {
+    id:      "pdf",
+    label:   "PDF",
+    ext:     "pdf",
+    mime:    "application/pdf",
+    purpose: "Professional PDF document. Requires Desktop Mode and WeasyPrint (falls back to HTML if unavailable).",
+    electronOnly: true,
   },
 ];
 
@@ -527,25 +537,43 @@ interface FormatCardProps {
 }
 
 function FormatCard({ fmt, isExporting, lastExported, onExport }: FormatCardProps) {
+  const inBrowserMode = !isElectron();
+  const unavailable   = fmt.electronOnly && inBrowserMode;
+
   return (
     <div
-      className={`export-fmt-card${lastExported ? " export-fmt-card--done" : ""}`}
+      className={`export-fmt-card${lastExported ? " export-fmt-card--done" : ""}${unavailable ? " export-fmt-card--unavailable" : ""}`}
       id={`export-fmt-${fmt.id}`}
     >
       <div className="export-fmt-card__top">
         <div className="export-fmt-card__badge">{fmt.label}</div>
         <div className="export-fmt-card__ext">.{fmt.ext}</div>
+        {unavailable && (
+          <span style={{ fontSize: "11px", color: "var(--text-muted)", marginLeft: "auto" }}>
+            Desktop Only
+          </span>
+        )}
       </div>
       <p className="export-fmt-card__desc">{fmt.purpose}</p>
       <button
         type="button"
-        className={`button button--primary export-fmt-card__btn${isExporting ? " button--loading" : ""}`}
-        onClick={onExport}
-        disabled={isExporting}
+        className={`button button--primary export-fmt-card__btn${isExporting ? " button--loading" : ""}${unavailable ? " button--disabled" : ""}`}
+        onClick={unavailable ? undefined : onExport}
+        disabled={isExporting || unavailable}
         id={`export-btn-${fmt.id}`}
         aria-label={`Download report as ${fmt.label}`}
+        title={unavailable ? "PDF export requires Desktop Mode (Electron + Python)" : undefined}
       >
-        {isExporting ? "Downloading…" : lastExported ? "✓ Downloaded" : `↓ Download ${fmt.label}`}
+        {isExporting
+          ? "Exporting…"
+          : lastExported
+          ? "✓ Saved"
+          : unavailable
+          ? `${fmt.label} — Desktop Mode only`
+          : isElectron()
+          ? `↓ Save ${fmt.label}`
+          : `↓ Download ${fmt.label}`
+        }
       </button>
     </div>
   );
@@ -585,11 +613,16 @@ function EmptyNoReport({ onBack }: { onBack: () => void }) {
 export function ExportPage({ onBackToResults, onBackToActions, onProceedToDeploy }: ExportPageProps) {
   const { state: reportState, dispatch } = useReportContext();
   const report = reportState.report;
+  const inElectron = isElectron();
 
-  // Per-format in-progress tracker (prevents double-click duplicate exports)
+  // Per-format in-progress tracker
   const [exportingFmt, setExportingFmt] = useState<ExportFormat | null>(null);
-  // Track which formats have been successfully downloaded this session
+  // Track which formats have been successfully exported this session
   const [downloadedFmts, setDownloadedFmts] = useState<Set<ExportFormat>>(new Set());
+  // Last saved file path (Electron mode)
+  const [lastSavedPath, setLastSavedPath]   = useState<string | null>(null);
+  // Fallback notice (e.g. WeasyPrint not available)
+  const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
 
   // Guard: no report
   if (!report) {
@@ -599,39 +632,74 @@ export function ExportPage({ onBackToResults, onBackToActions, onProceedToDeploy
   const isSimulated = report.meta.scan_id.startsWith("sim-");
 
   const handleExport = useCallback(async (fmt: ExportFormat) => {
-    if (exportingFmt !== null) return; // block while another export is running
-
+    if (exportingFmt !== null) return;
     setExportingFmt(fmt);
+    setLastSavedPath(null);
+    setFallbackNotice(null);
     dispatch({ type: REPORT_ACTIONS.EXPORT_START });
 
     try {
       const fmtDef = FORMATS.find((f) => f.id === fmt)!;
 
-      let content: string;
-      if (fmt === "json") {
-        content = serializeToJson(report);
-      } else if (fmt === "txt") {
-        content = serializeToTxt(report);
+      if (inElectron && window.electronAPI) {
+        // ── Desktop Mode: Python export + native save dialog ──────────────
+        const result = await window.electronAPI.exportReport(report, fmt);
+        if (result.saved && result.filePath) {
+          dispatch({ type: REPORT_ACTIONS.EXPORT_SUCCESS, payload: result.filePath });
+          setDownloadedFmts((prev) => new Set(prev).add(fmt));
+          setLastSavedPath(result.filePath);
+          if (result.fallback) setFallbackNotice(result.fallback);
+        } else if (!result.saved && !result.filePath) {
+          // User cancelled dialog — silent
+          dispatch({ type: REPORT_ACTIONS.EXPORT_RESET });
+        } else {
+          dispatch({ type: REPORT_ACTIONS.EXPORT_FAILED, payload: result.error ?? "Export failed" });
+        }
       } else {
-        content = serializeToHtml(report);
+        // ── Browser Mode: Blob download ───────────────────────────────────
+        let content: string;
+        if (fmt === "json") {
+          content = serializeToJson(report);
+        } else if (fmt === "txt") {
+          content = serializeToTxt(report);
+        } else if (fmt === "html") {
+          content = serializeToHtml(report);
+        } else {
+          // PDF not available in browser
+          dispatch({ type: REPORT_ACTIONS.EXPORT_FAILED, payload: "PDF export requires Desktop Mode" });
+          setExportingFmt(null);
+          return;
+        }
+        const filename = buildFilename(report, fmtDef.ext);
+        triggerDownload(content, filename, fmtDef.mime);
+        dispatch({ type: REPORT_ACTIONS.EXPORT_SUCCESS, payload: filename });
+        setDownloadedFmts((prev) => new Set(prev).add(fmt));
       }
-
-      const filename = buildFilename(report, fmtDef.ext);
-      triggerDownload(content, filename, fmtDef.mime);
-
-      dispatch({ type: REPORT_ACTIONS.EXPORT_SUCCESS, payload: filename });
-      setDownloadedFmts((prev) => new Set(prev).add(fmt));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown export error";
       dispatch({ type: REPORT_ACTIONS.EXPORT_FAILED, payload: msg });
     } finally {
       setExportingFmt(null);
     }
-  }, [report, exportingFmt, dispatch]);
+  }, [report, exportingFmt, dispatch, inElectron]);
+
+  const handleOpenFile = useCallback(async () => {
+    if (!lastSavedPath || !window.electronAPI) return;
+    await window.electronAPI.openFilePath(lastSavedPath);
+  }, [lastSavedPath]);
+
+  const handleOpenFolder = useCallback(async () => {
+    if (!lastSavedPath || !window.electronAPI) return;
+    await window.electronAPI.openFileFolder(lastSavedPath);
+  }, [lastSavedPath]);
 
   const handleDismissError = useCallback(() => {
     dispatch({ type: REPORT_ACTIONS.EXPORT_RESET });
   }, [dispatch]);
+
+  const handleDismissFallback = useCallback(() => {
+    setFallbackNotice(null);
+  }, []);
 
   return (
     <div className="export-page" id="export-page">
@@ -658,6 +726,71 @@ export function ExportPage({ onBackToResults, onBackToActions, onProceedToDeploy
           message={`Export failed: ${reportState.export_error}`}
           onDismiss={handleDismissError}
         />
+      )}
+
+      {/* Fallback notice (e.g. PDF → HTML because WeasyPrint not installed) */}
+      {fallbackNotice && (
+        <AlertBanner
+          type="info"
+          message={fallbackNotice}
+          onDismiss={handleDismissFallback}
+        />
+      )}
+
+      {/* Export success banner — Desktop mode shows file path + open buttons */}
+      {reportState.export_status === "success" && lastSavedPath && inElectron && (
+        <div
+          id="export-success-banner"
+          style={{
+            background: "rgba(34,197,94,0.08)",
+            border: "1px solid rgba(34,197,94,0.25)",
+            borderRadius: "10px",
+            padding: "14px 18px",
+            marginBottom: "16px",
+            display: "flex",
+            alignItems: "center",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <span style={{ color: "#22c55e", fontSize: "18px" }}>✓</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, color: "#22c55e", fontSize: "13px" }}>
+              Report saved successfully
+            </div>
+            <div
+              style={{
+                fontSize: "12px",
+                color: "var(--text-muted)",
+                marginTop: "2px",
+                wordBreak: "break-all",
+                fontFamily: "monospace",
+              }}
+            >
+              {lastSavedPath}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
+            <button
+              type="button"
+              className="button button--secondary"
+              style={{ fontSize: "12px", padding: "6px 14px" }}
+              onClick={handleOpenFile}
+              id="export-open-file-btn"
+            >
+              Open File
+            </button>
+            <button
+              type="button"
+              className="button button--secondary"
+              style={{ fontSize: "12px", padding: "6px 14px" }}
+              onClick={handleOpenFolder}
+              id="export-show-folder-btn"
+            >
+              Show in Folder
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ── Report Preview ── */}
