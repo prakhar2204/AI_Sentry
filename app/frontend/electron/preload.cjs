@@ -102,4 +102,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /** OS platform: 'win32', 'darwin', 'linux' */
   platform: process.platform,
+
+  // ── W2: Browser launcher (OAuth flows) ─────────────────
+  /**
+   * Open a URL in the system's default browser.
+   * Used by the deploy wizard to start AWS/Azure/GCP OAuth sign-in.
+   * Main process handles this via shell.openExternal (safe — sandboxed).
+   */
+  openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
 });

@@ -196,6 +196,12 @@ export interface ScanExecutionConfig {
   categories: string[];
   total_probes: number;
   per_category_probes: Record<string, number>;
+  /** W1.1: Which engine(s) to run. Passed to Python ipc_server. */
+  engine?: "auto" | "garak" | "pyrit" | "mock";
+  /** Model name for the target (API endpoint model identifier) */
+  model_name?: string;
+  /** API key if required by the endpoint */
+  api_key?: string;
 }
 
 /**

@@ -30,7 +30,8 @@ export type ScreenId =
   | "export"
   | "deploy-config"
   | "deploy-compare"
-  | "deploy-execute";
+  | "deploy-execute"
+  | "deploy-flow";
 
 const LINEAR_SCREENS: ScreenId[] = [
   "agree",

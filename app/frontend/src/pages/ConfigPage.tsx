@@ -27,6 +27,7 @@ import {
   useScanContext,
   type ScanDepth,
   type ScanStrategy,
+  type ScanEngine,
 } from "../store/ScanContext";
 import { SCAN_ACTIONS } from "../store/actions";
 import { PageHeader } from "../components/layout/PageHeader";
@@ -40,17 +41,27 @@ import { AlertBanner } from "../components/feedback/AlertBanner";
 
 const ALL_CATEGORIES = [
   { value: "prompt_injection", label: "Prompt Injection" },
-  { value: "data_leak", label: "Data Leak" },
   { value: "jailbreak", label: "Jailbreak" },
-  { value: "harmful_output", label: "Harmful Output" },
+  { value: "encoding_injection", label: "Encoding Injection" },
+  { value: "data_leakage", label: "Data Leakage" },
+  { value: "malware_generation", label: "Malware Generation" },
+  { value: "toxicity", label: "Toxicity" },
 ];
 
 const ALL_CATEGORY_VALUES = ALL_CATEGORIES.map((c) => c.value);
 
 const DEPTH_OPTIONS = [
-  { value: "quick", label: "Quick (5-15 min)" },
+  { value: "quick",    label: "Quick (5-15 min)" },
   { value: "standard", label: "Standard (30-90 min)" },
-  { value: "deep", label: "Deep (2-6 hrs)" },
+  { value: "deep",     label: "Deep (2-6 hrs)" },
+];
+
+/** Engine picker options with descriptions */
+const ENGINE_OPTIONS: { value: ScanEngine; label: string; desc: string }[] = [
+  { value: "auto",  label: "Auto (Recommended)",  desc: "Run Garak + PyRIT in parallel, merge results" },
+  { value: "garak", label: "Garak Only",           desc: "NVIDIA adversarial probe framework" },
+  { value: "pyrit", label: "PyRIT Only",           desc: "Microsoft red-team attack library" },
+  { value: "mock",  label: "Mock (Testing)",       desc: "Deterministic test data — no real probes" },
 ];
 
 // ─────────────────────────────────────────────
@@ -82,6 +93,7 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
     state.categories.length > 0 ? state.categories : []
   );
   const [depth, setDepth] = useState<ScanDepth>(state.scan_depth);
+  const [engine, setEngine] = useState<ScanEngine>(state.engine);
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
   // ── Strategy options ──
@@ -165,12 +177,13 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
 
     // Update ScanContext
     dispatch({ type: SCAN_ACTIONS.SET_SCAN_STRATEGY, payload: strategy });
-    dispatch({ type: SCAN_ACTIONS.SET_CATEGORIES, payload: finalCategories });
-    dispatch({ type: SCAN_ACTIONS.SET_SCAN_DEPTH, payload: depth });
+    dispatch({ type: SCAN_ACTIONS.SET_CATEGORIES,    payload: finalCategories });
+    dispatch({ type: SCAN_ACTIONS.SET_SCAN_DEPTH,    payload: depth });
+    dispatch({ type: SCAN_ACTIONS.SET_ENGINE,         payload: engine });
     dispatch({ type: SCAN_ACTIONS.START_CONFIRMING });
 
     onContinue();
-  }, [validate, strategy, categories, depth, dispatch, onContinue]);
+  }, [validate, strategy, categories, depth, engine, dispatch, onContinue]);
 
   // ── Mode display label ──
   const modeLabel = state.mode === "api" ? "API Endpoint" : "Local Model";
@@ -249,6 +262,39 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
             onChange={(val) => setDepth(val as ScanDepth)}
             name="scan-depth"
           />
+        </section>
+
+        {/* ── Engine Selection (W1.1) ── */}
+        <section className="config-page__section">
+          <fieldset className="config-page__fieldset">
+            <legend className="config-page__legend">Scan Engine</legend>
+            <p className="config-page__hint">
+              Choose which security framework runs the probes. "Auto" is recommended for the most thorough scan.
+            </p>
+            <div className="engine-picker">
+              {ENGINE_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className={`engine-picker__card ${
+                    engine === opt.value ? "engine-picker__card--active" : ""
+                  }`}
+                  htmlFor={`engine-${opt.value}`}
+                >
+                  <input
+                    type="radio"
+                    id={`engine-${opt.value}`}
+                    name="scan-engine"
+                    value={opt.value}
+                    checked={engine === opt.value}
+                    onChange={() => setEngine(opt.value)}
+                    className="engine-picker__radio"
+                  />
+                  <span className="engine-picker__label">{opt.label}</span>
+                  <span className="engine-picker__desc">{opt.desc}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </section>
 
         {/* ── Primary Action ── */}

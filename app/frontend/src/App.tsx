@@ -29,6 +29,8 @@ import { DeployConfigPage } from "./pages/DeployConfigPage";
 import { CloudComparePage } from "./pages/CloudComparePage";
 import { DeployExecutePage } from "./pages/DeployExecutePage";
 import { DeployProvider } from "./store/DeployContext";
+import { DeployFlowProvider } from "./store/DeployFlowContext";
+import DeployFlowPage from "./pages/DeployFlowPage";
 import { StepNav, WIZARD_STEPS } from "./components/layout/StepNav";
 import { ThemeToggle } from "./components/layout/ThemeToggle";
 import { Logo } from "./components/Logo";
@@ -53,7 +55,7 @@ function PlaceholderPage({ name }: { name: string }) {
 
 const STEP_NAV_SCREENS = new Set([
   "input", "config", "confirm", "scan", "results",
-  "actions", "export", "deploy-config", "deploy-compare", "deploy-execute",
+  "actions", "export", "deploy-config", "deploy-compare", "deploy-execute", "deploy-flow",
 ]);
 
 // ─────────────────────────────────────────────
@@ -182,6 +184,9 @@ function ScreenRouter() {
           />
         );
 
+      case "deploy-flow":
+        return <DeployFlowPage />;
+
       default:
         return <PlaceholderPage name="Unknown Screen" />;
     }
@@ -218,6 +223,7 @@ export default function App() {
     <ScanProvider>
       <ReportProvider>
         <DeployProvider>
+        <DeployFlowProvider>
         <div className="app-shell">
           {/* ── Header ── */}
           <header className="app-shell__header">
@@ -261,6 +267,7 @@ export default function App() {
           {/* ── Content ── */}
           <ScreenRouter />
         </div>
+        </DeployFlowProvider>
         </DeployProvider>
       </ReportProvider>
     </ScanProvider>

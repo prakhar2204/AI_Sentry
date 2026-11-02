@@ -67,6 +67,9 @@ export const SCAN_ACTIONS = {
 
   /** Phase 6d: Activity log entry from scanService */
   SCAN_ACTIVITY_EVENT: "SCAN_ACTIVITY_EVENT",
+
+  /** W1.1: Set engine selection (auto | garak | pyrit | mock) */
+  SET_ENGINE: "SET_ENGINE",
 } as const;
 
 // ─────────────────────────────────────────────

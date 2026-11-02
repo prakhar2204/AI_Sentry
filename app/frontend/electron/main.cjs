@@ -347,6 +347,20 @@ ipcMain.handle('shell:openFolder', async (event, filePath) => {
   return { success: true };
 });
 
+/** shell:openExternal — open a URL in the system default browser (OAuth flows) */
+ipcMain.handle('shell:openExternal', async (event, url) => {
+  // Security: only allow https:// URLs to prevent protocol exploitation
+  if (typeof url !== 'string' || !url.startsWith('https://')) {
+    return { success: false, error: 'Only https:// URLs are permitted' };
+  }
+  try {
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
+});
+
 /** dialog:save — open native save dialog and return chosen path */
 ipcMain.handle('dialog:save', async (event, options) => {
   const result = await dialog.showSaveDialog(mainWindow, options || {});

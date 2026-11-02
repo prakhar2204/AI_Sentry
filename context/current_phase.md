@@ -1,87 +1,43 @@
 # Sentryɸ — Current Phase Status
 
-**Last Updated:** 2026-11-02
-**Current Phase:** P8 — Installer + Distribution (COMPLETE)
+**Last Updated:** 2026-11-03
+**Active Plan:** `context/MASTER_WORKFLOW_V2.md` (Supersedes P1–P9)
+**Current Phase:** W3 — Deploy UI + OAuth Sign-In Flow (COMPLETE & VERIFIED)
+**Next Phase to Execute:** W4 — UI Polish + Professional Animations
 
 ---
 
-## Completed Phases
+## Progress Overview (W1 – W8 Roadmap)
 
-| Phase | Name | Status | Tests |
-|-------|------|--------|-------|
-| P1    | 11-Screen Frontend UI | ✅ COMPLETE | — |
-| P2a   | Electron Shell + IPC Bridge | ✅ COMPLETE | — |
-| P2b   | Backend IPC Server (JSON Lines) | ✅ COMPLETE | 23 tests |
-| P2c   | Frontend IPC Integration | ✅ COMPLETE | — |
-| P3    | Real File Export (PDF/JSON/CSV) | ✅ COMPLETE | 46 tests |
-| P4    | Garak Engine Adapter | ✅ COMPLETE | 30 tests |
-| P5    | PyRIT Engine Adapter | ✅ COMPLETE | 30 tests |
-| P6    | Normalization + Deduplication Pipeline | ✅ COMPLETE | 50 tests |
-| P8    | Installer + Distribution | ✅ COMPLETE | — |
-
-**Total backend tests: 1105 passed, 5 skipped**
+| Phase | Description | Status | Verification / Tests |
+|-------|-------------|--------|----------------------|
+| **W1** | **Complete Core Gaps** (Engine picker, OWASP coverage grid, Recommendation engine, App icons) | ✅ COMPLETED | Unit tests passing, icons generated in `public/` |
+| **W2** | **Multi-Cloud Deploy Backend** (AWS, Azure, GCP, Private, Pricing, OAuth server, IPC) | ✅ COMPLETED | 1141 passed pytest backend tests |
+| **W3** | **Deploy UI + OAuth Sign-In Flow** (ProviderSelectScreen, ProviderConfigPanel, DeployFlowPage, unified deployTypes) | ✅ COMPLETED | `tsc --noEmit` clean (0 errors), `npm run build` clean |
+| **W4** | **UI Polish + Professional Animations** (Design tokens, micro-interactions, animations, data viz, a11y) | 🔜 **NEXT UP** | Planned in `MASTER_WORKFLOW_V2.md` |
+| **W5** | **Frontend Test Suite** (Vitest, @testing-library/react, 200+ tests target) | ⏳ Queued | Planned after W4 |
+| **W6** | **.exe Build + Verification** (PyInstaller bundle, electron-builder NSIS) | ⏳ Queued | Planned after W5 |
+| **W7** | **Website Overhaul** (Next.js marketing site, multi-cloud content, SEO) | ⏳ Queued | Planned after W6 |
+| **W8** | **Integration Testing + Final QA** (E2E flows, release checklist) | ⏳ Queued | Planned after W7 |
 
 ---
 
-## P6 — Normalization + Deduplication (COMPLETE)
+## Verification Status
 
-**Files created/modified:**
-- `app/backend/core/normalizer.py` — SchemaMapper, Deduplicator, OWASP coverage map
-- `app/backend/ipc_server.py` — normalizer wired at step 4.5 in pipeline
-- `app/backend/tests/test_normalizer.py` — 50 tests
-
-**Key features:**
-- OWASP LLM Top 10 (2025) classification for all findings
-- Jaccard-based cross-engine deduplication (5-gram shingles, threshold 0.30)
-- Confidence boosting: +0.10 per corroborating engine (cap 1.0)
-- Severity = max across all corroborating engines
-- OWASP coverage map: tested / with_findings / not_covered counts
-- `normalization` key added to `complete` event payload
+- **Backend Tests:** 1141 passed, 5 skipped (Pytest 8.2.0, Python 3.10.10)
+- **Frontend Type Check:** `npx tsc --noEmit` passed with 0 errors
+- **Frontend Production Build:** `npm run build` passed (`dist/` created in < 1s)
 
 ---
 
-## P8 — Installer + Distribution (COMPLETE)
+## Context for the Next AI Model
 
-**Files created/modified:**
-- `app/frontend/scripts/build-python.py` — PyInstaller build script
-- `app/frontend/package.json` — build:python / build:all / dist scripts; NSIS config
-- `app/frontend/resources/backend/` — output dir for PyInstaller bundle
-- `app/frontend/electron/main.cjs` — smart spawn (bundled exe vs dev python)
-- `app/frontend/vite.config.ts` — port corrected to 5173
-- `docs/BUILD.md` — full build documentation
-
-**Build commands:**
-```bash
-cd app/frontend
-npm run build:python    # PyInstaller bundle
-npm run build:electron  # Electron + NSIS installer
-npm run build:all       # Both
-npm run dev:electron    # Dev mode (Vite + Electron)
-```
-
-**Engine bundling:**
-- garak 0.16.0 — ✅ installed, will be bundled
-- pyrit 1.1.0 — ✅ installed, will be bundled
-- MockEngine — ✅ always bundled (zero deps)
-
----
-
-## Remaining Phases
-
-| Phase | Name | Status |
-|-------|------|--------|
-| P7    | AWS Deployment Engine | 🔜 Optional v1 |
-| P9    | Frontend Test Suite | 🔜 Next |
-| —     | AgentGuardian adapter | 🔜 After garak+pyrit stable |
-
----
-
-## Known Limitations
-
-- PyInstaller bundle not yet tested end-to-end (run `npm run build:python` to test)
-- App icon (`.ico`, `.icns`) not yet created — electron-builder will warn but build succeeds
-- P7 (AWS deployment) is optional and not started
-
----
-
-*All 1105 backend tests pass as of 2026-11-02.*
+To continue immediately without any lost context:
+1. Refer to `context/AI_HANDOFF_STATUS.md` for exact architectural pointers, file locations, and state.
+2. Refer to `context/MASTER_WORKFLOW_V2.md` Section **W4 — UI POLISH + PROFESSIONAL ANIMATIONS** (lines 250–295).
+3. The next objective is implementing **W4.1 – W4.5**:
+   - `W4.1`: Design system overhaul (CSS tokens, variables, deep navy `#0a0f1a` + electric cyan `#00d4ff`)
+   - `W4.2`: Micro-animations in `app/frontend/src/index.css` & React transitions
+   - `W4.3`: Enhanced data visualizations (Radial gauge for risk score, OWASP heatmap effects)
+   - `W4.4`: Responsive layout and state handling (skeletons, empty states)
+   - `W4.5`: Accessibility pass (ARIA attributes, keyboard navigation)

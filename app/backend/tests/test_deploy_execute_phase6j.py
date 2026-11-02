@@ -436,25 +436,41 @@ class TestSafetyInvariants:
     BACKEND_DIR = Path(__file__).parent.parent
 
     def test_no_boto3_in_production_code(self):
-        """boto3 must not be used in production backend code (only tests permitted)."""
+        """
+        W2 update: boto3 is now an optional import in core/deploy/aws_engine.py
+        (wrapped in try/except). Verify it does NOT exist in any other core module.
+        """
         for py_file in (self.BACKEND_DIR / "core").rglob("*.py"):
+            # Skip deploy engines — boto3 is intentionally optional there
+            if "deploy" in py_file.parts:
+                continue
             content = py_file.read_text(encoding="utf-8", errors="ignore")
             if "import boto3" in content or "from boto3" in content:
-                pytest.fail(f"boto3 found in production code: {py_file}")
+                pytest.fail(f"boto3 found outside core/deploy/ — not permitted: {py_file}")
 
     def test_no_azure_sdk_in_backend(self):
-        """Azure SDK must not be imported in production backend code."""
+        """
+        W2 update: azure-identity is an optional import in core/deploy/azure_engine.py
+        (wrapped in try/except). Verify it does NOT exist in any other core module.
+        """
         for py_file in (self.BACKEND_DIR / "core").rglob("*.py"):
+            if "deploy" in py_file.parts:
+                continue
             content = py_file.read_text(encoding="utf-8", errors="ignore")
             if "azure-mgmt" in content or "from azure" in content:
-                pytest.fail(f"Azure SDK found in production code: {py_file}")
+                pytest.fail(f"Azure SDK found outside core/deploy/ — not permitted: {py_file}")
 
     def test_no_gcp_sdk_in_backend(self):
-        """GCP SDK must not be imported in production backend code."""
+        """
+        W2 update: google-auth is an optional import in core/deploy/gcp_engine.py
+        (wrapped in try/except). Verify it does NOT exist in any other core module.
+        """
         for py_file in (self.BACKEND_DIR / "core").rglob("*.py"):
+            if "deploy" in py_file.parts:
+                continue
             content = py_file.read_text(encoding="utf-8", errors="ignore")
             if "google-cloud" in content or "from google.cloud" in content:
-                pytest.fail(f"GCP SDK found in production code: {py_file}")
+                pytest.fail(f"GCP SDK found outside core/deploy/ — not permitted: {py_file}")
 
     def test_deploy_execute_page_no_fetch(self):
         """DeployExecutePage must not make fetch() calls."""

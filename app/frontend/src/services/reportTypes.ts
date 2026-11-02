@@ -107,6 +107,30 @@ export interface ScanReport {
   findings:        ScanFinding[];
   recommendations: Recommendation[];
   engine:          ReportEngine;
+  /** W1.2: OWASP coverage map from normalizer (injected by ipc_server) */
+  normalization?: {
+    coverage_map: Record<string, {
+      finding_count: number;
+      probed: boolean;
+      categories: string[];
+    }>;
+    deduplicated_count: number;
+    original_count: number;
+    owasp_categories_with_findings: string[];
+  };
+  /** W1.3: Auto-generated deployment recommendation from scan results */
+  deploy_recommendation?: {
+    recommended_provider: string;
+    rationale: string;
+    risk_level: string;
+    risk_score: number;
+    aws_config: Record<string, unknown>;
+    azure_config: Record<string, unknown>;
+    gcp_config: Record<string, unknown>;
+    private_config: Record<string, unknown>;
+    security_warnings: string[];
+    required_controls: string[];
+  };
 }
 
 // ─────────────────────────────────────────────

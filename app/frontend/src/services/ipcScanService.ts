@@ -272,6 +272,9 @@ export function startIpcScan(
     mode:       config.mode,
     scan_depth: config.scan_depth,
     categories: config.categories,
+    engine:     config.engine ?? "auto",
+    model_name: config.model_name ?? "",
+    api_key:    config.api_key ?? "",
   };
 
   api.startScan(ipcConfig).then((result) => {
@@ -283,6 +286,7 @@ export function startIpcScan(
     cleanup();
     handlers.onError(err.message ?? "IPC start error", "IPC_ERROR");
   });
+
 
   // ── Initial progress event ──
   emitProgress({ activity_label: "Connecting to Python backend..." });

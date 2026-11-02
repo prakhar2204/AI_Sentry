@@ -52,6 +52,15 @@ export type ScanMode = "api" | "local";
 export type ScanDepth = "quick" | "standard" | "deep";
 export type ScanStrategy = "manifest" | "manual" | "full";
 
+/**
+ * W1.1: Engine selection.
+ * auto   = run garak + pyrit in parallel, merge results
+ * garak  = garak only
+ * pyrit  = pyrit only
+ * mock   = deterministic mock (always available)
+ */
+export type ScanEngine = "auto" | "garak" | "pyrit" | "mock";
+
 export interface ScanProgress {
   current_probe: number;
   total_probes: number;
@@ -90,6 +99,8 @@ export interface ScanState {
   mode: ScanMode | null;
   scan_depth: ScanDepth;
   scan_strategy: ScanStrategy;
+  /** W1.1: Which engine(s) to run */
+  engine: ScanEngine;
   categories: string[];
   progress: ScanProgress | null;
   error: string | null;
@@ -133,6 +144,7 @@ function createInitialState(): ScanState {
     mode: null,
     scan_depth: "standard",
     scan_strategy: "manual",
+    engine: "auto",
     categories: [],
     progress: null,
     error: null,
@@ -167,7 +179,8 @@ type ScanAction =
   | { type: typeof SCAN_ACTIONS.SET_ERROR; payload: string }
   | { type: typeof SCAN_ACTIONS.CLEAR_ERROR }
   | { type: typeof SCAN_ACTIONS.SET_MANIFEST_FILE; payload: string | null }
-  | { type: typeof SCAN_ACTIONS.SET_SCAN_STRATEGY; payload: ScanStrategy };
+  | { type: typeof SCAN_ACTIONS.SET_SCAN_STRATEGY; payload: ScanStrategy }
+  | { type: typeof SCAN_ACTIONS.SET_ENGINE; payload: ScanEngine };
 
 // ─────────────────────────────────────────────
 //  Reducer
@@ -327,6 +340,7 @@ function scanReducer(state: ScanState, action: ScanAction): ScanState {
         mode: null,
         scan_depth: "standard",
         scan_strategy: "manual",
+        engine: "auto",
         categories: [],
         progress: null,
         error: null,
@@ -347,6 +361,9 @@ function scanReducer(state: ScanState, action: ScanAction): ScanState {
 
     case SCAN_ACTIONS.SET_SCAN_STRATEGY:
       return { ...state, scan_strategy: action.payload };
+
+    case SCAN_ACTIONS.SET_ENGINE:
+      return { ...state, engine: action.payload };
 
     default:
       return state;

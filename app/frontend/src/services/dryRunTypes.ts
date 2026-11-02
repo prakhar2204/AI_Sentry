@@ -17,7 +17,7 @@
  *   "Provision" and "Verify" are out of scope for v1.
  */
 
-import type { DeployConfig, CloudProvider, AwsDeploymentMode } from "./deployTypes";
+import type { DeployConfig, CloudProvider, AwsDeploymentMode, DeployMode } from "./deployTypes";
 import { validateDeployConfig } from "./deployTypes";
 
 // ─────────────────────────────────────────────
@@ -96,10 +96,10 @@ export interface DryRunPlan {
   provenance:   PlanProvenance;
 
   /** Provider from config */
-  provider:     CloudProvider;
+  provider:     CloudProvider | "private";
 
-  /** Mode (AWS-only) */
-  mode:         AwsDeploymentMode | null;
+  /** Mode */
+  mode:         DeployMode | null;
 
   /** Region from config */
   region:       string | null;
@@ -520,7 +520,7 @@ export function buildDryRunPlan(
       configSnapshotAt: cfg.lastModifiedAt,
       generatedAt:     now,
     },
-    provider:         cfg.provider!,
+    provider:         cfg.provider ?? "aws",
     mode:             cfg.mode,
     region:           cfg.region,
     modelId:          cfg.modelId,

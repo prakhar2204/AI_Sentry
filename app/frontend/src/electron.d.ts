@@ -10,11 +10,21 @@
 /** Shape of the electronAPI exposed via contextBridge */
 interface ElectronAPI {
   // Scan lifecycle
-  startScan: (config: unknown) => Promise<{ started: boolean; error?: string }>;
+  startScan: (config: unknown) => Promise<{
+    started: boolean;
+    error?:  string;
+    // W2: deploy command responses carry extra data
+    url?:    string;
+    data?:   unknown;
+    [key: string]: unknown;
+  }>;
   cancelScan: () => Promise<{ cancelled: boolean }>;
   onScanProgress: (callback: (data: unknown) => void) => () => void;
   onScanComplete: (callback: (data: unknown) => void) => () => void;
-  onScanError: (callback: (data: unknown) => void) => () => void;
+  onScanError:    (callback: (data: unknown) => void) => () => void;
+
+  // W2: Open a URL in the system browser (for OAuth flows)
+  openExternal?: (url: string) => Promise<void>;
 
   // Export operations (Python-backed, native save dialog)
   exportReport: (

@@ -200,6 +200,85 @@ function SeverityBar({ breakdown, total }: {
 }
 
 // ─────────────────────────────────────────────
+//  W1.2: OWASP LLM Top 10 Coverage Map
+// ─────────────────────────────────────────────
+
+const OWASP_LLM_TOP10 = [
+  { id: "LLM01", label: "Prompt Injection" },
+  { id: "LLM02", label: "Insecure Output Handling" },
+  { id: "LLM03", label: "Training Data Poisoning" },
+  { id: "LLM04", label: "Model Denial of Service" },
+  { id: "LLM05", label: "Supply Chain Vulnerabilities" },
+  { id: "LLM06", label: "Sensitive Info Disclosure" },
+  { id: "LLM07", label: "Insecure Plugin Design" },
+  { id: "LLM08", label: "Excessive Agency" },
+  { id: "LLM09", label: "Overreliance" },
+  { id: "LLM10", label: "Model Theft" },
+];
+
+type CoverageStatus = "findings" | "tested" | "not_covered";
+
+function OwaspCoverageMap({ coverageMap }: {
+  coverageMap: Record<string, unknown> | null | undefined;
+}) {
+  if (!coverageMap) return null;
+
+  function getCellStatus(owaspId: string): CoverageStatus {
+    const entry = coverageMap?.[owaspId] as Record<string, unknown> | undefined;
+    if (!entry) return "not_covered";
+    const count = (entry.finding_count as number) ?? 0;
+    if (count > 0) return "findings";
+    const probed = (entry.probed as boolean) ?? false;
+    return probed ? "tested" : "not_covered";
+  }
+
+  function getCellCount(owaspId: string): number {
+    const entry = coverageMap?.[owaspId] as Record<string, unknown> | undefined;
+    return (entry?.finding_count as number) ?? 0;
+  }
+
+  const statusLabel: Record<CoverageStatus, string> = {
+    findings:    "Findings detected",
+    tested:      "Tested — no findings",
+    not_covered: "Not covered by this scan",
+  };
+
+  return (
+    <div className="owasp-map" id="results-owasp-map" aria-label="OWASP LLM Top 10 coverage">
+      <div className="owasp-map__legend" aria-hidden="true">
+        <span className="owasp-map__legend-item owasp-map__legend-item--findings">⚠ Findings</span>
+        <span className="owasp-map__legend-item owasp-map__legend-item--tested">✓ Tested</span>
+        <span className="owasp-map__legend-item owasp-map__legend-item--not-covered">○ Not covered</span>
+      </div>
+      <div className="owasp-map__grid">
+        {OWASP_LLM_TOP10.map(({ id, label }) => {
+          const status = getCellStatus(id);
+          const count  = getCellCount(id);
+          return (
+            <div
+              key={id}
+              className={`owasp-map__cell owasp-map__cell--${status.replace("_", "-")}`}
+              title={statusLabel[status]}
+              aria-label={`${id} ${label}: ${statusLabel[status]}${
+                count > 0 ? ` (${count} finding${count !== 1 ? "s" : ""})` : ""
+              }`}
+            >
+              <span className="owasp-map__cell-id">{id}</span>
+              <span className="owasp-map__cell-label">{label}</span>
+              {count > 0 && (
+                <span className="owasp-map__cell-count" aria-hidden="true">
+                  {count}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 //  Category card
 // ─────────────────────────────────────────────
 
@@ -790,6 +869,19 @@ export function ResultsPage({ onViewActions, onExport, onNewScan }: ResultsPageP
           <p className="results-page__no-recs">
             No recommendations — target passed all probes.
           </p>
+        </section>
+      )}
+
+      {/* ── W1.2: OWASP LLM Top 10 Coverage Map ── */}
+      {report.normalization?.coverage_map && (
+        <section className="results-page__section" id="results-owasp-section">
+          <h2 className="results-page__section-title">OWASP LLM Top 10 Coverage</h2>
+          <p className="results-page__section-desc">
+            Which OWASP LLM Top 10 categories were exercised by this scan.
+          </p>
+          <OwaspCoverageMap
+            coverageMap={report.normalization.coverage_map as Record<string, unknown>}
+          />
         </section>
       )}
 

@@ -1,68 +1,97 @@
 /**
- * Sentryɸ -- Deploy Configuration Types
+ * Sentryɸ — Deploy Configuration Types (W3.5 Unified)
  * services/deployTypes.ts
  *
- * Typed deployment configuration model for Screen 9 (Deploy Configuration).
+ * Comprehensive typed deployment configuration model for Sentryɸ.
+ * Supports:
+ *   - Legacy single-cloud (AWS) configuration (Screens 9-11)
+ *   - W3 multi-cloud (AWS, Azure, GCP, Private) deployment wizard
+ *   - Live pricing estimates, recommendations, and OAuth state
  *
- * Architecture decisions applied:
- *   D-022: AWS only for provisioning; Azure/GCP = config docs only
- *   D-023: Plan → User review → Provision → Verify (Screen 9 is the Plan step)
+ * Architecture decisions:
  *   D-017: Credentials live in OS keychain only (never in this config object)
- *
- * IMPORTANT: This is a PLAN object only. No deployment has occurred
- * when this type is populated. Deployment execution is Screen 11.
- *
- * Fields deliberately excluded:
- *   - Cloud credentials (access key, secret key, service account) — OS keychain only
- *   - Live resource IDs — not provisioned yet
- *   - Real pricing data — not available without cloud API call
+ *   D-022: Multi-cloud automated provisioning (AWS, Azure, GCP, Private export)
+ *   D-023: Plan → User review → Provision → Verify
  */
 
 // ─────────────────────────────────────────────
 //  Provider and deployment mode enumerations
 // ─────────────────────────────────────────────
 
-/**
- * Supported cloud providers.
- * AWS: provisioning supported (D-022)
- * azure, gcp: configuration documentation only — no automated provisioning in v1
- */
 export type CloudProvider = "aws" | "azure" | "gcp";
+export type ProviderType = CloudProvider | "private" | null;
 
 /**
- * Deployment modes for AWS (the only provider with automated provisioning).
- *
- * bedrock:    Amazon Bedrock managed model endpoint (no inference server needed)
- * sagemaker:  SageMaker real-time inference endpoint (bring your own model)
- * lambda:     API Gateway + Lambda (serverless, lightweight, smaller models)
+ * Deployment modes for AWS (legacy enum alias)
  */
 export type AwsDeploymentMode = "bedrock" | "sagemaker" | "lambda";
+
+/**
+ * Full multi-cloud deployment modes
+ */
+export type DeployMode =
+  | "bedrock"
+  | "sagemaker"
+  | "lambda"
+  | "ai_services"
+  | "container"
+  | "app_service"
+  | "vertex_ai"
+  | "cloud_run"
+  | "cloud_functions"
+  | "docker_compose"
+  | "kubernetes"
+  | "bare_metal";
 
 /** Endpoint access scope */
 export type EndpointScope = "private" | "public";
 
 // ─────────────────────────────────────────────
-//  AWS regions (static list — no live API call)
+//  Regions
 // ─────────────────────────────────────────────
 
 export interface AwsRegion {
-  id:    string;
+  id: string;
+  value: string;
   label: string;
-  /** Whether Bedrock is documented as available. Static, may be out-of-date. */
   bedrockAvailable: boolean;
 }
 
 export const AWS_REGIONS: AwsRegion[] = [
-  { id: "us-east-1",      label: "US East (N. Virginia)",  bedrockAvailable: true },
-  { id: "us-west-2",      label: "US West (Oregon)",        bedrockAvailable: true },
-  { id: "eu-west-1",      label: "Europe (Ireland)",         bedrockAvailable: true },
-  { id: "eu-central-1",   label: "Europe (Frankfurt)",       bedrockAvailable: false },
-  { id: "ap-southeast-1", label: "Asia Pacific (Singapore)", bedrockAvailable: false },
-  { id: "ap-northeast-1", label: "Asia Pacific (Tokyo)",     bedrockAvailable: false },
+  { id: "us-east-1",      value: "us-east-1",      label: "US East (N. Virginia)",   bedrockAvailable: true },
+  { id: "us-west-2",      value: "us-west-2",      label: "US West (Oregon)",         bedrockAvailable: true },
+  { id: "eu-west-1",      value: "eu-west-1",      label: "Europe (Ireland)",          bedrockAvailable: true },
+  { id: "eu-central-1",   value: "eu-central-1",   label: "Europe (Frankfurt)",        bedrockAvailable: false },
+  { id: "ap-southeast-1", value: "ap-southeast-1", label: "Asia Pacific (Singapore)",  bedrockAvailable: false },
+  { id: "ap-northeast-1", value: "ap-northeast-1", label: "Asia Pacific (Tokyo)",      bedrockAvailable: false },
+];
+
+export interface CloudRegion {
+  id: string;
+  value: string;
+  label: string;
+}
+
+export const AZURE_REGIONS: CloudRegion[] = [
+  { id: "eastus",          value: "eastus",          label: "East US"           },
+  { id: "westus2",         value: "westus2",         label: "West US 2"         },
+  { id: "westeurope",      value: "westeurope",      label: "West Europe"       },
+  { id: "northeurope",     value: "northeurope",     label: "North Europe"      },
+  { id: "southeastasia",   value: "southeastasia",   label: "Southeast Asia"    },
+  { id: "australiaeast",   value: "australiaeast",   label: "Australia East"    },
+];
+
+export const GCP_REGIONS: CloudRegion[] = [
+  { id: "us-central1",     value: "us-central1",     label: "Iowa (us-central1)"       },
+  { id: "us-east1",        value: "us-east1",        label: "South Carolina (us-east1)"},
+  { id: "europe-west1",    value: "europe-west1",    label: "Belgium (europe-west1)"   },
+  { id: "europe-west4",    value: "europe-west4",    label: "Netherlands (europe-west4)"},
+  { id: "asia-southeast1", value: "asia-southeast1", label: "Singapore (asia-southeast1)"},
+  { id: "asia-east1",      value: "asia-east1",      label: "Taiwan (asia-east1)"      },
 ];
 
 // ─────────────────────────────────────────────
-//  AWS deployment modes — metadata
+//  Deployment modes metadata
 // ─────────────────────────────────────────────
 
 export interface DeploymentModeInfo {
@@ -93,24 +122,145 @@ export const AWS_DEPLOYMENT_MODES: DeploymentModeInfo[] = [
   },
 ];
 
+export const DEPLOY_MODES: Record<CloudProvider, { value: DeployMode; label: string; description: string }[]> = {
+  aws: [
+    { value: "bedrock",   label: "Amazon Bedrock",    description: "Managed foundation model service — no infrastructure" },
+    { value: "sagemaker", label: "SageMaker Endpoint",description: "Full control over compute — bring your own model"    },
+    { value: "lambda",    label: "Lambda + API GW",   description: "Serverless, pay-per-request — small/infrequent loads"  },
+  ],
+  azure: [
+    { value: "ai_services",  label: "Azure AI Services",   description: "Managed model endpoint — lowest ops overhead"      },
+    { value: "container",    label: "Container Instances",  description: "Docker-based, flexible — full model control"       },
+    { value: "app_service",  label: "App Service",          description: "Web app hosting with HTTPS + scaling"             },
+  ],
+  gcp: [
+    { value: "vertex_ai",       label: "Vertex AI Endpoint",  description: "Google's managed ML platform — integrated MLOps" },
+    { value: "cloud_run",       label: "Cloud Run",           description: "Containerized serverless — auto-scales to zero"  },
+    { value: "cloud_functions", label: "Cloud Functions",     description: "Event-driven, serverless — lightweight inference" },
+  ],
+};
+
 // ─────────────────────────────────────────────
-//  AWS instance types (for SageMaker only)
+//  Instance / compute types
 // ─────────────────────────────────────────────
 
 export interface AwsInstanceType {
-  id:     string;
-  label:  string;
-  gpu:    boolean;
-  notes:  string;
+  id:      string;
+  value:   string;
+  label:   string;
+  gpu:     boolean;
+  notes:   string;
+  vcpu:    number;
+  ram_gb:  number;
 }
 
 export const SAGEMAKER_INSTANCE_TYPES: AwsInstanceType[] = [
-  { id: "ml.m5.xlarge",   label: "ml.m5.xlarge (4 vCPU, 16 GB)",    gpu: false, notes: "CPU — lightweight adapters" },
-  { id: "ml.m5.2xlarge",  label: "ml.m5.2xlarge (8 vCPU, 32 GB)",   gpu: false, notes: "CPU — standard" },
-  { id: "ml.g4dn.xlarge", label: "ml.g4dn.xlarge (1x T4, 16 GB)",   gpu: true,  notes: "GPU — small models" },
-  { id: "ml.g4dn.2xlarge",label: "ml.g4dn.2xlarge (1x T4, 32 GB)",  gpu: true,  notes: "GPU — recommended" },
-  { id: "ml.g5.xlarge",   label: "ml.g5.xlarge (1x A10G, 24 GB)",   gpu: true,  notes: "GPU — larger models" },
-  { id: "ml.g5.2xlarge",  label: "ml.g5.2xlarge (1x A10G, 24 GB)",  gpu: true,  notes: "GPU — production" },
+  { id: "ml.m5.xlarge",   value: "ml.m5.xlarge",   label: "ml.m5.xlarge (4 vCPU, 16 GB)",     gpu: false, notes: "CPU — lightweight adapters", vcpu: 4,  ram_gb: 16 },
+  { id: "ml.m5.2xlarge",  value: "ml.m5.2xlarge",  label: "ml.m5.2xlarge (8 vCPU, 32 GB)",    gpu: false, notes: "CPU — standard",             vcpu: 8,  ram_gb: 32 },
+  { id: "ml.g4dn.xlarge", value: "ml.g4dn.xlarge", label: "ml.g4dn.xlarge (1x T4, 16 GB)",    gpu: true,  notes: "GPU — small models",          vcpu: 4,  ram_gb: 16 },
+  { id: "ml.g4dn.2xlarge",value: "ml.g4dn.2xlarge",label: "ml.g4dn.2xlarge (1x T4, 32 GB)",   gpu: true,  notes: "GPU — recommended",           vcpu: 8,  ram_gb: 32 },
+  { id: "ml.g5.xlarge",   value: "ml.g5.xlarge",   label: "ml.g5.xlarge (1x A10G, 24 GB)",    gpu: true,  notes: "GPU — larger models",         vcpu: 4,  ram_gb: 24 },
+  { id: "ml.g5.2xlarge",  value: "ml.g5.2xlarge",  label: "ml.g5.2xlarge (1x A10G, 24 GB)",   gpu: true,  notes: "GPU — production",            vcpu: 8,  ram_gb: 24 },
+  { id: "ml.g5.4xlarge",  value: "ml.g5.4xlarge",  label: "ml.g5.4xlarge (1x A10G, 64 GB)",   gpu: true,  notes: "GPU — high compute",          vcpu: 16, ram_gb: 64 },
+  { id: "ml.g5.12xlarge", value: "ml.g5.12xlarge", label: "ml.g5.12xlarge (4x A10G, 192 GB)", gpu: true,  notes: "GPU — distributed",          vcpu: 48, ram_gb: 192 },
+];
+
+export const SAGEMAKER_INSTANCES = SAGEMAKER_INSTANCE_TYPES;
+
+export const VERTEX_AI_ACCELERATORS: { value: string; label: string }[] = [
+  { value: "NVIDIA_TESLA_T4",  label: "NVIDIA T4 (16 GB VRAM)"   },
+  { value: "NVIDIA_A100_80GB", label: "NVIDIA A100 (80 GB VRAM)" },
+  { value: "NVIDIA_L4",        label: "NVIDIA L4 (24 GB VRAM)"   },
+];
+
+// ─────────────────────────────────────────────
+//  OAuth State
+// ─────────────────────────────────────────────
+
+export type CredentialStatus = "idle" | "pending" | "valid" | "invalid" | "expired";
+
+export interface OAuthState {
+  status:    CredentialStatus;
+  accountId: string;
+  email:     string;
+  provider:  CloudProvider | null;
+  scopes:    string[];
+  expiresAt: string | null;
+}
+
+export const INITIAL_OAUTH_STATE: OAuthState = {
+  status:    "idle",
+  accountId: "",
+  email:     "",
+  provider:  null,
+  scopes:    [],
+  expiresAt: null,
+};
+
+// ─────────────────────────────────────────────
+//  Cost Estimate
+// ─────────────────────────────────────────────
+
+export interface CostLineItem {
+  name:       string;
+  unit:       string;
+  quantity:   number;
+  unit_price: number;
+  monthly:    number;
+}
+
+export interface CostEstimate {
+  provider:      CloudProvider;
+  region:        string;
+  mode:          DeployMode;
+  monthly_min:   number;
+  monthly_max:   number;
+  monthly_mid:   number;
+  one_time:      number;
+  breakdown:     CostLineItem[];
+  currency:      string;
+  as_of_date:    string;
+  disclaimer:    string;
+}
+
+// ─────────────────────────────────────────────
+//  Deployment Recommendation (from W1.3 backend)
+// ─────────────────────────────────────────────
+
+export interface DeploymentRecommendation {
+  recommended_provider: CloudProvider | "private";
+  recommended_mode:     DeployMode | "docker_compose";
+  recommended_region:   string;
+  rationale:            string;
+  risk_level:           "low" | "medium" | "high" | "critical";
+  security_warnings:    string[];
+  estimated_cost:       { low_usd: number; high_usd: number };
+  compliance_notes:     string[];
+}
+
+// ─────────────────────────────────────────────
+//  Provider Feature Comparison
+// ─────────────────────────────────────────────
+
+export interface ProviderFeature {
+  name:            string;
+  aws:             boolean | string;
+  azure:           boolean | string;
+  gcp:             boolean | string;
+}
+
+export const PROVIDER_COMPARISON_FEATURES: ProviderFeature[] = [
+  { name: "Private endpoint",          aws: true,     azure: true,    gcp: true    },
+  { name: "Content safety filter",     aws: true,     azure: true,    gcp: "beta"  },
+  { name: "SOC 2 Type II",             aws: true,     azure: true,    gcp: true    },
+  { name: "HIPAA",                     aws: true,     azure: true,    gcp: true    },
+  { name: "Auto-scaling",              aws: true,     azure: true,    gcp: true    },
+  { name: "Serverless option",         aws: true,     azure: false,   gcp: true    },
+  { name: "Model monitoring",          aws: true,     azure: true,    gcp: true    },
+  { name: "Budget alerts",             aws: true,     azure: true,    gcp: true    },
+  { name: "VPC/private networking",    aws: true,     azure: true,    gcp: true    },
+  { name: "Custom domain / TLS",       aws: true,     azure: true,    gcp: true    },
+  { name: "Free tier",                 aws: "limited",azure: "trial", gcp: "trial" },
 ];
 
 // ─────────────────────────────────────────────
@@ -135,69 +285,54 @@ export interface DeployConfigValidation {
   budgetMonthlyUsd: FieldValidation;
   /** Overall: all required fields valid and no blocking errors */
   canProceed:       boolean;
+  valid:            boolean;
   /** List of blocking issues preventing proceed */
   blockingIssues:   string[];
+  errors:           string[];
+  warnings:         string[];
 }
 
 // ─────────────────────────────────────────────
 //  Core deployment configuration model
 // ─────────────────────────────────────────────
 
-/**
- * DeployConfig — the deployment plan assembled on Screen 9.
- *
- * This is a PLAN only. No resources are created until the user
- * explicitly approves and executes (Screen 11).
- *
- * Credentials are NEVER stored here — they live in the OS keychain (D-017).
- */
 export interface DeployConfig {
-  // Provider selection
-  provider:       CloudProvider | null;
-
-  // AWS-specific
-  mode:           AwsDeploymentMode | null;
+  provider:       ProviderType;
+  mode:           DeployMode | null;
   region:         string | null;
 
   // Model / workload
-  /** Model identifier — e.g. "anthropic.claude-3-sonnet-20240229-v1:0" for Bedrock */
   modelId:        string;
-  /** Friendly name for display only */
   modelLabel:     string;
 
-  // SageMaker compute (only if mode === "sagemaker")
+  // Compute
   instanceType:   string | null;
   replicas:       number;
 
   // Network / access
   endpointScope:  EndpointScope;
-  /** Require API key authentication on the endpoint */
   requireAuth:    boolean;
-  /** Enable CloudWatch logging */
   enableLogging:  boolean;
-  /** Enable Bedrock Guardrails (Bedrock mode only) */
   enableGuardrails: boolean;
 
-  // Budget constraint (informational — not a hard cloud-side limit)
+  // Budget
   budgetMonthlyUsd: number | null;
+  budgetAlertUsd?:  number | null;
+
+  // Provider-specific configs
+  resourceGroup?: string | null;
+  projectId?:     string | null;
+  domain?:        string | null;
 
   // Provenance
-  /** scan_id of the assessment this plan is based on — may be null if report unavailable */
   sourceScanId:   string | null;
-  /** True if the source assessment was simulated */
   isSimulated:    boolean;
 
   // Plan status
-  /** ISO timestamp when config was last modified */
   lastModifiedAt: string;
-  /** Deployment has NOT been executed — this is always false in Screen 9 */
-  deployed:       false;
+  deployed:       boolean;
 }
 
-/**
- * Empty/default configuration — safe starting state.
- * All booleans default to the safer option.
- */
 export function emptyDeployConfig(): DeployConfig {
   return {
     provider:         null,
@@ -207,11 +342,15 @@ export function emptyDeployConfig(): DeployConfig {
     modelLabel:       "",
     instanceType:     null,
     replicas:         1,
-    endpointScope:    "private",  // Safe default — never silently public
-    requireAuth:      true,       // Require auth by default
-    enableLogging:    true,       // Logging on by default
-    enableGuardrails: false,      // Off until user enables
+    endpointScope:    "private",
+    requireAuth:      true,
+    enableLogging:    true,
+    enableGuardrails: false,
     budgetMonthlyUsd: null,
+    budgetAlertUsd:   null,
+    resourceGroup:    null,
+    projectId:        null,
+    domain:           null,
     sourceScanId:     null,
     isSimulated:      false,
     lastModifiedAt:   new Date().toISOString(),
@@ -220,7 +359,7 @@ export function emptyDeployConfig(): DeployConfig {
 }
 
 // ─────────────────────────────────────────────
-//  Validation functions (pure — no side effects)
+//  Validation functions
 // ─────────────────────────────────────────────
 
 function fieldOk(message: string | null = null): FieldValidation {
@@ -238,25 +377,22 @@ function fieldIncomplete(message: string): FieldValidation {
 
 export function validateDeployConfig(cfg: DeployConfig): DeployConfigValidation {
   const issues: string[] = [];
+  const warnings: string[] = [];
 
   // Provider
   let providerV: FieldValidation;
   if (!cfg.provider) {
     providerV = fieldIncomplete("Select a cloud provider");
     issues.push("Cloud provider is required");
-  } else if (cfg.provider === "azure" || cfg.provider === "gcp") {
-    providerV = fieldUnverified(`${cfg.provider.toUpperCase()} automated provisioning is not supported in v1. Configuration planning is available.`);
-    // Not blocking — user can still build a config plan
+  } else if (cfg.provider === "azure" || cfg.provider === "gcp" || cfg.provider === "private") {
+    providerV = fieldOk();
   } else {
     providerV = fieldOk();
   }
 
   // Deployment mode
   let modeV: FieldValidation;
-  if (cfg.provider !== "aws") {
-    // Only AWS has mode selection
-    modeV = { status: "unverified", message: null };
-  } else if (!cfg.mode) {
+  if (!cfg.mode) {
     modeV = fieldIncomplete("Select a deployment mode");
     issues.push("Deployment mode is required");
   } else {
@@ -265,22 +401,22 @@ export function validateDeployConfig(cfg: DeployConfig): DeployConfigValidation 
 
   // Region
   let regionV: FieldValidation;
-  if (!cfg.region) {
+  if (!cfg.region && cfg.provider !== "private") {
     regionV = fieldIncomplete("Select a region");
     issues.push("Region is required");
   } else if (cfg.provider === "aws") {
-    const regionDef = AWS_REGIONS.find((r) => r.id === cfg.region);
+    const regionDef = AWS_REGIONS.find((r) => r.id === cfg.region || r.value === cfg.region);
     if (!regionDef) {
       regionV = fieldErr(`Unrecognised region: ${cfg.region}`);
       issues.push("Region is not valid");
     } else if (cfg.mode === "bedrock" && !regionDef.bedrockAvailable) {
       regionV = fieldUnverified(`Amazon Bedrock may not be available in ${regionDef.label}. Verify availability before provisioning.`);
-      // Warn but not blocking
+      warnings.push(`Amazon Bedrock may not be available in ${regionDef.label}`);
     } else {
       regionV = fieldOk();
     }
   } else {
-    regionV = fieldUnverified("Region availability not verified for this provider");
+    regionV = fieldOk();
   }
 
   // Model ID
@@ -288,24 +424,21 @@ export function validateDeployConfig(cfg: DeployConfig): DeployConfigValidation 
   if (!cfg.modelId || cfg.modelId.trim() === "") {
     modelIdV = fieldIncomplete("Enter a model identifier");
     issues.push("Model identifier is required");
-  } else if (cfg.modelId.trim().length < 3) {
+  } else if (cfg.modelId.trim().length < 2) {
     modelIdV = fieldErr("Model identifier is too short");
     issues.push("Model identifier is invalid");
-  } else if (cfg.provider === "aws" && cfg.mode === "bedrock") {
-    // Bedrock model IDs have a known format
-    modelIdV = fieldUnverified("Model ID format unverified — confirm this is a valid Bedrock model ARN or ID");
   } else {
     modelIdV = fieldOk();
   }
 
-  // Instance type (SageMaker only)
+  // Instance type
   let instanceTypeV: FieldValidation;
   if (cfg.provider === "aws" && cfg.mode === "sagemaker") {
     if (!cfg.instanceType) {
       instanceTypeV = fieldIncomplete("Select an instance type");
       issues.push("Instance type is required for SageMaker");
     } else {
-      const known = SAGEMAKER_INSTANCE_TYPES.find((t) => t.id === cfg.instanceType);
+      const known = SAGEMAKER_INSTANCE_TYPES.find((t) => t.id === cfg.instanceType || t.value === cfg.instanceType);
       instanceTypeV = known ? fieldOk() : fieldUnverified("Custom instance type — verify availability");
     }
   } else {
@@ -314,11 +447,12 @@ export function validateDeployConfig(cfg: DeployConfig): DeployConfigValidation 
 
   // Replicas
   let replicasV: FieldValidation;
-  if (cfg.replicas < 1) {
+  if ((cfg.replicas ?? 1) < 1) {
     replicasV = fieldErr("Minimum 1 replica required");
     issues.push("Replica count must be at least 1");
   } else if (cfg.replicas > 10) {
-    replicasV = fieldUnverified("High replica count — verify quota availability in your AWS account");
+    replicasV = fieldUnverified("High replica count — verify quota availability in your account");
+    warnings.push("High replica count");
   } else {
     replicasV = fieldOk();
   }
@@ -329,6 +463,7 @@ export function validateDeployConfig(cfg: DeployConfig): DeployConfigValidation 
     endpointScopeV = fieldUnverified(
       "Public endpoint exposes the model to the internet. Ensure authentication is enabled and access is properly scoped."
     );
+    warnings.push("Public endpoint exposes your model to the internet — ensure auth is in place");
     if (!cfg.requireAuth) {
       endpointScopeV = fieldErr("Public endpoint without authentication is a security risk. Enable authentication or switch to private.");
       issues.push("Public endpoint requires authentication to be enabled");
@@ -339,20 +474,30 @@ export function validateDeployConfig(cfg: DeployConfig): DeployConfigValidation 
 
   // Budget
   let budgetV: FieldValidation;
-  if (cfg.budgetMonthlyUsd !== null) {
-    if (cfg.budgetMonthlyUsd <= 0) {
+  const budget = cfg.budgetMonthlyUsd ?? cfg.budgetAlertUsd;
+  if (budget !== null && budget !== undefined) {
+    if (budget <= 0) {
       budgetV = fieldErr("Budget must be greater than $0");
       issues.push("Budget amount is invalid");
-    } else if (cfg.budgetMonthlyUsd > 100_000) {
+    } else if (budget > 100_000) {
       budgetV = fieldUnverified("Budget exceeds $100,000/month — verify this is intentional");
+      warnings.push("Budget exceeds $100,000/month");
     } else {
-      budgetV = fieldUnverified(
-        "Budget is informational only — it does not enforce a hard AWS spending limit. Enable AWS Budgets separately."
-      );
+      budgetV = fieldOk();
     }
   } else {
     budgetV = fieldOk();
   }
+
+  // Provider specific validations
+  if (cfg.provider === "gcp" && !cfg.projectId) {
+    warnings.push("GCP Project ID is recommended");
+  }
+  if (cfg.provider === "azure" && !cfg.resourceGroup) {
+    warnings.push("Resource group not set — a new one will be created automatically");
+  }
+
+  const canProceed = issues.length === 0;
 
   return {
     provider:         providerV,
@@ -363,7 +508,10 @@ export function validateDeployConfig(cfg: DeployConfig): DeployConfigValidation 
     replicas:         replicasV,
     endpointScope:    endpointScopeV,
     budgetMonthlyUsd: budgetV,
-    canProceed:       issues.length === 0,
+    canProceed,
+    valid:            canProceed,
     blockingIssues:   issues,
+    errors:           issues,
+    warnings,
   };
 }
