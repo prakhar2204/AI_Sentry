@@ -1,24 +1,26 @@
 """
-AI-SENTRY -- Engine Runner (Orchestrator)
+Sentryɸ -- Engine Runner (Orchestrator)
 core/engine_runner.py
 
 Orchestrates engine execution and result display.
 
 This module:
-  1. Instantiates the appropriate engine (mock for now)
+  1. Selects the appropriate engine based on the requested engine name:
+       - "garak"  → GarakAdapter (real scan via subprocess, requires garak installed)
+       - "pyrit"  → PyRITAdapter (real scan via SDK, requires pyrit installed)
+       - "mock"   → MockEngine (always available, for testing/dev)
+       - "auto"   → GarakAdapter if available, else MockEngine
   2. Runs the scan via the engine's run_scan() method
   3. Formats and displays the results
-  4. Returns the ScanResult for downstream processing
+  4. Returns the ScanResult for downstream processing (scorer → recommender → report)
 
-When real engines (Garak, PyRIT, DeepTeam) are integrated, this module
-will select the engine based on configuration. The mock engine is the
-default fallback.
-
-Phase 3c deliverable.
+Phase 3c deliverable + P4 update (engine-aware selection).
 Reference: docs/TRD.md Section 2.3 (Engine Adapters)
 """
 
 from __future__ import annotations
+
+from pathlib import Path
 
 from core.manifest import ScanManifest
 from core.engine_interface import ScanFinding, ScanResult
@@ -41,24 +43,70 @@ _SEVERITY_ORDER = {"high": 0, "medium": 1, "low": 2}
 
 
 # ─────────────────────────────────────────────
+#  Engine selection
+# ─────────────────────────────────────────────
+
+def _select_engine(
+    engine_name: str,
+    output_dir: Path | None = None,
+):
+    """
+    Return an instantiated engine for the given engine_name.
+
+    Selection logic:
+      "garak" → GarakAdapter (fails gracefully if garak not installed)
+      "pyrit" → PyRITAdapter (fails gracefully if pyrit not installed)
+      "mock"  → MockEngine (always available)
+      "auto"  → GarakAdapter if garak installed, else MockEngine
+
+    Never raises — unavailable real engines return an error ScanResult
+    via their run_scan() method.
+    """
+    engine_name = (engine_name or "mock").lower().strip()
+
+    if engine_name in ("garak", "auto"):
+        try:
+            from core.adapters.garak_adapter import GarakAdapter
+            if engine_name == "auto" and not GarakAdapter.is_available():
+                return MockEngine()
+            return GarakAdapter(output_dir=output_dir)
+        except ImportError:
+            return MockEngine()
+
+    if engine_name == "pyrit":
+        try:
+            from core.adapters.pyrit_adapter import PyRITAdapter
+            return PyRITAdapter(output_dir=output_dir)
+        except ImportError:
+            return MockEngine()
+
+    # Default: mock (covers "mock", unknown values)
+    return MockEngine()
+
+
+# ─────────────────────────────────────────────
 #  Engine execution
 # ─────────────────────────────────────────────
 
-def run_engine(manifest: ScanManifest) -> ScanResult:
+def run_engine(
+    manifest: ScanManifest,
+    engine_name: str = "mock",
+    output_dir: Path | None = None,
+) -> ScanResult:
     """
     Execute the scan using the appropriate engine.
 
-    Currently uses MockEngine. When real engines are available,
-    this function will select based on manifest configuration or
-    a separate engine registry.
-
     Parameters:
-        manifest -- A validated ScanManifest (after Phase 2c)
+        manifest     -- A validated ScanManifest (after Phase 2c)
+        engine_name  -- One of: "garak", "pyrit", "mock", "auto"
+                        Defaults to "mock" for safe dev/test behaviour.
+        output_dir   -- Directory for engine reports (garak/pyrit only).
+                        Defaults to None (engine uses its own default).
 
     Returns:
         ScanResult with normalized findings
     """
-    engine = MockEngine()
+    engine = _select_engine(engine_name, output_dir=output_dir)
     return engine.run_scan(manifest)
 
 

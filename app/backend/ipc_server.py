@@ -141,11 +141,12 @@ def _parse_config(raw: dict) -> dict:
     if not target:
         raise ValueError("'target' is required in scan config")
 
-    mode       = raw.get("mode", "api")
-    scan_depth = raw.get("scan_depth", "standard")
-    categories = raw.get("categories") or None  # None → use depth defaults
-    api_key    = raw.get("api_key", "")
-    notes      = raw.get("notes", "")
+    mode        = raw.get("mode", "api")
+    scan_depth  = raw.get("scan_depth", "standard")
+    categories  = raw.get("categories") or None  # None → use depth defaults
+    api_key     = raw.get("api_key", "")
+    notes       = raw.get("notes", "")
+    engine      = raw.get("engine", "mock")   # "garak" | "pyrit" | "mock" | "auto"
 
     return {
         "target":     target,
@@ -154,6 +155,7 @@ def _parse_config(raw: dict) -> dict:
         "categories": categories,
         "api_key":    api_key,
         "notes":      notes,
+        "engine":     engine,
     }
 
 
@@ -272,22 +274,45 @@ def run_scan_pipeline(config: dict) -> None:
     _emit_progress("manifest", 5, 0, 0, 0, "Building scan manifest...")
 
     from core.manifest import create_manifest
+    engine_name = params.pop("engine", "mock")  # extract before create_manifest call
     manifest = create_manifest(**params)
 
     cat_names = ", ".join(c.value for c in manifest.categories)
     _emit_activity(f"Manifest created — ID: {manifest.manifest_id[:8]}... · categories: {cat_names}", "info")
     _emit_progress("manifest", 8, 0, 0, 0, f"Manifest ready · {len(manifest.categories)} category(s) selected")
 
-    # ── 3. Run scan (streaming) ────────────────────────────────────────────
+    # ── 3. Run scan ────────────────────────────────────────────────────────
     _emit_stage("scanning", "Starting scan engine...")
-    _emit_activity("Launching MockEngine (real engines: Phase P4/P5)", "info")
+    _emit_activity(f"Launching engine: {engine_name}", "info")
 
-    findings = _run_scan_with_streaming(manifest)
+    if engine_name == "mock":
+        # Mock uses the streaming-aware per-probe emitter for live UI updates
+        findings = _run_scan_with_streaming(manifest)
+        scan_engine_name = "mock"
+    else:
+        # Real engines (garak / pyrit / auto) — run then batch-emit findings
+        from core.engine_runner import run_engine
+        import pathlib, os
+        out_dir_path = pathlib.Path(os.path.join(manifest.output_dir, f"engine_{engine_name}"))
+        scan_result_real = run_engine(manifest, engine_name=engine_name, output_dir=out_dir_path)
+        findings = scan_result_real.findings
+        scan_engine_name = engine_name
+        for f in findings:
+            _emit_finding(
+                category   = f.category,
+                severity   = f.severity,
+                confidence = f.confidence,
+                evidence   = f.evidence,
+                probe_id   = f.probe_id,
+            )
+        if scan_result_real.error:
+            _emit_activity(f"Engine warning: {scan_result_real.error}", "warn")
 
     elapsed_ms = int((time.time() - t_start) * 1000)
     _emit_progress("scanning", 90, len(findings), len(findings), elapsed_ms,
                    f"Scan complete — {len(findings)} finding(s) detected")
     _emit_activity(f"Engine finished: {len(findings)} total finding(s)", "info")
+
 
     # ── 4. Score findings ──────────────────────────────────────────────────
     _emit_stage("scoring", "Running severity classifier and risk scorer...")
@@ -298,7 +323,7 @@ def run_scan_pipeline(config: dict) -> None:
 
     scan_result = ScanResult(
         findings     = findings,
-        engine_name  = "mock",
+        engine_name  = scan_engine_name,
         manifest_id  = manifest.manifest_id,
         total_probes = len(findings),
         duration_sec = time.time() - t_start,

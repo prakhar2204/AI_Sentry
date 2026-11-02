@@ -1,6 +1,6 @@
 ﻿# Sentry\u0278 — Architecture & Design Decisions
 
-**Last Updated:** 2026-09-13  
+**Last Updated:** 2026-10-09  
 **Format:** Decision Log — each entry is permanent. Decisions are never deleted, only superseded.
 
 ---
