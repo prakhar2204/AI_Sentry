@@ -336,6 +336,25 @@ def run_scan_pipeline(config: dict) -> None:
         "warning" if risk_report.risk_level == "high" else "info",
     )
 
+    # ── 4.5 Normalize + deduplicate findings (P6) ──────────────────────────
+    norm_dict: dict = {}
+    try:
+        from core.normalizer import normalize_findings
+        tested_cats = [c.value if hasattr(c, "value") else str(c) for c in manifest.categories]
+        norm_result = normalize_findings(
+            findings_by_engine={scan_engine_name: findings},
+            tested_categories=tested_cats,
+        )
+        if norm_result.duplicates_merged > 0:
+            _emit_activity(
+                f"Deduplication: {norm_result.duplicates_merged} duplicate(s) merged "
+                f"({norm_result.total_raw} → {norm_result.total_after_dedup} findings)",
+                "info",
+            )
+        norm_dict = norm_result.to_dict()
+    except Exception:  # noqa: BLE001
+        pass   # normalizer failure is non-fatal
+
     # ── 5. Generate recommendations ────────────────────────────────────────
     _emit_stage("recommendations", "Generating remediation recommendations...")
     _emit_progress("recommendations", 95, len(findings), len(findings), elapsed_ms,
@@ -359,8 +378,12 @@ def run_scan_pipeline(config: dict) -> None:
         "info",
     )
 
-    # ── Complete event: full report sent to frontend ───────────────────────
-    _emit({"type": "complete", "report": report.to_dict()})
+    # ── Complete event: full report + normalization/OWASP data ────────────
+    report_dict = report.to_dict()
+    if norm_dict:
+        report_dict["normalization"] = norm_dict
+    _emit({"type": "complete", "report": report_dict})
+
 
 
 # ─────────────────────────────────────────────

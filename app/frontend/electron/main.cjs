@@ -25,8 +25,8 @@ const fs = require('fs');
 //  Environment
 // ─────────────────────────────────────────────
 
-const isDev = !app.isPackaged;
-const DEV_URL = 'http://localhost:3000';
+const isDev = process.env.ELECTRON_DEV === '1' || !app.isPackaged;
+const DEV_URL = 'http://localhost:5173';
 
 // ─────────────────────────────────────────────
 //  Active scan process reference
@@ -100,23 +100,32 @@ function createWindow() {
 
 /** Find the Python executable on the system */
 function findPython() {
-  // In production, check for bundled Python first
+  // In production, check for bundled PyInstaller executable first
   if (!isDev) {
-    const bundledPy = path.join(process.resourcesPath, 'python', 'python');
-    if (fs.existsSync(bundledPy)) return bundledPy;
-    const bundledPyWin = path.join(process.resourcesPath, 'python', 'python.exe');
-    if (fs.existsSync(bundledPyWin)) return bundledPyWin;
+    // PyInstaller single-file bundle
+    const bundledExe = path.join(process.resourcesPath, 'backend', 'ipc_server.exe');
+    if (fs.existsSync(bundledExe)) return bundledExe;
+    const bundledBin = path.join(process.resourcesPath, 'backend', 'ipc_server');
+    if (fs.existsSync(bundledBin)) return bundledBin;
+    // Embedded Python
+    const embeddedPy = path.join(process.resourcesPath, 'python', 'python.exe');
+    if (fs.existsSync(embeddedPy)) return embeddedPy;
+    const embeddedPy3 = path.join(process.resourcesPath, 'python', 'python');
+    if (fs.existsSync(embeddedPy3)) return embeddedPy3;
   }
-  // Fall back to system Python
+  // Development: use system Python
   return process.platform === 'win32' ? 'python' : 'python3';
 }
 
 function getBackendPath() {
   if (isDev) {
-    // Development: backend is at ../../backend relative to electron/
+    // Development: backend source is at ../../backend relative to electron/
     return path.join(__dirname, '../../backend');
   }
-  // Production: backend is bundled in resources
+  // Production: prefer raw backend_src (always bundled)
+  const srcPath = path.join(process.resourcesPath, 'backend_src');
+  if (fs.existsSync(srcPath)) return srcPath;
+  // Fallback: old layout
   return path.join(process.resourcesPath, 'backend');
 }
 
@@ -142,8 +151,13 @@ ipcMain.handle('scan:start', async (event, config) => {
   const backendPath = getBackendPath();
 
   try {
-    scanProcess = spawn(pythonPath, ['-m', 'ipc_server'], {
-      cwd: backendPath,
+    // Detect if pythonPath IS the bundled ipc_server executable (PyInstaller)
+    const isBundledExe = pythonPath.endsWith('ipc_server.exe') || pythonPath.endsWith('ipc_server');
+    const spawnArgs  = isBundledExe ? [] : ['-m', 'ipc_server'];
+    const spawnCwd   = isBundledExe ? path.dirname(pythonPath) : backendPath;
+
+    scanProcess = spawn(pythonPath, spawnArgs, {
+      cwd: spawnCwd,
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, PYTHONUNBUFFERED: '1' },
     });

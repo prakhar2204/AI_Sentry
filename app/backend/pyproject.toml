@@ -28,7 +28,7 @@ dependencies = [
 engines = [
     # Scanning engines — pinned to tested versions.
     # DO NOT change these versions without running the full test suite.
-    "garak==0.17.0",            # D-002: Garak pinned to 0.17.0 (verified in B1-B6)
+    "garak>=0.16.0",            # D-002: Garak (latest stable; 0.17.0 not yet on PyPI)
     "pyrit==1.1.0",             # D-020, D-021: PyRIT real package name; pinned to 1.1.0
 ]
 

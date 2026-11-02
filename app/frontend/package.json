@@ -5,9 +5,12 @@
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
-    "dev:electron": "concurrently \"vite\" \"wait-on http://localhost:3000 && electron .\"",
+    "dev:electron": "concurrently \"vite\" \"wait-on http://localhost:5173 && cross-env ELECTRON_DEV=1 electron .\"",
     "build": "tsc && vite build",
     "build:electron": "npm run build && electron-builder",
+    "build:python": "python scripts/build-python.py",
+    "build:all": "npm run build:python && npm run build:electron",
+    "dist": "npm run build:all",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -19,6 +22,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "concurrently": "^9.1.2",
+    "cross-env": "^10.1.0",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8",
     "typescript": "^5.5.3",
@@ -37,15 +41,28 @@
     ],
     "extraResources": [
       {
-        "from": "../backend",
+        "from": "resources/backend",
         "to": "backend",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../backend",
+        "to": "backend_src",
         "filter": [
-          "**/*",
+          "**/*.py",
           "!**/__pycache__/**",
-          "!**/*.pyc"
+          "!**/*.pyc",
+          "!tests/**"
         ]
       }
     ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Sentryphi"
+    },
     "win": {
       "target": "nsis",
       "icon": "public/icon.ico"
@@ -58,6 +75,7 @@
       "target": "AppImage",
       "icon": "public/icon.png"
     }
+
   },
   "allowScripts": {
     "esbuild@0.21.5": true,

@@ -7,7 +7,7 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   server: {
-    port: 3000,
+    port: 5173,
     open: false,
     watch: {
       ignored: ['**/release/**', '**/dist/**'],
