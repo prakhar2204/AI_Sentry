@@ -1,6 +1,6 @@
-﻿# AI-SENTRY — Architecture & Design Decisions
+# AI-SENTRY — Architecture & Design Decisions
 
-**Last Updated:** 2026-09-13  
+**Last Updated:** 2026-10-09  
 **Format:** Decision Log — each entry is permanent. Decisions are never deleted, only superseded.
 
 ---
@@ -318,3 +318,153 @@ The download begins immediately upon clicking the button.
 - Email capture before download is common but actively hostile to the target user
 - Trust is built by transparency and technical depth — not by gating access to a free tool
 
+---
+
+### D-018: DeepTeam Dropped — Garak Used as Primary Scanning Engine
+
+**Date:** 2026-09-21
+**Phase:** 4 (Engine Integration — pivot during implementation)
+**Status:** Active
+**Supersedes:** D-002 (partially — DeepTeam portion only), KI-003, GAP-002
+
+**Decision:** DeepTeam (and its underlying dependency `deepeval`) has been removed from the project. The scanning engine integration in Phase 4 will be built on **Garak** instead. Garak becomes the primary (and currently sole) scanning engine. PyRIT remains planned for future integration.
+
+**Rationale:**
+- DeepTeam requires an auxiliary LLM (OpenAI `gpt-4o-mini` by default) for both attack generation (`simulator_model`) and response judging (`evaluation_model`). This creates a hard dependency on a paid API key for any scan to function.
+- The project's design goal is a tool that works without requiring users to provide third-party API keys for the scanning engine's internal operation. Garak does not have this dependency.
+- During Sub-phase 1 smoke testing, DeepTeam v1.0.9 (backed by deepeval v4.2.3) was confirmed to import and expose 39 vulnerability classes and the `red_team()` function successfully. However, the mandatory paid-LLM dependency made it unsuitable for the project's "free on its own" constraint.
+- Garak operates as a self-contained probe-based scanner (subprocess/CLI) with no auxiliary LLM requirement.
+
+**What was removed:**
+- `deepeval==1.4.0` from `pyproject.toml` `[engines]` dependencies
+- `deepteam` and `deepeval` packages uninstalled
+- 3 throwaway test scripts (`smoke_test_deepteam.py`, `smoke_test_output.txt`, `check_model_options.py`)
+- DeepTeam reference in `core/health.py` comment (L15)
+- DeepTeam reference in `cli/main.py` healthcheck description (L130)
+
+**What was NOT removed (historical audit trail):**
+- All prior decision entries (D-002, etc.) that mention DeepTeam remain in this file — they document the original design intent
+- Documentation files (`PRD.md`, `TRD.md`, `FINAL_CONSOLIDATION.md`, `SYSTEM_EXECUTION_LAYER.md`) retain their original DeepTeam references as historical design records
+- `context/` files (`architecture.md`, `known_issues.md`, etc.) retain DeepTeam references as Phase 0 design history
+
+**Note for future readers:** Entries D-002, KI-003 (in `known_issues.md`), and GAP-002 (in `FINAL_CONSOLIDATION.md`) reference DeepTeam as an active engine. Those entries reflect the original Phase 0 design. This decision (D-018) supersedes them. The original text is preserved for decision-trail integrity.
+
+---
+
+### D-019: PyRIT Offline-Only Scorers (no LLM judge)
+
+**Date:** 2026-10-28  
+**Decision:** All PyRIT scorers used in `core/pyrit_engine.py` must be offline — no scorer may make a secondary LLM call.
+
+**Rationale:** User requirement (D-Q2): AI-SENTRY must work without any external API keys or a running secondary LLM. LLM-based scorers (`SelfAskRefusalScorer`, `SelfAskLikertScorer`, etc.) violate this.
+
+**Chosen scorers (all offline):**
+- `SubStringScorer` — keyword match (primary workhorse)
+- `StaticPromptInjectionScorer` — regex-based injection pattern detection
+- `RegexScorer` — available for future custom patterns
+
+**Explicitly rejected:**
+- `SelfAskRefusalScorer`, `SelfAskLikertScorer`, `SelfAskTrueFalseScorer`, `SelfAskCategoryScorer` — all require a `chat_target` (secondary LLM)
+- `AzureContentFilterScorer`, `LlamaGuardScorer` — require Azure API or local LlamaGuard model
+
+---
+
+### D-020: PyRIT Package Name Correction
+
+**Date:** 2026-10-28  
+**Decision:** The correct PyPI package name is `pyrit`, NOT `pyrit-ai`. Updated `pyproject.toml` from `pyrit-ai==0.5.0` to `pyrit==1.1.0`.
+
+**Rationale:** `pyrit-ai` does not exist on PyPI. `pyrit` is the real package (Microsoft). Version 1.1.0 is the latest as of 2026-10-28.
+
+**API changes vs old assumption (pyrit-ai==0.5.0):**
+- `DuckDBMemory` removed → `SQLiteMemory`
+- `PromptRequestPiece` / `PromptRequestResponse` → `MessagePiece` / `Message`
+- `pyrit.orchestrator` module does not exist → use `PromptNormalizer.send_prompt_async()`
+- `fetch_harmbench_examples()` does not exist → use `SeedDatasetProvider`
+- `OpenAIChatTarget` requires explicit `model_name` (passing `None` forces env var lookup)
+- `endpoint` must be base URL only — no `/chat/completions` suffix
+
+**Dependency conflict:** PyRIT 1.1.0 upgrades `datasets` to 5.1.0, but Garak 0.17.0 requires `datasets<4.0`. Garak subprocess isolation means unit tests still pass (82/82). Real server runs should be re-validated.
+
+### D-021: PyRIT Version Pinned to 1.1.0
+
+**Date:** 2026-11-02
+**Phase:** 5 (PyRIT Engine Integration — P1-P6)
+**Status:** Active
+
+**Decision:** `pyrit==1.1.0` is pinned in `pyproject.toml` `[engines]`.
+
+**Rationale:**
+- 1.1.0 is the latest published version of `pyrit` on PyPI as of 2026-11-02.
+- The package was verified installable and functional on Python 3.12.0.
+- API surfaces discovered and documented during P1 (environment discovery):
+  `SQLiteMemory`, `MessagePiece`, `Message`, `PromptNormalizer.send_prompt_async`,
+  `SubStringScorer`, `StaticPromptInjectionScorer`, `initialize_pyrit_async`.
+- Pinning prevents silent breakage from upstream API changes (PyRIT 1.x → 2.x).
+
+**Supersedes note:** D-020 corrected the package name from `pyrit-ai` to `pyrit`
+and set the initial version. D-021 formalises the P6-era pin.
+
+**Version lock review:** Required before any upgrade. Full test suite
+(148 tests) must pass. API surfaces must be re-verified via P1-style inspection.
+
+---
+
+### D-022: Garak/PyRIT datasets Conflict Resolved via Subprocess Isolation
+
+**Date:** 2026-11-02
+**Phase:** 5 (PyRIT Engine Integration — P1-P6)
+**Status:** Active
+
+**Decision:** `pyrit==1.1.0` and `garak==0.17.0` can coexist in the same
+Python environment despite their conflicting `datasets` version requirements
+(`datasets>=4.8.0` vs `datasets<4.0`). No workaround or virtual environment
+split is required.
+
+**Rationale:**
+- Garak is invoked exclusively as a CLI subprocess (`subprocess.run(["garak", ...])`).
+  It runs in its own Python interpreter (the system PATH `garak` executable), which
+  loads `datasets` independently of the AI-SENTRY process.
+- The AI-SENTRY Python process imports `pyrit` directly. PyRIT's `datasets>=4.8.0`
+  is satisfied by whatever version pip installs.
+- The two `datasets` consumers never share a Python process. There is no runtime
+  conflict.
+
+**Evidence:** 148/148 tests pass with both packages installed simultaneously.
+Integration tests (P6) confirmed Garak subprocess scans and PyRIT SDK scans
+produce correct results from the same environment.
+
+**Future risk:** If AI-SENTRY ever imports Garak as a Python library (not a
+subprocess), this isolation guarantee disappears and the conflict must be resolved
+by virtualenv splitting or a common-version negotiation.
+
+---
+
+### D-023: PyRIT VulnerabilityFinding Reuse (Shared Schema)
+
+**Date:** 2026-11-02
+**Phase:** 5 (PyRIT Engine Integration — P1-P6)
+**Status:** Active
+
+**Decision:** `core/pyrit_engine.py` imports `VulnerabilityFinding` from
+`core.garak_engine` rather than defining its own. Both engines produce
+identical output objects.
+
+**Rationale:**
+- D-003 mandates a single shared schema for all engine outputs.
+- `VulnerabilityFinding` in `core/garak_engine.py` already matches the Phase 4
+  normalization contract (all required fields: `finding_id`, `engine`, `category`,
+  `probe`, `detector`, `passed`, `failed`, `total`, `pass_rate`, `severity`,
+  `confidence`, `raw_eval`).
+- Re-implementing the same dataclass in `pyrit_engine.py` would create drift risk.
+- PyRIT findings set `engine="pyrit"`, all other fields populated identically to
+  Garak findings — the downstream normalization layer requires zero changes.
+
+**Implementation:** `from core.garak_engine import VulnerabilityFinding`
+(line 1 import in `core/pyrit_engine.py`).
+
+**Future:** When Phase 4 normalization is built, `VulnerabilityFinding` will
+be extracted to `core/schemas.py` (a neutral module). Both engine files will
+then import from there. This is a one-line change in each file; no schema change.
+
+---

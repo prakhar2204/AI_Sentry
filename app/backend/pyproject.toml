@@ -28,9 +28,8 @@ dependencies = [
 engines = [
     # Scanning engines — pinned to tested versions.
     # DO NOT change these versions without running the full test suite.
-    "garak==0.9.0.14",          # D-002: Garak pinned
-    "pyrit-ai==0.5.0",          # D-002: PyRIT pinned
-    "deepeval==1.4.0",          # D-002: DeepTeam pinned
+    "garak==0.17.0",            # D-002: Garak pinned to 0.17.0 (verified in B1-B6)
+    "pyrit==1.1.0",             # D-020, D-021: PyRIT real package name; pinned to 1.1.0
 ]
 
 reports = [
@@ -79,6 +78,9 @@ include = ["cli*", "core*"]
 testpaths    = ["tests"]
 pythonpath   = ["."]           # ensures `from core.x import ...` resolves
 addopts      = "-v --tb=short"
+markers      = [
+    "integration: tests that require a live server (fake or real); skipped in pure-unit runs",
+]
 
 [tool.ruff]
 line-length = 100

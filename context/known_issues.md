@@ -1,7 +1,7 @@
-﻿# AI-SENTRY — Known Issues & Open Questions
+# AI-SENTRY — Known Issues & Open Questions
 
-**Last Updated:** 2026-09-13  
-**Phase:** 0b — Documentation Foundation  
+**Last Updated:** 2026-11-02  
+**Phase:** 3 Complete (Garak B1–B6 + T2–T4, PyRIT P1–P6; 148 tests passing)  
 **Format:** Each entry has an ID, status, and resolution path.
 
 ---
@@ -21,55 +21,49 @@
 
 ### KI-001: PyRIT Attacker LLM Hardware Requirements Unknown
 
-**Status:** 🟡 RISK  
+**Status:** ✅ RESOLVED  
 **Phase Discovered:** 0b  
+**Resolved:** Phase 3 P2 (2026-11-02)  
 **Affects:** Phase 3 (Engine Adapters)
 
 **Description:**  
-PyRIT's red-teaming orchestration requires a secondary "attacker LLM" to generate adversarial follow-up prompts. The decision (D-008) is to default to Phi-3 Mini locally. However, the exact RAM/VRAM requirements to run Phi-3 Mini *alongside* the scan target model on the same machine have not been measured.
+PyRIT's multi-turn orchestration optionally uses an attacker LLM to generate follow-up adversarial prompts. Running a secondary LLM alongside the target model introduces significant RAM/VRAM resource contention.
 
-**Risk:** On machines with limited RAM (8–16GB), running two models simultaneously may be infeasible.
-
-**Resolution Path:**  
-- Phase 3: Benchmark Phi-3 Mini memory footprint on standard developer hardware configurations
-- Design fallback: if hardware is insufficient for dual-model operation, PyRIT runs in single-turn mode (no attacker LLM) with coverage reduction noted in report
-- Consider offering Phi-3 Mini as an optional API endpoint (HuggingFace hosted) as a middle ground
+**Resolution:**  
+Per confirmed decision D-Q2 and implementation in P2, AI-SENTRY uses strictly offline deterministic scorers (`SubStringScorer`, regex matchers, refusal detection) across all 12 attack specs. No secondary attacker LLM is loaded or required. Scanning operates with zero extra VRAM overhead.
 
 ---
 
 ### KI-002: Garak Output Format Stability
 
-**Status:** 🟡 RISK  
+**Status:** ✅ RESOLVED  
 **Phase Discovered:** 0b  
+**Resolved:** Phase 3 (2026-09-21)  
 **Affects:** Phase 3 (Garak Adapter)
 
 **Description:**  
 Garak is an actively developed research tool. Its JSONL output format and CLI interface have changed between versions. AI-SENTRY pins to a specific version, but the pinned version may have known bugs or missing probe categories.
 
-**Risk:** The adapter must be designed for a specific Garak version. The "best current version" must be evaluated before Phase 3 begins.
-
-**Resolution Path:**  
-- Phase 3: Evaluate Garak's last 3 releases; choose the version with the most stable output format and broadest probe coverage
-- Document the chosen version and its limitations in the adapter
-- Build the adapter parser with explicit version checking — fail loudly if the installed Garak version doesn't match
+**Resolution:**  
+- Garak 0.17.0 selected after evaluating real output format in B1
+- Full adapter built in `core/garak_engine.py` with explicit JSONL parsing for 7 entry_types
+- Key 0.17.0 changes discovered and handled: `probes.` prefix required in `--spec`, URI must come from `--config` YAML (not `--target_name`), JSONPath `$` prefix required in `response_json_field`
+- 21 probes verified working across 6 categories in B2
 
 ---
 
 ### KI-003: DeepTeam Metric Threshold Calibration
 
-**Status:** 🟡 RISK  
+**Status:** ✅ SUPERSEDED  
 **Phase Discovered:** 0b  
-**Affects:** Phase 3 (DeepTeam Adapter), Phase 4 (Normalization)
+**Superseded by:** D-018 (DeepTeam dropped entirely, 2026-09-21)  
+**Affects:** N/A — DeepTeam is no longer part of the project
 
-**Description:**  
-DeepTeam uses metric scores to identify vulnerabilities (e.g., "bias score > 0.7 = finding detected"). The default thresholds may produce different false-positive rates depending on model type and domain. Thresholds that work well for a general-purpose model may not be appropriate for a domain-specific fine-tuned model.
+**Original Description:**  
+DeepTeam uses metric scores to identify vulnerabilities. The default thresholds may produce different false-positive rates depending on model type.
 
-**Risk:** Too-sensitive thresholds → excessive false positives → user distrust. Too-lenient thresholds → missed real vulnerabilities.
-
-**Resolution Path:**  
-- Phase 3: Test DeepTeam defaults against a set of known-clean and known-vulnerable models
-- Design thresholds as configurable per scan (Advanced settings)
-- Document the default threshold values and their empirical basis in the TRD
+**Resolution:**  
+DeepTeam was dropped from the project in D-018 due to its hard dependency on paid API keys (OpenAI gpt-4o-mini). This issue no longer applies. See `context/decisions.md` D-018 for full rationale.
 
 ---
 
@@ -146,14 +140,103 @@ The website must comply with GDPR and other privacy regulations for cookie conse
 
 ---
 
+### KI-008: `dan.Ablation_Dan_11_0` Always Times Out on Slow Local Models
+
+**Status:** 🟡 RISK  
+**Phase Discovered:** Phase 3 T3 (2026-10-28)  
+**Affects:** Phase 3 (Garak Engine), Phase 4+ (all full sweeps)
+
+**Description:**  
+`probes.dan.Ablation_Dan_11_0` contains 127 extremely long DAN jailbreak prompts
+(1000–2000 chars each). On `smollm2-135m`, each prompt takes ~36s to process.
+With `prompt_cap=10`, a single probe run takes ~360s — exactly at our subprocess
+timeout limit. The probe consistently times out at 360s.
+
+**Risk:** This is the most aggressive DAN variant. Not having results from it
+creates a blind spot in jailbreak coverage.
+
+**Resolution Path:**  
+- Short-term: Raise `timeout` to 600s specifically for DAN-category probes OR
+  add a `per_probe_timeout` override dict to `GarakEngine.__init__`
+- Alternative: Skip `Ablation_Dan_11_0` on models with <5 tok/s throughput and
+  document this as expected behaviour in the scan report
+- Long-term: Detect model throughput at scan start and auto-adjust timeouts
+
+---
+
+### KI-009: `lmrc.Bullying` Silently Produces 0 Attempt Records
+
+**Status:** 🟡 RISK  
+**Phase Discovered:** Phase 3 T2 (2026-10-28)  
+**Affects:** Phase 3 (Garak Engine), toxicity category
+
+**Description:**  
+When run via `python -m garak --spec probes.lmrc.Bullying`, garak runs for ~56s
+then exits rc=0 with only `start_run setup` + `init` records in the JSONL.
+No `plugin_cache`, no `attempt`, no `eval` records. This means the toxicity
+category (`lmrc.Bullying`, `lmrc.SlurUsage`) may be completely non-functional.
+
+**Risk:** The toxicity category silently produces 0 findings — a false sense
+of security ("model is fine on toxicity") with no actual testing.
+
+**Resolution Path:**  
+- Investigate in garak 0.17.0 source: whether `lmrc` probes have an external
+  data dependency, require a specific intent flag, or have a Windows-specific bug
+- If unfixable in 0.17.0, replace `lmrc.Bullying` and `lmrc.SlurUsage` with
+  `probes.continuation.ContinueSlursReclaimedSlurs` (64 prompts, confirmed working)
+- Update `CATEGORY_PROBE_MAP` toxicity entries accordingly
+
+---
+
+### KI-010: Multi-Detector Probes Produce Duplicate Resilient Findings
+
+**Status:** 🟢 ACKNOWLEDGED  
+**Phase Discovered:** Phase 3 T3 (2026-10-28)  
+**Affects:** Phase 4 (Normalization Layer)
+
+**Description:**  
+Some garak probes (e.g. `encoding.InjectBase64`) have multiple detectors. Each
+detector produces its own `eval` record in the JSONL, and `_parse_report()` yields
+one `VulnerabilityFinding` per eval record. Result: `InjectBase64` appears twice in
+result.findings — one per detector — even though it is a single probe run.
+
+**Risk:** Inflated finding counts; confusing output where one probe appears as
+2 resilient findings. Not a correctness issue but a UX issue.
+
+**Resolution Path:**  
+Phase 4 Deduplicator (task 4.3) — when same `probe` appears multiple times with
+same `category`, merge into a single finding with `worst_case` severity and
+`combined_detectors` field listing all detector names.
+
+---
+
+### KI-011: rc=1 False Error Detection (RESOLVED — 2026-10-28)
+
+**Status:** ✅ RESOLVED  
+**Phase Discovered:** Phase 3 T3 (2026-10-28)  
+**Resolved:** Same session, B-FIX-002b
+
+**Description:**  
+Garak returns `rc=1` when it finds vulnerabilities (FAIL results). The original
+`_run_probe()` logic used `has_error = proc.returncode != 0`, which flagged every
+vulnerable scan as `success=False` with error markers.
+
+**Resolution:**  
+Fixed `has_error = proc.returncode not in (0, 1)`. rc=0 means all passed;
+rc=1 means vulnerabilities found — both are successful scan outcomes.
+Removed `"Error:"` and `"Exception"` from error_markers (too broad).
+
+---
+
 ## Open Questions
 
 | ID | Question | Priority | Target Phase for Resolution |
 |---|---|---|---|
-| OQ-001 | What is the minimum hardware spec for running PyRIT + Phi-3 Mini simultaneously? | High | Phase 3 |
-| OQ-002 | Which version of Garak should be pinned for v1? | High | Phase 3 |
+| OQ-001 | What is the minimum hardware spec for running PyRIT + Phi-3 Mini simultaneously? | ✅ RESOLVED | Phase 3 (D-Q2 resolved via offline scorers; no Phi-3 Mini required) |
+| OQ-002 | Which version of Garak should be pinned for v1? | ✅ RESOLVED: garak 0.17.0 | Phase 3 |
 | OQ-003 | What is the exact minimum IAM policy for AWS deployment? | High | Phase 7 |
 | OQ-004 | Should the confidence score weights be hardcoded or user-configurable? | Medium | Phase 5 |
 | OQ-005 | How should AI-SENTRY handle a model that returns empty responses to all probes? | Medium | Phase 2 |
 | OQ-006 | Should probe payloads be stored by default, or only on explicit user opt-in? | Medium | Phase 1 |
 | OQ-007 | What is the right default scan depth for first-time users? | Low | Phase 8 (UI) |
+| OQ-008 | Should `prompt_cap` be auto-adjusted based on detected model throughput? | Medium | Phase 4 |

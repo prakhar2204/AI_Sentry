@@ -1,14 +1,14 @@
-﻿# AI-SENTRY — Project Overview
+# AI-SENTRY — Project Overview
 
-**Last Updated:** 2026-09-13  
-**Phase:** 0b — Documentation Foundation  
-**Status:** Pre-implementation — Documentation complete, no code written
+**Last Updated:** 2026-11-02  
+**Phase:** 3 — Engine Adapters (Garak & PyRIT Complete)  
+**Status:** Implementation in progress — Phases 0-2 complete, Phase 3 complete (Garak B1–B6, T2–T4, PyRIT P1–P6; 148 tests passing), Next: Engine Unification / Phase 4 Normalization
 
 ---
 
 ## What Is This Project?
 
-AI-SENTRY is a **multi-engine LLM security orchestration platform** delivered as a desktop application (Windows + Linux). It automates the process of scanning any LLM for known security vulnerabilities using three industry-grade engines (Garak, PyRIT, DeepTeam), normalizes their outputs into a unified report with severity and confidence scores, and guides the user through secure cloud deployment.
+AI-SENTRY is a **multi-engine LLM security orchestration platform** delivered as a desktop application (Windows + Linux). It automates the process of scanning any LLM for known security vulnerabilities using industry-grade engines (Garak CLI subprocess + PyRIT Python SDK), normalizes their outputs into a unified report with severity and confidence scores, and guides the user through secure cloud deployment.
 
 ## Core Value Proposition
 
@@ -16,12 +16,14 @@ AI-SENTRY is a **multi-engine LLM security orchestration platform** delivered as
 
 ## The Problem Being Solved
 
-Three excellent open-source LLM security tools exist (Garak, PyRIT, DeepTeam) but:
+Two excellent open-source LLM security tools exist (Garak, PyRIT) but:
 - They have incompatible output formats
 - They require complex individual setup
 - They provide no unified scoring or deployment guidance
 
-AI-SENTRY wraps all three, normalizes their outputs, adds scoring and remediation, and connects to cloud deployment.
+AI-SENTRY wraps them, normalizes their outputs, adds scoring and remediation, and connects to cloud deployment.
+
+**Note:** DeepTeam was originally planned as a third engine but was dropped (D-018) due to its hard dependency on paid API keys. PyRIT was fully integrated in Phase 3 alongside Garak. Agent-Guardian is deferred.
 
 ## Product Delivery
 
@@ -35,7 +37,7 @@ AI-SENTRY wraps all three, normalizes their outputs, adds scoring and remediatio
 **"Wrap, don't rebuild"** — AI-SENTRY does not reimplement scanning logic. It orchestrates existing tools through a layered pipeline:
 
 ```
-Input → Orchestration → Engines (Garak/PyRIT/DeepTeam) → Normalization → Intelligence → Output
+Input → Orchestration → Engines (Garak/PyRIT) → Normalization → Intelligence → Output
 ```
 
 ## Key Differentiators
@@ -48,7 +50,7 @@ Input → Orchestration → Engines (Garak/PyRIT/DeepTeam) → Normalization →
 
 ## v1 Scope Boundaries
 
-**In v1:** Desktop app, 3 engines, unified report, AWS one-click deployment  
+**In v1:** Desktop app, dual scanning engines (Garak + PyRIT), unified report, AWS one-click deployment  
 **Out of v1:** Runtime monitoring, Azure/GCP deployment, SaaS, CI/CD integration, multi-modal scanning
 
 ## Repository Structure (Target)

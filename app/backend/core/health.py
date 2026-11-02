@@ -12,7 +12,7 @@ Status: STUB — implementation planned for Phase 1.
 #   1. Python runtime version (must be 3.11.x)
 #   2. garak import at pinned version
 #   3. pyrit import at pinned version
-#   4. deepeval import at pinned version
+#   4. garak import at pinned version
 #   5. OS keychain read/write access
 #   6. llama.cpp binary present and executable
 #   7. Available disk space (>500 MB free)
