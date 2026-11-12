@@ -13,7 +13,6 @@ import {
   ProductPreview,
   OwaspSection,
   FAQSection,
-  FutureSection,
   FinalCTA,
 } from '@/sections/LandingSections';
 
@@ -33,7 +32,6 @@ export default function HomePage() {
       <ProductPreview />
       <OwaspSection />
       <FAQSection />
-      <FutureSection />
       <FinalCTA />
     </main>
   );
