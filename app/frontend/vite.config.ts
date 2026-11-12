@@ -13,4 +13,18 @@ export default defineConfig({
       ignored: ['**/release/**', '**/dist/**'],
     },
   },
+  test: {
+    // W5: Vitest configuration
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./src/tests/setup.ts'],
+    css: false,
+    include: ['src/tests/**/*.test.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/tests/**', 'src/main.tsx', 'src/vite-env.d.ts'],
+    },
+  },
 });
