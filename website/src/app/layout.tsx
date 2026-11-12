@@ -100,13 +100,15 @@ const jsonLd = {
     priceCurrency: 'USD',
   },
   featureList: [
-    'Multi-layer security analysis',
+    'Multi-layer security analysis (Garak + PyRIT engines)',
     'Adaptive vulnerability detection',
     'Model behavior stress testing',
     'Explainable dual-axis risk scoring',
     'OWASP LLM Top 10 coverage mapping',
     'Actionable three-layer remediation',
-    'Cloud deployment advisory',
+    'Multi-cloud deployment advisory (AWS, Azure, GCP)',
+    'One-click deployment to AWS SageMaker and Bedrock',
+    'Azure ML and GCP Vertex AI deployment support',
     'PDF, HTML, JSON report export',
   ],
   softwareVersion: '1.0.0',
@@ -128,8 +130,68 @@ const orgJsonLd = {
   description:
     'Open-source LLM security platform for pre-deployment vulnerability assessment.',
   foundingDate: '2026',
-  sameAs: [
-    // Add social links here when available
+  sameAs: [],
+};
+
+/* FAQ structured data — W7.2 */
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: [
+    {
+      '@type': 'Question',
+      name: 'What LLMs can Sentryɸ scan?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Sentryɸ works with any model accessible via an OpenAI-compatible API endpoint, including OpenAI, Anthropic via proxy, Azure OpenAI, and self-hosted models. It also supports local GGUF models via built-in llama.cpp integration.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Is Sentryɸ free to use?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Yes. Sentryɸ is completely free and open-source under the MIT license. No account, no subscription, no API key required for local or mock scans.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'What security vulnerabilities does Sentryɸ detect?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Sentryɸ covers all OWASP LLM Top 10 categories including prompt injection, jailbreak resistance, data leakage, harmful output generation, and more. It uses Garak and PyRIT engines for comprehensive testing.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Which cloud providers does Sentryɸ support for deployment?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Sentryɸ supports AWS (SageMaker, Bedrock, Lambda), Microsoft Azure (Azure ML, AKS), and Google Cloud Platform (Vertex AI, Cloud Run) for one-click secure model deployment.',
+      },
+    },
+    {
+      '@type': 'Question',
+      name: 'Does Sentryɸ send my model data to the cloud?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'No. Sentryɸ runs entirely locally on your machine. Your model endpoint, API keys, and scan results never leave your computer. Cloud deployment is opt-in and uses your own cloud credentials.',
+      },
+    },
+  ],
+};
+
+/* BreadcrumbList for homepage — W7.2 */
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Home',
+      item: BASE_URL,
+    },
   ],
 };
 
@@ -154,6 +216,14 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
         />
       </head>
       <body>

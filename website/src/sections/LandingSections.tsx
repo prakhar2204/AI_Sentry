@@ -338,11 +338,13 @@ export function CloudSection() {
     <section className={s.cloud} id="cloud">
       <div className={s.cloudInner}>
         <div className={`${s.sectionHeader} animate-in`}>
-          <span className={s.sectionLabel}>Deployment</span>
+          <span className={s.sectionLabel}>Multi-Cloud Deployment</span>
           <h2 className={s.sectionTitle}>From report to secure infrastructure.</h2>
           <p className={s.sectionSub}>
             The Deployment Advisor reads your risk profile and generates
-            production-ready cloud configurations. For AWS: one-click execution.
+            production-ready configurations for <strong>AWS</strong>,{' '}
+            <strong>Azure</strong>, and <strong>GCP</strong> — with one-click
+            execution on all three platforms.
           </p>
         </div>
         <div className={`${s.cloudTableWrap} animate-in`}>
@@ -365,26 +367,32 @@ export function CloudSection() {
               <tr>
                 <td>Native guardrails</td>
                 <td><span className={s.cloudCheck}>✓ Bedrock</span></td>
-                <td className={s.cloudMuted}>Manual</td>
-                <td className={s.cloudMuted}>—</td>
+                <td><span className={s.cloudCheck}>✓ Content Safety</span></td>
+                <td><span className={s.cloudCheck}>✓ Vertex AI</span></td>
               </tr>
               <tr>
                 <td>One-click deploy</td>
                 <td><span className={s.cloudCheck}>✓</span></td>
-                <td className={s.cloudMuted}>—</td>
-                <td className={s.cloudMuted}>—</td>
-              </tr>
-              <tr>
-                <td>IAM auto-configuration</td>
                 <td><span className={s.cloudCheck}>✓</span></td>
-                <td className={s.cloudMuted}>—</td>
-                <td className={s.cloudMuted}>—</td>
+                <td><span className={s.cloudCheck}>✓</span></td>
               </tr>
               <tr>
-                <td>Monitoring alarms</td>
+                <td>OAuth sign-in flow</td>
+                <td><span className={s.cloudCheck}>✓ AWS SSO</span></td>
+                <td><span className={s.cloudCheck}>✓ Azure AD</span></td>
+                <td><span className={s.cloudCheck}>✓ GCP OAuth</span></td>
+              </tr>
+              <tr>
+                <td>Monitoring &amp; alarms</td>
                 <td><span className={s.cloudCheck}>✓ CloudWatch</span></td>
-                <td className={s.cloudMuted}>Manual</td>
-                <td className={s.cloudMuted}>Manual</td>
+                <td><span className={s.cloudCheck}>✓ Monitor</span></td>
+                <td><span className={s.cloudCheck}>✓ Cloud Logging</span></td>
+              </tr>
+              <tr>
+                <td>Private self-hosted</td>
+                <td><span className={s.cloudCheck}>✓ Docker/K8s</span></td>
+                <td><span className={s.cloudCheck}>✓ AKS</span></td>
+                <td><span className={s.cloudCheck}>✓ GKE</span></td>
               </tr>
             </tbody>
           </table>
@@ -393,6 +401,8 @@ export function CloudSection() {
     </section>
   );
 }
+
+
 
 /* ════════════════════════════════════════════════
    PRODUCT PREVIEW

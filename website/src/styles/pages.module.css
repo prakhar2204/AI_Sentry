@@ -114,3 +114,189 @@
   padding-bottom: 12px;
   border-bottom: 1px solid var(--border-subtle);
 }
+
+/* ── Blog Post Layout ─────────────────────────────────────────────────── */
+
+.blogPost {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 80px 24px 120px;
+}
+
+.blogArticle {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.blogHeader {
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.blogCategory {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-subtle, rgba(0, 212, 255, 0.08));
+  padding: 4px 10px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+
+.blogTitle {
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text-primary);
+  margin: 16px 0 20px;
+  letter-spacing: -0.02em;
+}
+
+.blogMeta {
+  font-size: 14px;
+  color: var(--text-tertiary, #666);
+  margin: 0;
+}
+
+.blogBody {
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+}
+
+.blogBody h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 56px 0 16px;
+  letter-spacing: -0.01em;
+}
+
+.blogBody h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 32px 0 10px;
+}
+
+.blogBody p {
+  margin: 0 0 20px;
+}
+
+.blogBody ul,
+.blogBody ol {
+  margin: 0 0 24px 24px;
+}
+
+.blogBody li {
+  margin-bottom: 8px;
+}
+
+.blogBody strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.blogBody a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.blogLead {
+  font-size: 20px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin-bottom: 40px !important;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+/* ── OWASP Category Cards ─────────────────────────────────────────────── */
+
+.owaspCategory {
+  margin: 48px 0;
+  padding: 32px;
+  background: var(--surface-raised, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.owaspCategory h2 {
+  margin-top: 0 !important;
+  margin-bottom: 12px !important;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.owaspId {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  background: var(--accent-subtle, rgba(0, 212, 255, 0.08));
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.owaspDetail {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.owaspDetail h3 {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary, #888) !important;
+  margin: 0 0 8px !important;
+}
+
+.owaspExample {
+  font-style: italic;
+  opacity: 0.85;
+}
+
+/* ── Blog CTA ──────────────────────────────────────────────────────────── */
+
+.blogCta {
+  margin: 64px 0 0;
+  padding: 40px;
+  background: linear-gradient(135deg, var(--surface-raised, #0d1117), var(--surface-elevated, #1a1f2e));
+  border: 1px solid var(--accent, #00d4ff);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.blogCta p {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px !important;
+}
+
+.blogCtaBtn {
+  display: inline-block;
+  padding: 14px 32px;
+  background: var(--accent, #00d4ff);
+  color: #000;
+  font-weight: 700;
+  font-size: 15px;
+  border-radius: 8px;
+  text-decoration: none !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.blogCtaBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.35);
+}
+
