@@ -4365,3 +4365,554 @@ body {
 }
 .deploy-cfg__cost-mid { font-size: 22px; font-weight: 900; color: #00d4ff; text-align: center; }
 .deploy-cfg__cost-note { font-size: 10px; color: var(--fg-muted); text-align: center; }
+
+/* -------------------------------------------------------
+   W4.2 — MICRO-ANIMATIONS & MOTION SYSTEM
+   ------------------------------------------------------- */
+
+/* -- Page Transition -- */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes page-exit {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+
+.page-container {
+  animation: page-enter var(--duration-page) var(--easing-enter) both;
+}
+
+/* -- Fade-in -- */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in var(--duration-normal) var(--easing-enter) both;
+}
+
+/* -- Slide-up stagger for lists -- */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up { animation: slide-up var(--duration-slow) var(--easing-enter) both; }
+
+/* Generate 12 stagger delays */
+.stagger-1  { animation-delay: 50ms; }
+.stagger-2  { animation-delay: 100ms; }
+.stagger-3  { animation-delay: 150ms; }
+.stagger-4  { animation-delay: 200ms; }
+.stagger-5  { animation-delay: 250ms; }
+.stagger-6  { animation-delay: 300ms; }
+.stagger-7  { animation-delay: 350ms; }
+.stagger-8  { animation-delay: 400ms; }
+.stagger-9  { animation-delay: 450ms; }
+.stagger-10 { animation-delay: 500ms; }
+.stagger-11 { animation-delay: 550ms; }
+.stagger-12 { animation-delay: 600ms; }
+
+/* -- Scale-in (cards / badges) -- */
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.animate-scale-in { animation: scale-in var(--duration-normal) var(--easing-spring) both; }
+
+/* -- Button hover / active micro-interactions -- */
+.button {
+  transition:
+    background-color var(--duration-fast) var(--easing-default),
+    border-color     var(--duration-fast) var(--easing-default),
+    color            var(--duration-fast) var(--easing-default),
+    transform        var(--duration-fast) var(--easing-spring),
+    box-shadow       var(--duration-fast) var(--easing-default);
+  will-change: transform;
+}
+.button--primary {
+  background: var(--accent-primary);
+  color: var(--fg-on-accent);
+  border: 1px solid transparent;
+}
+.button--primary:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px var(--accent-primary-glow);
+}
+.button--primary:active:not(:disabled) {
+  transform: translateY(0px) scale(0.98);
+  box-shadow: none;
+}
+
+/* -- Card hover lift -- */
+.card-hover {
+  transition:
+    transform  var(--duration-normal) var(--easing-default),
+    box-shadow var(--duration-normal) var(--easing-default),
+    border-color var(--duration-normal) var(--easing-default);
+  will-change: transform;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), 0 0 24px var(--accent-primary-glow);
+  border-color: var(--border-stronger) !important;
+}
+
+/* -- Glassmorphism card -- */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+}
+
+/* -- Progress bar shimmer (during scan) -- */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-raised) 25%,
+    rgba(0, 212, 255, 0.08) 50%,
+    var(--bg-raised) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* -- Scan progress bar animation -- */
+.scan-progress__bar {
+  transition: width 0.6s var(--easing-default);
+}
+.scan-progress__bar--active {
+  background: linear-gradient(90deg, var(--accent-primary), #0088cc, var(--accent-primary));
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* -- Input focus ring -- */
+input, select, textarea {
+  transition:
+    border-color var(--duration-fast) var(--easing-default),
+    box-shadow   var(--duration-fast) var(--easing-default);
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--border-focus) !important;
+  box-shadow: var(--input-shadow-focus);
+}
+
+/* -- Cyan glow pulse (attention indicator) -- */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 8px var(--accent-primary-glow); }
+  50%       { box-shadow: var(--glow-cyan-md); }
+}
+.glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+
+/* -- Spinner -- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--accent-primary);
+  border-radius: var(--radius-full);
+  animation: spin 0.8s linear infinite;
+}
+.spinner--lg { width: 32px; height: 32px; border-width: 3px; }
+
+/* -- Tick reveal (check mark) -- */
+@keyframes tick-draw {
+  from { stroke-dashoffset: 30; }
+  to   { stroke-dashoffset: 0; }
+}
+.tick-svg path {
+  stroke-dasharray: 30;
+  animation: tick-draw var(--duration-normal) var(--easing-enter) forwards;
+}
+
+/* -- Number count-up (applied via JS inline style --target) -- */
+@property --num {
+  syntax: "<integer>";
+  initial-value: 0;
+  inherits: false;
+}
+.count-up {
+  animation: count-up var(--duration-xslow) var(--easing-default) forwards;
+  counter-reset: num var(--num);
+}
+@keyframes count-up {
+  to { --num: var(--target, 100); }
+}
+
+/* -- Step nav active indicator line -- */
+.step-nav__item--active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px; left: 0; right: 0;
+  height: 2px;
+  background: var(--accent-primary);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 8px var(--accent-primary-glow);
+}
+
+/* -- Provider / feature card selection ring -- */
+.provider-card--selected,
+.feature-card--selected {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 1px var(--accent-primary),
+              0 0 16px var(--accent-primary-glow);
+  transition: all var(--duration-normal) var(--easing-spring);
+}
+
+/* -------------------------------------------------------
+   W4.3 — RISK GAUGE COMPONENT
+   ------------------------------------------------------- */
+
+.risk-gauge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+.risk-gauge__svg { overflow: visible; }
+.risk-gauge__track {
+  fill: none;
+  stroke: var(--bg-elevated, rgba(255,255,255,0.05));
+  stroke-linecap: round;
+}
+.risk-gauge__fill {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1.4s cubic-bezier(0.4, 0, 0.2, 1),
+              stroke 0.6s ease;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+.risk-gauge__label {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family);
+  letter-spacing: var(--tracking-tight);
+  dominant-baseline: middle;
+  text-anchor: middle;
+}
+.risk-gauge__sublabel {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-widest);
+  text-transform: uppercase;
+  text-anchor: middle;
+  fill: var(--fg-muted);
+}
+.risk-gauge__title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--fg-muted);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  text-align: center;
+}
+/* Score colors */
+.risk-gauge--low      .risk-gauge__fill,
+.risk-gauge--low      .risk-gauge__label  { stroke: var(--severity-low); fill: var(--severity-low); }
+.risk-gauge--medium   .risk-gauge__fill,
+.risk-gauge--medium   .risk-gauge__label  { stroke: var(--severity-medium); fill: var(--severity-medium); }
+.risk-gauge--high     .risk-gauge__fill,
+.risk-gauge--high     .risk-gauge__label  { stroke: var(--severity-high); fill: var(--severity-high); }
+.risk-gauge--critical .risk-gauge__fill,
+.risk-gauge--critical .risk-gauge__label  { stroke: var(--severity-critical); fill: var(--severity-critical); }
+
+/* -------------------------------------------------------
+   W4.4 — SKELETON SCREENS
+   ------------------------------------------------------- */
+
+@keyframes skeleton-wave {
+  0%   { background-position: -300px 0; }
+  100% { background-position:  300px 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-raised)   30%,
+    var(--bg-elevated) 50%,
+    var(--bg-raised)   70%
+  );
+  background-size: 600px 100%;
+  animation: skeleton-wave 1.4s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+.skeleton--text   { height: 14px; border-radius: var(--radius-sm); }
+.skeleton--title  { height: 22px; border-radius: var(--radius-sm); }
+.skeleton--avatar { width: 40px; height: 40px; border-radius: var(--radius-full); }
+.skeleton--card   {
+  height: 120px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+}
+.skeleton--badge  { height: 20px; width: 60px; border-radius: var(--radius-full); }
+
+/* Skeleton page wrapper */
+.skeleton-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  animation: fade-in var(--duration-fast) ease both;
+}
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* -- Severity badge -- */
+.severity-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+.severity-badge--critical { background: var(--status-error-bg); color: var(--severity-critical); border: 1px solid var(--status-error-border); }
+.severity-badge--high     { background: rgba(255,107,53,0.08);   color: var(--severity-high);     border: 1px solid rgba(255,107,53,0.20); }
+.severity-badge--medium   { background: var(--status-warning-bg); color: var(--severity-medium);  border: 1px solid var(--status-warning-border); }
+.severity-badge--low      { background: var(--status-success-bg); color: var(--severity-low);     border: 1px solid var(--status-success-border); }
+.severity-badge--info     { background: var(--status-info-bg);    color: var(--severity-info);    border: 1px solid var(--status-info-border); }
+
+/* -------------------------------------------------------
+   W4.5 — ACCESSIBILITY
+   ------------------------------------------------------- */
+
+/* -- Skip Link -- */
+.skip-to-main {
+  position: fixed;
+  top: -100%; left: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--accent-primary);
+  color: var(--fg-on-accent);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  z-index: var(--z-toast);
+  text-decoration: none;
+  transition: top var(--duration-fast);
+}
+.skip-to-main:focus { top: var(--space-4); }
+
+/* -- Focus visible ring (keyboard only) -- */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+:focus:not(:focus-visible) { outline: none; }
+
+/* -- WCAG AA contrast badges -- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+.badge--accent   { background: var(--accent-primary-subtle); color: var(--accent-primary); }
+.badge--success  { background: var(--status-success-bg);     color: var(--status-success); }
+.badge--warning  { background: var(--status-warning-bg);     color: var(--status-warning); }
+.badge--error    { background: var(--status-error-bg);       color: var(--status-error); }
+.badge--neutral  { background: var(--bg-elevated);           color: var(--fg-muted); }
+
+/* -- Tooltip (accessible via aria-label) -- */
+[data-tooltip] {
+  position: relative;
+}
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%; transform: translateX(-50%);
+  padding: 4px 8px;
+  background: var(--bg-elevated);
+  color: var(--fg-default);
+  font-size: var(--font-size-xs);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--duration-fast);
+  border: 1px solid var(--border-strong);
+  z-index: var(--z-dropdown);
+}
+[data-tooltip]:hover::after,
+[data-tooltip]:focus::after { opacity: 1; }
+
+/* -- Reduce motion -- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* -------------------------------------------------------
+   W4.1 — DESIGN SYSTEM OVERHAUL (App Shell upgrade)
+   ------------------------------------------------------- */
+
+/* Refined scrollbar with cyan tint */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-primary-muted);
+}
+
+/* Header: deep navy + subtle bottom border glow */
+.app-shell__header {
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-app) 100%);
+  border-bottom: 1px solid var(--border-default);
+  box-shadow: 0 1px 20px rgba(0, 212, 255, 0.04);
+}
+
+/* Brand glow on hover */
+.app-shell__brand:hover .app-shell__brand-icon svg {
+  filter: drop-shadow(0 0 6px var(--accent-primary-glow));
+  transition: filter var(--duration-normal) ease;
+}
+
+/* Step nav — refined */
+.step-nav {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-default);
+  backdrop-filter: blur(4px);
+}
+.step-nav__item--active {
+  background: var(--accent-primary-subtle);
+  color: var(--accent-primary);
+}
+
+/* Page container — give content area breathing room */
+.page-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* -------------------------------------------------------
+   W4.3 — OWASP COVERAGE HEATMAP ANIMATIONS
+   ------------------------------------------------------- */
+
+.owasp-grid__cell {
+  transition:
+    background-color var(--duration-normal) var(--easing-default),
+    border-color     var(--duration-normal) var(--easing-default),
+    transform        var(--duration-fast)   var(--easing-spring);
+}
+.owasp-grid__cell:hover {
+  transform: scale(1.03);
+  z-index: var(--z-raised);
+}
+.owasp-grid__cell--covered {
+  background: var(--status-success-bg);
+  border-color: var(--status-success-border) !important;
+}
+.owasp-grid__cell--finding {
+  background: var(--status-error-bg);
+  border-color: var(--status-error-border) !important;
+}
+.owasp-grid__cell--uncovered {
+  background: var(--bg-elevated);
+  border-color: var(--border-default) !important;
+}
+
+/* -- Sequential reveal for findings list -- */
+.findings-list__item {
+  animation: slide-up var(--duration-slow) var(--easing-enter) both;
+}
+
+/* -------------------------------------------------------
+   W4.4 — RESPONSIVE POLISH & EMPTY STATES
+   ------------------------------------------------------- */
+
+/* Empty state illustration */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16) var(--space-6);
+  text-align: center;
+  animation: fade-in var(--duration-slow) ease both;
+}
+.empty-state__icon {
+  font-size: 48px;
+  opacity: 0.4;
+}
+.empty-state__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--fg-default);
+}
+.empty-state__description {
+  font-size: var(--font-size-sm);
+  color: var(--fg-muted);
+  max-width: 320px;
+  line-height: var(--line-height-relaxed);
+}
+
+/* Error state */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+  animation: fade-in var(--duration-normal) ease both;
+}
+.error-state__icon { font-size: 36px; }
+.error-state__title {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--status-error);
+}
+.error-state__detail {
+  font-size: var(--font-size-sm);
+  color: var(--fg-muted);
+  max-width: 400px;
+}
+
+/* Loading overlay */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  animation: fade-in var(--duration-fast) ease both;
+}
+
+/* -- Responsive breakpoints -- */
+@media (max-width: 768px) {
+  .step-nav { overflow-x: auto; justify-content: flex-start; gap: 0; }
+  .step-nav__item { flex-shrink: 0; }
+  .page-container { padding: var(--space-4); }
+}

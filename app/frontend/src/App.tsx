@@ -205,7 +205,7 @@ function ScreenRouter() {
       )}
 
       {/* ── Page Content ── */}
-      <main className="app-shell__main">
+      <main id="main-content" className="app-shell__main" aria-label="Main content">
         <div className="page-container" key={currentScreen}>
           {renderScreen()}
         </div>
@@ -224,6 +224,8 @@ export default function App() {
       <ReportProvider>
         <DeployProvider>
         <DeployFlowProvider>
+        {/* W4.5: Skip-to-main for keyboard / screen reader users */}
+        <a href="#main-content" className="skip-to-main">Skip to main content</a>
         <div className="app-shell">
           {/* ── Header ── */}
           <header className="app-shell__header">

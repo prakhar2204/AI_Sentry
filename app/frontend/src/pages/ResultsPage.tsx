@@ -29,6 +29,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from "react";
+import { RiskGauge } from "../components/common/RiskGauge";
 import { useReportContext, selectFilteredFindings, pageFindings, buildSimulatedReport } from "../store/ReportContext";
 import { REPORT_ACTIONS } from "../store/actions";
 import { useScanContext } from "../store/ScanContext";
@@ -81,61 +82,14 @@ function SeverityBadge({ severity }: { severity: string }) {
 // ─────────────────────────────────────────────
 
 function ScoreGauge({ score, level }: { score: number; level: string }) {
-  const norm = score > 100 ? 100 : score < 0 ? 0 : score;
-  // Color class based on level
-  const levelClass =
-    level === "CRITICAL" ? "critical" :
-    level === "HIGH"     ? "high" :
-    level === "MEDIUM"   ? "medium" :
-    level === "LOW"      ? "low" : "none";
-
-  // SVG arc gauge
-  const radius  = 52;
-  const cx      = 64;
-  const cy      = 64;
-  const circ    = 2 * Math.PI * radius;
-  // Only draw 270° arc (from 135° to 405°)
-  const arcFrac = (norm / 100) * 0.75;
-  const dashArr = circ * arcFrac;
-  const dashOff = 0;
-  const totalArc = circ * 0.75;
-
   return (
-    <div className="score-gauge" id="results-score-gauge" aria-label={`Risk score ${norm} out of 100`}>
-      <svg viewBox="0 0 128 128" className="score-gauge__svg" aria-hidden="true">
-        {/* Track arc */}
-        <circle
-          cx={cx} cy={cy} r={radius}
-          fill="none"
-          stroke="var(--bg-raised)"
-          strokeWidth="10"
-          strokeDasharray={`${totalArc} ${circ}`}
-          strokeDashoffset={-circ * 0.125}
-          strokeLinecap="round"
-        />
-        {/* Fill arc */}
-        {norm > 0 && (
-          <circle
-            cx={cx} cy={cy} r={radius}
-            fill="none"
-            className={`score-gauge__fill score-gauge__fill--${levelClass}`}
-            strokeWidth="10"
-            strokeDasharray={`${dashArr} ${circ}`}
-            strokeDashoffset={-circ * 0.125}
-            strokeLinecap="round"
-          />
-        )}
-      </svg>
-      <div className="score-gauge__label">
-        <span className={`score-gauge__score score-gauge__score--${levelClass}`}>
-          {norm}
-        </span>
-        <span className="score-gauge__max">/100</span>
-        <span className={`score-gauge__level score-gauge__level--${levelClass}`}>
-          {RISK_LEVEL_LABELS[level as import("../services/reportTypes").RiskLevel] ?? level}
-        </span>
-      </div>
-    </div>
+    <RiskGauge
+      score={score}
+      size={160}
+      strokeWidth={11}
+      animated
+      label="Risk Score"
+    />
   );
 }
 
@@ -292,7 +246,7 @@ function CategoryCard({ id, data, onClick, selected }: {
   return (
     <button
       type="button"
-      className={`results-cat-card${selected ? " results-cat-card--selected" : ""}`}
+      className={`results-cat-card card-hover animate-scale-in${selected ? " results-cat-card--selected" : ""}`}
       onClick={onClick}
       id={`results-cat-${id}`}
       aria-pressed={selected}
@@ -535,14 +489,19 @@ function FindingsTable({
         ) : (
           items.map((finding, i) => {
             const globalIdx = (page - 1) * 20 + i;
+            const stagger = i < 12 ? `stagger-${i + 1}` : "";
             return (
-              <FindingRow
+              <div
                 key={`${finding.category}-${finding.probe_id}-${globalIdx}`}
-                finding={finding}
-                index={globalIdx}
-                expanded={expandedFinding === globalIdx}
-                onToggle={() => handleToggle(globalIdx)}
-              />
+                className={`animate-slide-up findings-list__item ${stagger}`}
+              >
+                <FindingRow
+                  finding={finding}
+                  index={globalIdx}
+                  expanded={expandedFinding === globalIdx}
+                  onToggle={() => handleToggle(globalIdx)}
+                />
+              </div>
             );
           })
         )}
