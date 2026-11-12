@@ -385,6 +385,93 @@ ipcMain.handle('system:app-version', async () => {
   return app.getVersion();
 });
 
+/**
+ * system:health-check — W6.3 First-Launch Health Check
+ *
+ * Returns a detailed status object for all backend components:
+ *   - python:  version string or 'not found'
+ *   - backend: 'available' | 'not found' (IPC server entry point)
+ *   - engines: { mock, garak, pyrit } availability
+ *   - bundled: true if running from PyInstaller .exe
+ *   - paths:   { python, backend } resolved paths
+ *
+ * The frontend uses this on first launch to show a startup status screen.
+ * If garak/pyrit unavailable → shows warning but allows scan with MockEngine.
+ */
+ipcMain.handle('system:health-check', async () => {
+  const pythonPath  = findPython();
+  const backendPath = getBackendPath();
+  const isBundled   = pythonPath.endsWith('ipc_server.exe') || pythonPath.endsWith('ipc_server');
+
+  // 1. Python version
+  const pythonVersion = await new Promise((resolve) => {
+    if (isBundled) { resolve('bundled'); return; }
+    const proc = spawn(pythonPath, ['--version'], { stdio: ['pipe', 'pipe', 'pipe'] });
+    let ver = '';
+    proc.stdout.on('data', (d) => { ver += d.toString(); });
+    proc.stderr.on('data', (d) => { ver += d.toString(); });
+    proc.on('exit', () => resolve(ver.trim() || 'unknown'));
+    proc.on('error', () => resolve('not found'));
+  });
+
+  // 2. Backend (IPC server) availability
+  let backendAvailable = false;
+  if (isBundled) {
+    backendAvailable = true;
+  } else {
+    const ipcEntry = path.join(backendPath, 'ipc_server.py');
+    backendAvailable = fs.existsSync(ipcEntry);
+  }
+
+  // 3. Engine availability — ask the backend via quick ping
+  //    Use --check flag on the ipc_server to get engine status JSON.
+  const engineStatus = await new Promise((resolve) => {
+    const args = isBundled ? ['--check'] : ['-m', 'ipc_server', '--check'];
+    const cwd  = isBundled ? path.dirname(pythonPath) : backendPath;
+    const proc = spawn(pythonPath, args, {
+      cwd,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    proc.on('exit', (code) => {
+      try {
+        const parsed = JSON.parse(stdout.trim());
+        resolve(parsed);
+      } catch {
+        // If --check not supported, assume mock only
+        resolve({ mock: true, garak: false, pyrit: false, error: stderr.trim() });
+      }
+    });
+    proc.on('error', (err) => {
+      resolve({ mock: false, garak: false, pyrit: false, error: err.message });
+    });
+
+    // Timeout: 8 seconds max for health check
+    setTimeout(() => {
+      try { proc.kill(); } catch (_) {}
+      resolve({ mock: true, garak: false, pyrit: false, error: 'timeout' });
+    }, 8000);
+  });
+
+  return {
+    python:  pythonVersion,
+    backend: backendAvailable ? 'available' : 'not found',
+    engines: engineStatus,
+    bundled: isBundled,
+    paths: {
+      python:  pythonPath,
+      backend: backendPath,
+    },
+    appVersion: app.getVersion(),
+    platform:   process.platform,
+    arch:       process.arch,
+  };
+});
+
 // ─────────────────────────────────────────────
 //  App lifecycle
 // ─────────────────────────────────────────────

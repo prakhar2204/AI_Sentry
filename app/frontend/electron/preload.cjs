@@ -96,6 +96,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /** Get the Electron app version (from package.json) */
   getAppVersion: () => ipcRenderer.invoke('system:app-version'),
 
+  /**
+   * W6.3 — Run the first-launch health check.
+   * Returns { python, backend, engines, bundled, paths, appVersion, platform, arch }
+   */
+  healthCheck: () => ipcRenderer.invoke('system:health-check'),
+
   // ── Platform detection ──────────────────────────────────
   /** Always true when running inside Electron */
   isElectron: true,

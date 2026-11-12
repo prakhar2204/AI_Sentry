@@ -584,4 +584,21 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # W6.3 — Health check mode: python -m ipc_server --check
+    # Returns engine availability JSON to stdout and exits 0.
+    # Used by Electron's system:health-check IPC handler.
+    if "--check" in sys.argv:
+        import importlib.util
+        def _engine_available(name: str) -> bool:
+            return importlib.util.find_spec(name) is not None
+
+        result = {
+            "mock":  True,  # always available
+            "garak": _engine_available("garak"),
+            "pyrit": _engine_available("pyrit"),
+            "version": "1.0.0",
+        }
+        print(json.dumps(result), flush=True)
+        sys.exit(0)
+
     main()
