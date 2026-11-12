@@ -177,10 +177,13 @@ export const RISK_LEVEL_LABELS: Record<RiskLevel, string> = {
 
 /** Category ID → display label (matches CATEGORY_LABELS in scanTypes.ts) */
 export const CATEGORY_DISPLAY_LABELS: Record<string, string> = {
-  prompt_injection: "Prompt Injection",
-  jailbreak:        "Jailbreak Resistance",
-  data_leak:        "Data Leakage",
-  harmful_output:   "Harmful Output",
+  prompt_injection:   "Prompt Injection",
+  jailbreak:          "Jailbreak Resistance",
+  data_leak:          "Data Leakage",
+  harmful_output:     "Harmful Output",
+  encoding_injection: "Encoding Injection",
+  malware_generation: "Malware Generation",
+  toxicity:           "Toxicity",
 };
 
 export function categoryLabel(id: string): string {

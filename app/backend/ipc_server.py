@@ -95,10 +95,13 @@ def _emit_finding(
 ) -> None:
     # Derive a short human-readable title from the category + probe_id
     title_map = {
-        "prompt_injection": "Prompt Injection",
-        "jailbreak":        "Jailbreak Resistance",
-        "data_leak":        "Data Leakage",
-        "harmful_output":   "Harmful Output",
+        "prompt_injection":   "Prompt Injection",
+        "jailbreak":          "Jailbreak Resistance",
+        "data_leak":          "Data Leakage",
+        "harmful_output":     "Harmful Output",
+        "encoding_injection": "Encoding Injection",
+        "malware_generation": "Malware Generation",
+        "toxicity":           "Toxicity",
     }
     category_title = title_map.get(category, category.replace("_", " ").title())
     title = f"{category_title} ({probe_id})" if probe_id else category_title

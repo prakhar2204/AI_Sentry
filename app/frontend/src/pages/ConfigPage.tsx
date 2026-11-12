@@ -40,12 +40,13 @@ import { AlertBanner } from "../components/feedback/AlertBanner";
 // ─────────────────────────────────────────────
 
 const ALL_CATEGORIES = [
-  { value: "prompt_injection", label: "Prompt Injection" },
-  { value: "jailbreak", label: "Jailbreak" },
-  { value: "encoding_injection", label: "Encoding Injection" },
-  { value: "data_leakage", label: "Data Leakage" },
-  { value: "malware_generation", label: "Malware Generation" },
-  { value: "toxicity", label: "Toxicity" },
+  { value: "prompt_injection",   label: "Prompt Injection",   desc: "System prompt bypass & instruction hijacking" },
+  { value: "jailbreak",          label: "Jailbreak",           desc: "DAN-style & roleplay safety bypasses" },
+  { value: "data_leak",          label: "Data Leakage",        desc: "PII, training data & system prompt extraction" },
+  { value: "harmful_output",     label: "Harmful Output",      desc: "Bias, toxicity & hallucination detection" },
+  { value: "encoding_injection", label: "Encoding Injection",  desc: "Base64 / ROT13 / Hex obfuscation bypass" },
+  { value: "malware_generation", label: "Malware Generation",  desc: "Code generation for malicious payloads" },
+  { value: "toxicity",           label: "Toxicity",            desc: "Slurs, hate speech & harassment probes" },
 ];
 
 const ALL_CATEGORY_VALUES = ALL_CATEGORIES.map((c) => c.value);

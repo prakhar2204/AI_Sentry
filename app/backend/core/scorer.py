@@ -43,10 +43,10 @@ SEVERITY_WEIGHTS: dict[str, int] = {
 # ─────────────────────────────────────────────
 
 # Maximum expected raw score for normalization.
-# Based on: 4 categories * 3 findings each * HIGH weight * confidence 1.0
-# = 4 * 3 * 10 * 1.0 = 120
+# Based on: 7 categories * 3 findings each * HIGH weight * confidence 1.0
+# = 7 * 3 * 10 * 1.0 = 210
 # This is a configurable ceiling -- scores above it still cap at 100.
-MAX_POSSIBLE_SCORE: float = 120.0
+MAX_POSSIBLE_SCORE: float = 210.0
 
 # ─────────────────────────────────────────────
 #  Constants -- risk level thresholds

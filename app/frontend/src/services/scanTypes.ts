@@ -235,10 +235,13 @@ export interface ScanController {
 // ─────────────────────────────────────────────
 
 export const CATEGORY_LABELS: Record<string, string> = {
-  prompt_injection: "Prompt Injection",
-  jailbreak: "Jailbreak Resistance",
-  data_leak: "Data Leakage Detection",
-  harmful_output: "Harmful Output Analysis",
+  prompt_injection:   "Prompt Injection",
+  jailbreak:          "Jailbreak Resistance",
+  data_leak:          "Data Leakage Detection",
+  harmful_output:     "Harmful Output Analysis",
+  encoding_injection: "Encoding Injection",
+  malware_generation: "Malware Generation",
+  toxicity:           "Toxicity",
 };
 
 /** Stage display labels — user-safe descriptions */

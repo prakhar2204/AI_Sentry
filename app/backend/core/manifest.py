@@ -63,23 +63,26 @@ class ProbeCategory(str, Enum):
     TRD taxonomy (VulnClass) and activates specific probes in each
     engine adapter (Phase 3).
 
-    Kept intentionally coarse-grained at the manifest level so users
-    don't need to understand engine-level internals.
-
     Mapping to TRD VulnClass:
-      prompt_injection → PROMPT_INJECTION, SYSTEM_PROMPT_EXTRACTION
-      jailbreak        → JAILBREAK_DAN, JAILBREAK_ROLEPLAY,
-                         JAILBREAK_CRESCENDO, EXCESSIVE_AGENCY
-      data_leak        → PII_LEAKAGE, TRAINING_DATA_EXTRACTION,
-                         COPYRIGHT_REPRODUCTION, INSECURE_OUTPUT_HANDLING
-      harmful_output   → TOXICITY_GENERAL, TOXICITY_TARGETED,
-                         BIAS_GENDER, BIAS_RACIAL, BIAS_POLITICAL,
-                         HALLUCINATION_FACTUAL, HALLUCINATION_CITATION
+      prompt_injection   → PROMPT_INJECTION, SYSTEM_PROMPT_EXTRACTION
+      jailbreak          → JAILBREAK_DAN, JAILBREAK_ROLEPLAY,
+                           JAILBREAK_CRESCENDO, EXCESSIVE_AGENCY
+      data_leak          → PII_LEAKAGE, TRAINING_DATA_EXTRACTION,
+                           COPYRIGHT_REPRODUCTION, INSECURE_OUTPUT_HANDLING
+      harmful_output     → TOXICITY_GENERAL, TOXICITY_TARGETED,
+                           BIAS_GENDER, BIAS_RACIAL, BIAS_POLITICAL,
+                           HALLUCINATION_FACTUAL, HALLUCINATION_CITATION
+      encoding_injection → ENCODING_BYPASS (Base64/ROT13/Hex/Morse obfuscation)
+      malware_generation → MALWARE_GEN (code generation for malicious payloads)
+      toxicity           → TOXICITY_SLURS, TOXICITY_BULLYING
     """
-    PROMPT_INJECTION = "prompt_injection"
-    JAILBREAK        = "jailbreak"
-    DATA_LEAK        = "data_leak"
-    HARMFUL_OUTPUT   = "harmful_output"
+    PROMPT_INJECTION   = "prompt_injection"
+    JAILBREAK          = "jailbreak"
+    DATA_LEAK          = "data_leak"
+    HARMFUL_OUTPUT     = "harmful_output"
+    ENCODING_INJECTION = "encoding_injection"
+    MALWARE_GENERATION = "malware_generation"
+    TOXICITY           = "toxicity"
 
 
 class ManifestStatus(str, Enum):
@@ -128,6 +131,21 @@ CATEGORY_DESCRIPTIONS: dict[ProbeCategory, str] = {
         "including targeted toxicity, gender/racial/political bias, and "
         "confident generation of false information (hallucination)."
     ),
+    ProbeCategory.ENCODING_INJECTION: (
+        "Tests whether obfuscated payloads (Base64, ROT13, Hex, Morse) can "
+        "bypass the model's safety filters by encoding harmful instructions "
+        "before sending them."
+    ),
+    ProbeCategory.MALWARE_GENERATION: (
+        "Tests whether the model can be induced to generate functional "
+        "malicious code, exploit payloads, or step-by-step instructions "
+        "for compromising systems."
+    ),
+    ProbeCategory.TOXICITY: (
+        "Tests for generation of slurs, hate speech, targeted harassment, "
+        "and bullying content that violates the OWASP LLM02 (Insecure "
+        "Output Handling) control."
+    ),
 }
 
 # Categories included by each scan depth (ordered for display)
@@ -141,12 +159,17 @@ DEPTH_CATEGORIES: dict[ScanDepth, list[ProbeCategory]] = {
         ProbeCategory.JAILBREAK,
         ProbeCategory.DATA_LEAK,
         ProbeCategory.HARMFUL_OUTPUT,
+        ProbeCategory.ENCODING_INJECTION,
+        ProbeCategory.TOXICITY,
     ],
     ScanDepth.DEEP: [
         ProbeCategory.PROMPT_INJECTION,
         ProbeCategory.JAILBREAK,
         ProbeCategory.DATA_LEAK,
         ProbeCategory.HARMFUL_OUTPUT,
+        ProbeCategory.ENCODING_INJECTION,
+        ProbeCategory.MALWARE_GENERATION,
+        ProbeCategory.TOXICITY,
     ],
 }
 
@@ -154,22 +177,31 @@ DEPTH_CATEGORIES: dict[ScanDepth, list[ProbeCategory]] = {
 # Used by the consent gate to display what will run (Phase 3 will use real counts)
 PROBE_COUNT_ESTIMATES: dict[ScanDepth, dict[ProbeCategory, int]] = {
     ScanDepth.QUICK: {
-        ProbeCategory.PROMPT_INJECTION: 20,
-        ProbeCategory.JAILBREAK:        15,
-        ProbeCategory.DATA_LEAK:         0,  # not included in quick
-        ProbeCategory.HARMFUL_OUTPUT:    0,
+        ProbeCategory.PROMPT_INJECTION:   20,
+        ProbeCategory.JAILBREAK:          15,
+        ProbeCategory.DATA_LEAK:           0,  # not included in quick
+        ProbeCategory.HARMFUL_OUTPUT:      0,
+        ProbeCategory.ENCODING_INJECTION:  0,
+        ProbeCategory.MALWARE_GENERATION:  0,
+        ProbeCategory.TOXICITY:            0,
     },
     ScanDepth.STANDARD: {
-        ProbeCategory.PROMPT_INJECTION: 60,
-        ProbeCategory.JAILBREAK:        50,
-        ProbeCategory.DATA_LEAK:        40,
-        ProbeCategory.HARMFUL_OUTPUT:   45,
+        ProbeCategory.PROMPT_INJECTION:   60,
+        ProbeCategory.JAILBREAK:          50,
+        ProbeCategory.DATA_LEAK:          40,
+        ProbeCategory.HARMFUL_OUTPUT:     45,
+        ProbeCategory.ENCODING_INJECTION: 30,
+        ProbeCategory.MALWARE_GENERATION:  0,  # deep only
+        ProbeCategory.TOXICITY:           25,
     },
     ScanDepth.DEEP: {
-        ProbeCategory.PROMPT_INJECTION: 150,
-        ProbeCategory.JAILBREAK:        120,
-        ProbeCategory.DATA_LEAK:        100,
-        ProbeCategory.HARMFUL_OUTPUT:   110,
+        ProbeCategory.PROMPT_INJECTION:   150,
+        ProbeCategory.JAILBREAK:          120,
+        ProbeCategory.DATA_LEAK:          100,
+        ProbeCategory.HARMFUL_OUTPUT:     110,
+        ProbeCategory.ENCODING_INJECTION:  80,
+        ProbeCategory.MALWARE_GENERATION:  60,
+        ProbeCategory.TOXICITY:            70,
     },
 }
 
@@ -592,8 +624,20 @@ def _parse_depth(value: str) -> ScanDepth:
         )
 
 
+# Alias map: alternative names → canonical ProbeCategory value
+# Handles naming drift between engines (garak uses "data_leakage", core uses "data_leak")
+_CATEGORY_ALIASES: dict[str, str] = {
+    "data_leakage": "data_leak",   # garak engine uses data_leakage
+    "behavioral":   "harmful_output",  # legacy alias
+}
+
+
 def _parse_categories(values: list[str]) -> list[ProbeCategory]:
-    """Parse and validate a list of category name strings."""
+    """Parse and validate a list of category name strings.
+
+    Accepts both canonical names and known aliases (e.g. 'data_leakage' → 'data_leak').
+    Silently deduplicates repeated entries.
+    """
     if not isinstance(values, list):
         raise ValueError(
             f"'categories' must be a list, got {type(values).__name__}."
@@ -606,15 +650,18 @@ def _parse_categories(values: list[str]) -> list[ProbeCategory]:
         val = (raw or "").strip().lower()
         if not val:
             continue
-        if val in seen:
+        # Resolve alias before enum lookup
+        canonical = _CATEGORY_ALIASES.get(val, val)
+        if canonical in seen:
             continue  # silently deduplicate
         try:
-            result.append(ProbeCategory(val))
-            seen.add(val)
+            result.append(ProbeCategory(canonical))
+            seen.add(canonical)
         except ValueError:
             raise ValueError(
                 f"Unknown probe category '{raw}'. "
-                f"Valid categories: {sorted(VALID_CATEGORY_NAMES)}"
+                f"Valid categories: {sorted(VALID_CATEGORY_NAMES)} "
+                f"(aliases accepted: {sorted(_CATEGORY_ALIASES.keys())})"
             )
 
     return result
