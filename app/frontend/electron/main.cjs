@@ -150,34 +150,55 @@ ipcMain.handle('scan:start', async (event, config) => {
   const pythonPath = findPython();
   const backendPath = getBackendPath();
 
+  console.log('[scan:start] ========== SCAN STARTING ==========');
+  console.log('[scan:start] pythonPath:', pythonPath);
+  console.log('[scan:start] backendPath:', backendPath);
+  console.log('[scan:start] config:', JSON.stringify(config));
+  console.log('[scan:start] mainWindow exists:', !!mainWindow);
+
   try {
     // Detect if pythonPath IS the bundled ipc_server executable (PyInstaller)
     const isBundledExe = pythonPath.endsWith('ipc_server.exe') || pythonPath.endsWith('ipc_server');
     const spawnArgs  = isBundledExe ? [] : ['-m', 'ipc_server'];
     const spawnCwd   = isBundledExe ? path.dirname(pythonPath) : backendPath;
 
+    console.log('[scan:start] spawnArgs:', spawnArgs);
+    console.log('[scan:start] spawnCwd:', spawnCwd);
+
     scanProcess = spawn(pythonPath, spawnArgs, {
       cwd: spawnCwd,
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, PYTHONUNBUFFERED: '1' },
+      env: { ...process.env, PYTHONUNBUFFERED: '1', PYTHONUTF8: '1' },
     });
 
+    console.log('[scan:start] Python spawned, PID:', scanProcess.pid);
+
     // Write config to Python stdin
-    scanProcess.stdin.write(JSON.stringify(config) + '\n');
+    const configJson = JSON.stringify(config) + '\n';
+    scanProcess.stdin.write(configJson);
     scanProcess.stdin.end();
+    console.log('[scan:start] Config written to stdin:', configJson.length, 'bytes');
 
     // Stream stdout line-by-line (JSON Lines protocol)
     const rl = readline.createInterface({ input: scanProcess.stdout });
+    let lineCount = 0;
     rl.on('line', (line) => {
       const trimmed = line.trim();
       if (!trimmed) return;
+      lineCount++;
+      if (lineCount <= 5) {
+        console.log('[scan:stdout line', lineCount, ']', trimmed.substring(0, 120));
+      }
       try {
         const evt = JSON.parse(trimmed);
         // Always use mainWindow — getFocusedWindow() returns null when the user
         // has any other window focused (alt-tab, clicking elsewhere), which would
         // silently drop ALL scan events leaving the UI stuck at "Preparing... 0%".
         const win = mainWindow;
-        if (!win || win.isDestroyed()) return;
+        if (!win || win.isDestroyed()) {
+          console.warn('[scan:start] mainWindow gone, dropping event:', evt.type);
+          return;
+        }
 
         switch (evt.type) {
           case 'progress':
@@ -207,6 +228,7 @@ ipcMain.handle('scan:start', async (event, config) => {
     });
 
     scanProcess.on('exit', (code) => {
+      console.log('[scan:start] Python exited with code:', code, '| stdout lines received:', lineCount);
       const win = mainWindow;
       if (code !== 0 && code !== null && win && !win.isDestroyed()) {
         win.webContents.send('scan:error', {
@@ -218,8 +240,10 @@ ipcMain.handle('scan:start', async (event, config) => {
       scanProcess = null;
     });
 
+    console.log('[scan:start] Listeners attached, returning started=true');
     return { started: true };
   } catch (err) {
+    console.error('[scan:start] SPAWN ERROR:', err);
     return { started: false, error: err.message };
   }
 });

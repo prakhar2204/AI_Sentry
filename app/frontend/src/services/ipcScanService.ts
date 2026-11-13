@@ -268,13 +268,16 @@ export function startIpcScan(
 
   // ── Start the scan via IPC ──
   const ipcConfig = {
-    target:     config.target,
-    mode:       config.mode,
-    scan_depth: config.scan_depth,
-    categories: config.categories,
-    engine:     config.engine ?? "auto",
-    model_name: config.model_name ?? "",
-    api_key:    config.api_key ?? "",
+    target:           config.target,
+    mode:             config.mode,
+    scan_depth:       config.scan_depth,
+    categories:       config.categories,
+    engine:           config.engine ?? "auto",
+    model_name:       config.model_name ?? "",
+    api_key:          config.api_key ?? "",
+    // Forward local_model_path so Python backend can auto-load GGUF models
+    // with GPU acceleration via llama.cpp server (no Ollama required).
+    local_model_path: (config as any).local_model_path ?? "",
   };
 
   api.startScan(ipcConfig).then((result) => {
