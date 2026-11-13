@@ -1,35 +1,78 @@
-"""Fix ScanPage.tsx to use local_model_path from state instead of state.target."""
-import re
+"""Full end-to-end test of scan pipeline with local GGUF model."""
+import sys, json, subprocess, threading, time
 
-with open(r"d:\AI_Sentry\app\frontend\src\pages\ScanPage.tsx", "r", encoding="utf-8") as f:
-    content = f.read()
+config = {
+    "target": "http://127.0.0.1:11500/v1/chat/completions",
+    "mode": "local",
+    "scan_depth": "quick",
+    "categories": ["prompt_injection", "jailbreak"],
+    "engine": "auto",
+    "local_model_path": r"F:\models\dolphin-phi.gguf",
+}
 
-# Find and replace the local_model_path block
-idx = content.find("local_model_path = state.target")
-if idx < 0:
-    print("FAIL: local_model_path = state.target not found")
-else:
-    # Find the start of this block
-    block_start = content.rfind("// Attach engine", 0, idx)
-    block_end = content.find("\n\n", idx) + 2
-    old_block = content[block_start:block_end]
-    print("OLD BLOCK:")
-    print(repr(old_block))
-    
-    new_block = """    // Attach engine from state so Python backend uses the right engine
-    (config as any).engine = state.engine || "mock";
+proc = subprocess.Popen(
+    [sys.executable, "-m", "ipc_server"],
+    cwd=r"d:\AI_Sentry\app\backend",
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE,
+    text=True, encoding="utf-8",
+)
 
-    // For local mode with a .gguf file: pass local_model_path to backend.
-    // The Python backend auto-launches llama.cpp server with CUDA GPU acceleration.
-    // local_model_path is the REAL full disk path from the Electron native file picker.
-    const localModelPath = (state as any).local_model_path as string | null;
-    if (state.mode === "local" && localModelPath && !localModelPath.startsWith("http")) {
-      (config as any).local_model_path = localModelPath;
-      config.target = "http://127.0.0.1:11500/v1/chat/completions";
-    }
+proc.stdin.write(json.dumps(config) + "\n")
+proc.stdin.flush()
+proc.stdin.close()
 
-"""
-    content = content[:block_start] + new_block + content[block_end:]
-    with open(r"d:\AI_Sentry\app\frontend\src\pages\ScanPage.tsx", "w", encoding="utf-8") as f:
-        f.write(content)
-    print("OK: ScanPage.tsx patched")
+stdout_lines = []
+stderr_lines = []
+
+def read_out():
+    for line in proc.stdout:
+        stdout_lines.append(line.rstrip())
+
+def read_err():
+    for line in proc.stderr:
+        stderr_lines.append(line.rstrip())
+
+t1 = threading.Thread(target=read_out, daemon=True)
+t2 = threading.Thread(target=read_err, daemon=True)
+t1.start(); t2.start()
+
+try:
+    proc.wait(timeout=60)
+except subprocess.TimeoutExpired:
+    proc.terminate()
+    print("TIMEOUT after 60s")
+
+t1.join(timeout=2); t2.join(timeout=2)
+
+print("=== STDOUT EVENTS ===")
+for i, line in enumerate(stdout_lines):
+    try:
+        event = json.loads(line)
+        etype = event.get("type", "?")
+        if etype == "progress":
+            print(f"  [{etype}] {event.get('stage', '')} {event.get('percent', '')}% | {event.get('message', '')}")
+        elif etype == "stage":
+            print(f"  [{etype}] {event.get('stage', '')} — {event.get('message', '')}")
+        elif etype == "finding":
+            print(f"  [{etype}] {event.get('category', '')} | {event.get('severity', '')} | {event.get('evidence', '')[:60]}")
+        elif etype == "activity":
+            print(f"  [{etype}] [{event.get('severity', '')}] {event.get('message', '')[:100]}")
+        elif etype == "complete":
+            report = event.get("report", {})
+            print(f"  [{etype}] risk={report.get('risk_score', '?')}/100 | findings={len(report.get('findings', []))}")
+        elif etype == "error":
+            print(f"  [{etype}] {event.get('message', '')[:150]}")
+        else:
+            print(f"  [{etype}] {line[:150]}")
+    except Exception:
+        print(f"  [raw] {line[:150]}")
+
+print(f"\nTotal events: {len(stdout_lines)}")
+print(f"Return code: {proc.returncode}")
+
+if stderr_lines:
+    print(f"\n=== STDERR (first 5 lines) ===")
+    for line in stderr_lines[:5]:
+        print(f"  {line[:200]}")

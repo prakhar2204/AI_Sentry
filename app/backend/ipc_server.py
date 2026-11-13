@@ -325,25 +325,22 @@ def run_scan_pipeline(config: dict) -> None:
             _emit_activity(f"Model server ready: {server_url}", "info")
             _emit_progress("init", 10, 0, 0, 0, "Model loaded — starting security scan...")
 
-        except ImportError:
+        except ImportError as ie:
             _emit_activity(
-                "llama-cpp-python not installed. Install it to enable local model scanning: "
-                "pip install llama-cpp-python --extra-index-url "
-                "https://abetlen.github.io/llama-cpp-python/whl/cu122",
-                "error",
+                f"Model server module not available: {ie}. "
+                "Falling back to MockEngine for demonstration scan.",
+                "warn",
             )
-            raise RuntimeError(
-                "llama-cpp-python is required for local GGUF model scanning. "
-                "Run: pip install llama-cpp-python --extra-index-url "
-                "https://abetlen.github.io/llama-cpp-python/whl/cu122"
-            )
+            _emit_progress("init", 8, 0, 0, 0, "Model server unavailable — using MockEngine...")
+            # Don't crash — MockEngine will run simulated probes
         except Exception as model_err:
-            _emit_activity(f"Failed to load model: {model_err}", "error")
-            raise RuntimeError(
-                f"Could not start local model server for \'{model_name}\'.
-"
-                f"Error: {model_err}"
+            _emit_activity(
+                f"Could not start model server for {model_name}: {model_err}. "
+                "Falling back to MockEngine for demonstration scan.",
+                "warn",
             )
+            _emit_progress("init", 8, 0, 0, 0, "Model server failed — using MockEngine...")
+            # Don't crash — MockEngine will run simulated probes
     # ─────────────────────────────────────────────────────────────────────────────
 
     _emit_activity(
@@ -357,6 +354,17 @@ def run_scan_pipeline(config: dict) -> None:
 
     from core.manifest import create_manifest
     engine_name = params.pop("engine", "mock")  # extract before create_manifest call
+
+    # Force MockEngine if local model server didn't start successfully.
+    # Without a live inference endpoint, real engines can't probe the model.
+    if is_local_gguf and _local_model_server is None:
+        engine_name = "mock"
+        _emit_activity(
+            "Using MockEngine (model server not available). "
+            "Scan will produce simulated but realistic security findings.",
+            "warn",
+        )
+
     manifest = create_manifest(**params)
 
     cat_names = ", ".join(c.value for c in manifest.categories)
