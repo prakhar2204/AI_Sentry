@@ -139,6 +139,18 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
       state.scan_depth || "standard",
       effectiveCategories
     );
+        // Attach engine from state so Python backend uses the right engine
+    (config as any).engine = state.engine || "mock";
+
+    // For local mode with a .gguf file: pass local_model_path to backend.
+    // The Python backend auto-launches llama.cpp server with CUDA GPU acceleration.
+    // local_model_path is the REAL full disk path from the Electron native file picker.
+    const localModelPath = (state as any).local_model_path as string | null;
+    if (state.mode === "local" && localModelPath && !localModelPath.startsWith("http")) {
+      (config as any).local_model_path = localModelPath;
+      config.target = "http://127.0.0.1:11500/v1/chat/completions";
+    }
+
 
     // Shared event handlers (same for IPC and simulator)
     const sharedHandlers = {
@@ -275,10 +287,10 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
   const probesTotal = exec?.probes_total ?? 0;
   const progressPercent = probesTotal > 0
     ? Math.round((probesCompleted / probesTotal) * 100)
-    : 0;
+    : (exec?.lifecycle_stage === "completed" ? 100 : 0);
   const elapsedSec = exec?.elapsed_sec ?? 0;
   const lifecycleStage = exec?.lifecycle_stage ?? "idle";
-  const activityLabel = exec?.activity_label ?? "Preparing...";
+  const activityLabel = exec?.activity_label ?? "Connecting to backend...";
   const categories = exec?.categories ?? [];
   const findings = exec?.preliminary_findings ?? 0;
   const activityLog = exec?.activity_log ?? [];
@@ -286,15 +298,55 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
   const isCancelled = state.phase === "cancelled";
   const isTerminal = isFailed || isCancelled || isCompleting;
 
+  // Engine display — derived from state (never expose internal name directly)
+  const engineLabel = (() => {
+    const e = state.engine || "auto";
+    if (e === "mock") return "Probe Engine (MockEngine)";
+    if (e === "garak") return "Probe Engine (Garak)";
+    if (e === "pyrit") return "Probe Engine (PyRIT)";
+    return "Probe Engine (Auto)";
+  })();
+
+  // Target display — if it looks like a file path, show server URL instead
+  const targetDisplay = (() => {
+    const t = state.target || "";
+    if (state.mode === "local" && t && !t.startsWith("http")) {
+      return `${t} → http://localhost:11434`;
+    }
+    return t;
+  })();
+
+  // Category icon helper
+  const catIcon = (status: string) => {
+    if (status === "complete") return "✓";
+    if (status === "active")   return "⟳";
+    if (status === "failed")   return "✗";
+    if (status === "skipped")  return "—";
+    return "○";  // queued
+  };
+
   return (
     <div className="scan-page" id="scan-page">
       {/* ── A. Page Header ── */}
       <PageHeader
         title="Security Scan"
-        subtitle={truncateTarget(state.target || "")}
+        subtitle={truncateTarget(targetDisplay)}
       />
 
       <div className="scan-page__content">
+        {/* ── Engine Badge ── */}
+        <div className="scan-page__engine-badge" id="scan-engine-badge">
+          <span className="scan-page__engine-label">{engineLabel}</span>
+          {!isCompleting && !isFailed && !isCancelled && (
+            <span
+              className={`scan-page__engine-dot${
+                ACTIVE_STAGES.has(lifecycleStage as any)
+                  ? " scan-page__engine-dot--active"
+                  : ""
+              }`}
+            />
+          )}
+        </div>
         {/* ── Error State ── */}
         {isFailed && (
           <div className="scan-page__error-block">
@@ -396,6 +448,12 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
                       className={`scan-page__cat-row scan-page__cat-row--${cat.status}`}
                       id={`scan-cat-${cat.id}`}
                     >
+                      <span
+                        className={`scan-page__cat-icon scan-page__cat-icon--${cat.status}`}
+                        aria-hidden="true"
+                      >
+                        {catIcon(cat.status)}
+                      </span>
                       <span className="scan-page__cat-label">{cat.label}</span>
                       <span className="scan-page__cat-probes">
                         {cat.probes_completed}/{cat.probes_total}

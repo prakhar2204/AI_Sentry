@@ -70,6 +70,8 @@ export const SCAN_ACTIONS = {
 
   /** W1.1: Set engine selection (auto | garak | pyrit | mock) */
   SET_ENGINE: "SET_ENGINE",
+  /** Full disk path to local .gguf model file — set via Electron native file picker. */
+  SET_LOCAL_MODEL_PATH: "SET_LOCAL_MODEL_PATH",
 } as const;
 
 // ─────────────────────────────────────────────

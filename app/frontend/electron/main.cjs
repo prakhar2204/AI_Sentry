@@ -173,8 +173,11 @@ ipcMain.handle('scan:start', async (event, config) => {
       if (!trimmed) return;
       try {
         const evt = JSON.parse(trimmed);
-        const win = BrowserWindow.getFocusedWindow() || mainWindow;
-        if (!win) return;
+        // Always use mainWindow — getFocusedWindow() returns null when the user
+        // has any other window focused (alt-tab, clicking elsewhere), which would
+        // silently drop ALL scan events leaving the UI stuck at "Preparing... 0%".
+        const win = mainWindow;
+        if (!win || win.isDestroyed()) return;
 
         switch (evt.type) {
           case 'progress':
@@ -204,8 +207,8 @@ ipcMain.handle('scan:start', async (event, config) => {
     });
 
     scanProcess.on('exit', (code) => {
-      const win = BrowserWindow.getFocusedWindow() || mainWindow;
-      if (code !== 0 && code !== null && win) {
+      const win = mainWindow;
+      if (code !== 0 && code !== null && win && !win.isDestroyed()) {
         win.webContents.send('scan:error', {
           type: 'error',
           message: `Python process exited with code ${code}`,
@@ -367,6 +370,31 @@ ipcMain.handle('dialog:save', async (event, options) => {
   return result.canceled ? null : result.filePath;
 });
 
+/**
+ * dialog:open-model-file -- open native Windows file picker for .gguf model files.
+ * Returns the REAL full disk path (e.g. D:\\models\\dolphin-phi.gguf).
+ * The browser File API can only return the filename, not the full path --
+ * this IPC call is required for the Python backend to actually load the file.
+ *
+ * Returns: { filePath, fileName } or null if cancelled.
+ */
+ipcMain.handle('dialog:open-model-file', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title: 'Select GGUF Model File',
+    buttonLabel: 'Select Model',
+    filters: [
+      { name: 'GGUF Model Files', extensions: ['gguf'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+    properties: ['openFile'],
+  });
+  if (result.canceled || result.filePaths.length === 0) return null;
+  const fullPath = result.filePaths[0];
+  const fileName = require('path').basename(fullPath);
+  return { filePath: fullPath, fileName };
+});
+
+
 /** system:python-version — get Python version string */
 ipcMain.handle('system:python-version', async () => {
   return new Promise((resolve) => {
@@ -383,6 +411,51 @@ ipcMain.handle('system:python-version', async () => {
 /** system:app-version — get Electron app version */
 ipcMain.handle('system:app-version', async () => {
   return app.getVersion();
+});
+
+/**
+ * system:gpu-info — Query NVIDIA GPU info via nvidia-smi.
+ * Returns { available, name, vram_total_mb, vram_free_mb, utilization_pct, driver_version }
+ * Falls back to { available: false } if no NVIDIA GPU or nvidia-smi not found.
+ */
+ipcMain.handle('system:gpu-info', async () => {
+  return new Promise((resolve) => {
+    const args = [
+      '--query-gpu=name,memory.total,memory.free,utilization.gpu,driver_version',
+      '--format=csv,noheader,nounits',
+    ];
+    const proc = spawn('nvidia-smi', args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    proc.stdout.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d) => { stderr += d.toString(); });
+    proc.on('exit', (code) => {
+      if (code !== 0 || !stdout.trim()) {
+        resolve({ available: false, error: stderr.trim() || 'No NVIDIA GPU detected' });
+        return;
+      }
+      try {
+        const parts = stdout.trim().split(',').map(s => s.trim());
+        resolve({
+          available:        true,
+          name:             parts[0] || 'Unknown GPU',
+          vram_total_mb:    parseInt(parts[1], 10) || 0,
+          vram_free_mb:     parseInt(parts[2], 10) || 0,
+          utilization_pct:  parseInt(parts[3], 10) || 0,
+          driver_version:   parts[4] || 'unknown',
+        });
+      } catch (err) {
+        resolve({ available: false, error: String(err) });
+      }
+    });
+    proc.on('error', () => {
+      resolve({ available: false, error: 'nvidia-smi not found — no NVIDIA GPU or driver not installed' });
+    });
+    setTimeout(() => {
+      try { proc.kill(); } catch (_) {}
+      resolve({ available: false, error: 'GPU query timed out' });
+    }, 5000);
+  });
 });
 
 /**

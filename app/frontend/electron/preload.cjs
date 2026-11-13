@@ -102,6 +102,21 @@ contextBridge.exposeInMainWorld('electronAPI', {
    */
   healthCheck: () => ipcRenderer.invoke('system:health-check'),
 
+  /**
+   * Query NVIDIA GPU info via nvidia-smi.
+   * Returns { available, name, vram_total_mb, vram_free_mb, utilization_pct, driver_version }
+   * or { available: false, error } when no NVIDIA GPU is detected.
+   */
+  getGpuInfo: () => ipcRenderer.invoke('system:gpu-info'),
+
+  /**
+   * Open native Windows file picker for .gguf model files.
+   * Returns { filePath: string, fileName: string } or null if cancelled.
+   * Use this instead of the browser File API — it gives the REAL full disk path
+   * that Python needs to load the model file.
+   */
+  openModelFilePicker: () => ipcRenderer.invoke('dialog:open-model-file'),
+
   // ── Platform detection ──────────────────────────────────
   /** Always true when running inside Electron */
   isElectron: true,

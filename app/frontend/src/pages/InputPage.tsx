@@ -63,10 +63,12 @@ function validateLocalTarget(
   filePath: string,
   fileName: string | null
 ): string | null {
-  // Either a dropped/browsed file or a manual path is required
-  if (fileName) return null; // file was dropped/browsed — valid
+  // Allow either:
+  //   a) A URL (http://localhost:11434/...) — the inference server endpoint
+  //   b) A file path / filename (displayed info only; actual target will be the server URL)
+  if (fileName) return null; // file was dropped/browsed — show friendly name
   if (!filePath.trim()) {
-    return "Provide a model file or enter a file path.";
+    return "Provide a model file path or enter a local server URL (e.g. http://localhost:11434).";
   }
   return null;
 }
@@ -125,9 +127,39 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
   }, []);
 
   // ── File handlers ──
+
+  /**
+   * Native Electron file picker — gets the REAL full disk path.
+   * The browser File API only gives filename, not the path Python needs.
+   */
+  const handleNativeFilePicker = useCallback(async () => {
+    const api = (window as any).electronAPI;
+    if (api?.openModelFilePicker) {
+      const result = await api.openModelFilePicker();
+      if (result) {
+        setLocalFileName(result.fileName);
+        setLocalPath(result.filePath);   // REAL full path, e.g. D:\models\model.gguf
+        setTargetError(null);
+      }
+    } else {
+      // Browser fallback: trigger the hidden file input
+      document.getElementById("local-model-file-input")?.click();
+    }
+  }, []);
+
+  /**
+   * Browser drag-and-drop / file input fallback (browser mode only).
+   * In Electron, the full path is NOT available via File API — use native picker instead.
+   */
   const handleLocalFile = useCallback((file: File) => {
     setLocalFileName(file.name);
-    setLocalPath(file.name);
+    // In Electron, file.path is available via the File API (Chromium extension)
+    const electronPath = (file as any).path;
+    if (electronPath) {
+      setLocalPath(electronPath);  // Real path via Electron's File.path extension
+    } else {
+      setLocalPath(file.name);     // Browser fallback — filename only
+    }
     setTargetError(null);
   }, []);
 
@@ -166,6 +198,8 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
     }
 
     // Determine target value
+    // For local mode: localPath holds the full disk path (from native picker)
+    // or HTTP URL if manually typed. ScanPage will route accordingly.
     const target = mode === "api" ? apiUrl.trim() : localPath.trim();
 
     // Update ScanContext
@@ -175,6 +209,18 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
       type: SCAN_ACTIONS.SET_MANIFEST_FILE,
       payload: manifestFilePath,
     });
+    // Store full disk path separately so Python backend can auto-load the model
+    if (mode === "local" && localPath && !localPath.startsWith("http")) {
+      dispatch({
+        type: SCAN_ACTIONS.SET_LOCAL_MODEL_PATH as any,
+        payload: localPath,
+      });
+    } else {
+      dispatch({
+        type: SCAN_ACTIONS.SET_LOCAL_MODEL_PATH as any,
+        payload: null,
+      });
+    }
     dispatch({ type: SCAN_ACTIONS.START_CONFIGURING });
 
     onContinue();
@@ -212,31 +258,70 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
         {/* ── Local Model Input ── */}
         {mode === "local" && (
           <section className="input-page__section" id="local-input-section">
-            <FileDropZone
-              label="Model File"
-              id="local-model-file"
-              accept=".gguf,.bin,.safetensors,.pt,.onnx"
-              onFile={handleLocalFile}
-              fileName={localFileName || undefined}
-              error={undefined}
-              disabled={false}
-            />
+
+            {/* Primary: native file picker button (Electron) or drag-drop (browser) */}
+            {(window as any).electronAPI?.openModelFilePicker ? (
+              <div className="input-page__native-picker">
+                <div className="input-page__native-picker-label">Model File (.gguf)</div>
+                {localFileName ? (
+                  <div className="input-page__native-picker-selected" id="selected-model-display">
+                    <span className="input-page__file-icon">&#x1F916;</span>
+                    <span className="input-page__file-name">{localFileName}</span>
+                    <button
+                      type="button"
+                      className="input-page__file-clear"
+                      onClick={() => { setLocalFileName(null); setLocalPath(""); }}
+                      aria-label="Remove model"
+                    >&#x2715;</button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="input-page__native-picker-btn"
+                    onClick={handleNativeFilePicker}
+                    id="browse-model-button"
+                  >
+                    <span className="input-page__file-icon">&#x1F4C2;</span>
+                    Browse for Model File&#8230;
+                  </button>
+                )}
+                {targetError && (
+                  <p className="input-page__field-error" role="alert">{targetError}</p>
+                )}
+                <p className="input-page__native-picker-hint">
+                  Supports .gguf format. GPU acceleration applied automatically.
+                </p>
+              </div>
+            ) : (
+              /* Browser fallback: drag-and-drop */
+              <FileDropZone
+                label="Model File"
+                id="local-model-file"
+                accept=".gguf,.bin,.safetensors"
+                onFile={handleLocalFile}
+                fileName={localFileName || undefined}
+                error={targetError || undefined}
+                disabled={false}
+              />
+            )}
 
             <div className="input-page__separator">
-              <span className="input-page__separator-text">or</span>
+              <span className="input-page__separator-text">or enter server URL</span>
             </div>
 
             <TextInput
-              label="File Path"
+              label="Local Server URL (if already running)"
               id="local-model-path"
-              value={localPath}
+              value={localPath.startsWith("http") ? localPath : ""}
               onChange={(val) => {
-                setLocalPath(val);
-                setLocalFileName(null); // manual path overrides file drop
-                setTargetError(null);
+                if (val.trim()) {
+                  setLocalPath(val);
+                  setLocalFileName(null);
+                  setTargetError(null);
+                }
               }}
-              placeholder="/path/to/model.gguf or http://localhost:8080"
-              error={targetError || undefined}
+              placeholder="http://localhost:11434/v1/chat/completions"
+              error={!localFileName && !localPath.startsWith("http") ? targetError || undefined : undefined}
             />
           </section>
         )}

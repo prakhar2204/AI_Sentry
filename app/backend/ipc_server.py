@@ -267,6 +267,85 @@ def run_scan_pipeline(config: dict) -> None:
     _emit_progress("init", 2, 0, 0, 0, "Parsing scan configuration...")
 
     params = _parse_config(config)
+
+    # ── 1b. Auto-launch local model server if target is a .gguf file ───────────────────
+    # The user drops a .gguf file. We detect it, load it with llama-cpp-python
+    # (full CUDA GPU acceleration via n_gpu_layers=-1), replace the target with
+    # the local server URL. No Ollama or manual setup required by the user.
+    _local_model_server = None
+    local_model_path = config.get("local_model_path", "")
+    is_local_gguf = (
+        params.get("mode") == "local"
+        and bool(local_model_path)
+        and not str(local_model_path).startswith("http")
+    )
+
+    if is_local_gguf:
+        import pathlib as _pathlib
+        gguf_path = _pathlib.Path(local_model_path).resolve()
+        model_name = gguf_path.name
+
+        _emit_stage("init", f"Loading model: {model_name}...")
+        _emit_activity(f"Detected local GGUF model: {model_name}", "info")
+        _emit_progress("init", 3, 0, 0, 0, f"Detecting GPU for {model_name}...")
+
+        try:
+            from core.local_model_server import (
+                detect_gpu,
+                start_local_model,
+                get_or_create_server,
+            )
+            gpu_info = detect_gpu()
+            if gpu_info["available"]:
+                _emit_activity(
+                    f"GPU detected: {gpu_info['name']} "
+                    f"({gpu_info['vram_total_mb']} MB VRAM, "
+                    f"{gpu_info['vram_free_mb']} MB free) — using CUDA",
+                    "info",
+                )
+            else:
+                _emit_activity(
+                    "No NVIDIA GPU detected — running on CPU (will be slower)", "warn"
+                )
+
+            accel = "GPU (CUDA)" if gpu_info["available"] else "CPU"
+            _emit_progress("init", 5, 0, 0, 0, f"Loading {model_name} into {accel}...")
+            _emit_stage("init", f"Loading {model_name} — please wait (10–60 seconds)...")
+
+            def _on_model_log(msg: str) -> None:
+                _emit_activity(msg, "info")
+
+            server_url = start_local_model(
+                model_path=str(gguf_path),
+                on_log=_on_model_log,
+            )
+            _local_model_server = get_or_create_server()
+            params["target"] = server_url
+            params["mode"] = "local"
+            _emit_activity(f"Model server ready: {server_url}", "info")
+            _emit_progress("init", 10, 0, 0, 0, "Model loaded — starting security scan...")
+
+        except ImportError:
+            _emit_activity(
+                "llama-cpp-python not installed. Install it to enable local model scanning: "
+                "pip install llama-cpp-python --extra-index-url "
+                "https://abetlen.github.io/llama-cpp-python/whl/cu122",
+                "error",
+            )
+            raise RuntimeError(
+                "llama-cpp-python is required for local GGUF model scanning. "
+                "Run: pip install llama-cpp-python --extra-index-url "
+                "https://abetlen.github.io/llama-cpp-python/whl/cu122"
+            )
+        except Exception as model_err:
+            _emit_activity(f"Failed to load model: {model_err}", "error")
+            raise RuntimeError(
+                f"Could not start local model server for \'{model_name}\'.
+"
+                f"Error: {model_err}"
+            )
+    # ─────────────────────────────────────────────────────────────────────────────
+
     _emit_activity(
         f"Target: {params['target']} · mode={params['mode']} · depth={params['scan_depth']}",
         "info",
@@ -400,6 +479,14 @@ def run_scan_pipeline(config: dict) -> None:
         pass   # non-fatal
 
     _emit({"type": "complete", "report": report_dict})
+
+    # ── Cleanup: stop the local model server if we launched one ──
+    if _local_model_server is not None:
+        try:
+            _local_model_server.stop()
+            _emit_activity("Local model server stopped cleanly", "info")
+        except Exception:
+            pass
 
 
 

@@ -3,26 +3,13 @@
  * pages/EstimatePage.tsx
  *
  * Scan preview and decision gate. Shows the user what the scan
- * will cost in time, probes, and money before they commit.
+ * will cost in time, probes, compute power, and GPU usage before they commit.
  *
- * On load:
- *   - Reads categories, scan_depth, mode from ScanContext
- *   - Calls getEstimate() (simulated IPC)
- *   - Displays results
- *
- * Heavy scan:
- *   - If is_heavy, shows AlertBanner (warning)
- *   - User must still explicitly click "Start Scan"
- *
- * States:
- *   - loading: "Calculating estimate..." with buttons disabled
- *   - ready:   estimation displayed, buttons enabled
- *   - error:   error banner with retry button
- *
- * Follows UI_ARCHITECTURE.md:
- *   - Section 2: Screen 4 (exit: user confirms)
- *   - Section 7: UX rules (disable don't hide, numbers are precise)
- *   - Section 8: Heavy scan warning
+ * Sections:
+ *   A. Scan Overview (probes, time, cost, depth, mode, engine)
+ *   B. Compute & GPU Resources (GPU name, VRAM total/free, utilization)
+ *   C. Per-Category Breakdown
+ *   D. Local Model Notice (if mode=local and target is a file path)
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -36,12 +23,50 @@ import {
 } from "../services/estimatorService";
 
 // ─────────────────────────────────────────────
+//  GPU Info type
+// ─────────────────────────────────────────────
+
+interface GpuInfo {
+  available: boolean;
+  name?: string;
+  vram_total_mb?: number;
+  vram_free_mb?: number;
+  utilization_pct?: number;
+  driver_version?: string;
+  error?: string;
+}
+
+// ─────────────────────────────────────────────
+//  VRAM overhead estimate per depth (probe runner overhead only)
+// ─────────────────────────────────────────────
+
+const VRAM_ESTIMATE_MB: Record<string, number> = {
+  quick:    512,
+  standard: 1024,
+  deep:     2048,
+};
+
+// ─────────────────────────────────────────────
 //  Props
 // ─────────────────────────────────────────────
 
 interface EstimatePageProps {
   onContinue: () => void;
   onBack: () => void;
+}
+
+// ─────────────────────────────────────────────
+//  Helpers
+// ─────────────────────────────────────────────
+
+function formatVram(mb: number): string {
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
+  return `${mb} MB`;
+}
+
+function vramSufficient(gpuInfo: GpuInfo, depth: string): boolean {
+  if (!gpuInfo.available || gpuInfo.vram_free_mb == null) return true;
+  return gpuInfo.vram_free_mb >= (VRAM_ESTIMATE_MB[depth] ?? 512);
 }
 
 // ─────────────────────────────────────────────
@@ -55,12 +80,13 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
   const [estimate, setEstimate] = useState<EstimateResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [gpuInfo, setGpuInfo] = useState<GpuInfo | null>(null);
+  const [gpuLoading, setGpuLoading] = useState(false);
 
-  // ── Fetch estimate on mount ──
+  // ── Fetch compute estimate on mount ──
   const fetchEstimate = useCallback(async () => {
     setLoading(true);
     setError(null);
-
     try {
       const result = await getEstimate({
         categories: state.categories,
@@ -79,9 +105,28 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
     }
   }, [state.categories, state.scan_depth, state.mode]);
 
+  // ── Fetch GPU info (Electron only) ──
+  const fetchGpuInfo = useCallback(async () => {
+    const api = (window as any).electronAPI;
+    if (!api?.getGpuInfo) {
+      setGpuInfo({ available: false, error: "GPU query not available in browser mode" });
+      return;
+    }
+    setGpuLoading(true);
+    try {
+      const info: GpuInfo = await api.getGpuInfo();
+      setGpuInfo(info);
+    } catch {
+      setGpuInfo({ available: false, error: "Failed to query GPU" });
+    } finally {
+      setGpuLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchEstimate();
-  }, [fetchEstimate]);
+    fetchGpuInfo();
+  }, [fetchEstimate, fetchGpuInfo]);
 
   // ── Continue handler ──
   const handleContinue = useCallback(() => {
@@ -96,11 +141,17 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
     return `$${usd.toFixed(4)}`;
   };
 
+  // Is the target a local .gguf file (not a URL)?
+  const isLocalGguf =
+    state.mode === "local" &&
+    state.target != null &&
+    !state.target.startsWith("http");
+
   return (
     <div className="estimate-page">
       <PageHeader
         title="Scan Estimate"
-        subtitle="Review the estimated impact before starting."
+        subtitle="Review the estimated compute impact before starting."
         onBack={onBack}
       />
 
@@ -132,7 +183,20 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
           </div>
         )}
 
-        {/* ── Estimate Display ── */}
+        {/* ── Local GGUF Notice ── */}
+        {isLocalGguf && !loading && (
+          <AlertBanner
+            type="warning"
+            message={
+              `Local model file detected: "${state.target}". ` +
+              `The scanner probes your model via its local inference server ` +
+              `(default: http://localhost:11434). ` +
+              `Ensure Ollama or llama.cpp server is running with this model loaded before starting.`
+            }
+          />
+        )}
+
+        {/* ── Estimate + GPU Display ── */}
         {estimate && !loading && !error && (
           <>
             {/* ── Heavy Scan Warning ── */}
@@ -143,7 +207,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
               />
             )}
 
-            {/* ── Summary Table ── */}
+            {/* ── A. Scan Overview ── */}
             <section className="estimate-page__section">
               <h2 className="estimate-page__section-title">Scan Overview</h2>
               <dl className="estimate-page__stats">
@@ -177,14 +241,130 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                     {estimate.mode === "api" ? "API Endpoint" : "Local Model"}
                   </dd>
                 </div>
+                <div className="estimate-page__stat-row">
+                  <dt className="estimate-page__stat-label">Scan Engine</dt>
+                  <dd className="estimate-page__stat-value" id="stat-engine">
+                    {state.engine === "auto"
+                      ? "Auto (selects best available)"
+                      : state.engine ?? "auto"}
+                  </dd>
+                </div>
               </dl>
             </section>
 
-            {/* ── Per-Category Breakdown ── */}
+            {/* ── B. Compute & GPU Resources ── */}
             <section className="estimate-page__section">
-              <h2 className="estimate-page__section-title">
-                Category Breakdown
-              </h2>
+              <h2 className="estimate-page__section-title">Compute Resources</h2>
+
+              {gpuLoading && (
+                <p className="estimate-page__loading-text" style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>
+                  Detecting GPU...
+                </p>
+              )}
+
+              {!gpuLoading && gpuInfo && (
+                <dl className="estimate-page__stats">
+                  {/* GPU availability */}
+                  <div className="estimate-page__stat-row">
+                    <dt className="estimate-page__stat-label">NVIDIA GPU</dt>
+                    <dd
+                      className="estimate-page__stat-value"
+                      id="stat-gpu-name"
+                      style={{
+                        color: gpuInfo.available
+                          ? "var(--color-success, #22c55e)"
+                          : "var(--color-warn, #f59e0b)",
+                      }}
+                    >
+                      {gpuInfo.available
+                        ? gpuInfo.name ?? "Unknown"
+                        : "Not detected — CPU only"}
+                    </dd>
+                  </div>
+
+                  {/* Per-GPU stats when available */}
+                  {gpuInfo.available && (
+                    <>
+                      <div className="estimate-page__stat-row">
+                        <dt className="estimate-page__stat-label">VRAM Total</dt>
+                        <dd className="estimate-page__stat-value" id="stat-vram-total">
+                          {formatVram(gpuInfo.vram_total_mb ?? 0)}
+                        </dd>
+                      </div>
+
+                      <div className="estimate-page__stat-row">
+                        <dt className="estimate-page__stat-label">VRAM Free</dt>
+                        <dd
+                          className="estimate-page__stat-value"
+                          id="stat-vram-free"
+                          style={{
+                            color: vramSufficient(gpuInfo, state.scan_depth)
+                              ? undefined
+                              : "var(--color-error, #ef4444)",
+                          }}
+                        >
+                          {formatVram(gpuInfo.vram_free_mb ?? 0)}
+                          {!vramSufficient(gpuInfo, state.scan_depth) &&
+                            " ⚠ May be insufficient"}
+                        </dd>
+                      </div>
+
+                      <div className="estimate-page__stat-row">
+                        <dt className="estimate-page__stat-label">GPU Utilization</dt>
+                        <dd className="estimate-page__stat-value" id="stat-gpu-util">
+                          {gpuInfo.utilization_pct ?? 0}%
+                          {(gpuInfo.utilization_pct ?? 0) > 80 && " ⚠ High load"}
+                        </dd>
+                      </div>
+
+                      <div className="estimate-page__stat-row">
+                        <dt className="estimate-page__stat-label">Driver</dt>
+                        <dd className="estimate-page__stat-value" id="stat-gpu-driver">
+                          {gpuInfo.driver_version ?? "unknown"}
+                        </dd>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Estimated probe-runner VRAM overhead */}
+                  <div className="estimate-page__stat-row">
+                    <dt className="estimate-page__stat-label">Est. VRAM Required</dt>
+                    <dd className="estimate-page__stat-value" id="stat-vram-req">
+                      {formatVram(VRAM_ESTIMATE_MB[state.scan_depth] ?? 512)}
+                      <span
+                        style={{ fontSize: "0.75em", opacity: 0.6, marginLeft: "6px" }}
+                      >
+                        (probe runner overhead)
+                      </span>
+                    </dd>
+                  </div>
+
+                  {/* CPU-only warning */}
+                  {!gpuInfo.available && (
+                    <div className="estimate-page__stat-row">
+                      <dt className="estimate-page__stat-label">Acceleration</dt>
+                      <dd
+                        className="estimate-page__stat-value"
+                        id="stat-acceleration"
+                        style={{ color: "var(--color-warn, #f59e0b)" }}
+                      >
+                        CPU only — scanning will be slower
+                      </dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+
+              {!gpuLoading && !gpuInfo && (
+                <p style={{ fontSize: "0.85rem", opacity: 0.6 }}>
+                  GPU information unavailable.
+                </p>
+              )}
+            </section>
+
+            {/* ── C. Per-Category Breakdown ── */}
+            <section className="estimate-page__section">
+              <h2 className="estimate-page__section-title">Category Breakdown</h2>
               <table className="estimate-page__table">
                 <thead>
                   <tr>

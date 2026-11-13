@@ -111,6 +111,8 @@ export interface ScanState {
   scan_execution: ScanExecutionState | null;
   /** True when scan is actively running — used for navigation protection */
   scan_active: boolean;
+  /** Full disk path to local .gguf model file — set via Electron file picker. */
+  local_model_path: string | null;
 }
 
 // ─────────────────────────────────────────────
@@ -153,6 +155,7 @@ function createInitialState(): ScanState {
     manifest_file: null,
     scan_execution: null,
     scan_active: false,
+    local_model_path: null,
   };
 }
 
