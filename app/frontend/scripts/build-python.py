@@ -191,6 +191,18 @@ def build(onefile: bool = True) -> int:
         "--add-data", f"{BACKEND_DIR}{os.pathsep}backend",
     ]
 
+    # Bundle garak's data files (YAML configs, JSON prompts, text resources)
+    # Without these, garak crashes at runtime looking for garak.core.yaml etc.
+    if engines["garak"]:
+        import garak
+        garak_pkg = Path(garak.__file__).parent
+        for subdir in ("data", "resources", "configs"):
+            src = garak_pkg / subdir
+            if src.is_dir():
+                cmd += ["--add-data", f"{src}{os.pathsep}garak/{subdir}"]
+        # Also collect any package data PyInstaller might miss
+        cmd += ["--collect-data", "garak"]
+
     # Exclude heavy packages that are test-only or not needed at runtime
     for exc in ["pytest", "hypothesis", "mypy", "ruff", "respx"]:
         cmd += ["--exclude-module", exc]
