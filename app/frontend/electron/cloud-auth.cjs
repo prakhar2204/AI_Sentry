@@ -20,7 +20,7 @@ class CloudAuthError extends Error {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function httpsJson(method, url, body, headers = {}) {
+function httpsJson(method, url, body, headers = {}, timeoutMs = 30000) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
     const payload = typeof body === 'string' ? body : (body ? JSON.stringify(body) : '');
@@ -37,15 +37,15 @@ function httpsJson(method, url, body, headers = {}) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(30000, () => { req.destroy(); reject(new Error('Request timed out')); });
+    req.setTimeout(timeoutMs, () => { req.destroy(); reject(new Error('Request timed out')); });
     if (payload) req.write(payload);
     req.end();
   });
 }
 
-function formPost(url, params) {
+function formPost(url, params, timeoutMs = 30000) {
   const body = new URLSearchParams(params).toString();
-  return httpsJson('POST', url, body, { 'Content-Type': 'application/x-www-form-urlencoded' });
+  return httpsJson('POST', url, body, { 'Content-Type': 'application/x-www-form-urlencoded' }, timeoutMs);
 }
 
 // ─── AWS Signature V4 ───────────────────────────────────────────────────────
@@ -336,15 +336,25 @@ class AzureCloudAuth extends CloudAuth {
     this._polling = true;
     const pollInterval = Math.max((interval || 5) * 1000, 5000);
     const deadline = Date.now() + (expires_in || 900) * 1000;
+    let pollCount = 0;
 
     while (this._polling && Date.now() < deadline) {
       await new Promise(r => setTimeout(r, pollInterval));
       if (!this._polling) throw new CloudAuthError('CANCELLED', 'Sign-in cancelled.');
 
-      const tokenResponse = await formPost(`${AZURE_TOKEN_URL}/token`, {
-        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-        client_id: AZURE_CLIENT_ID, device_code,
-      });
+      pollCount++;
+      let tokenResponse;
+      try {
+        tokenResponse = await formPost(`${AZURE_TOKEN_URL}/token`, {
+          grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+          client_id: AZURE_CLIENT_ID, device_code,
+        }, 60000); // 60s timeout for auth polling
+      } catch (err) {
+        // Network error or timeout — retry on next poll, don't crash
+        this.onProgress({ provider: 'azure', stage: 'polling',
+          message: `Waiting for sign-in... (attempt ${pollCount}, retrying after network error)` });
+        continue;
+      }
 
       if (tokenResponse.body?.access_token) {
         this._polling = false;
@@ -353,7 +363,13 @@ class AzureCloudAuth extends CloudAuth {
         this.onProgress({ provider: 'azure', stage: 'validating', message: 'Verifying Azure identity...' });
         return await this._getIdentity(region);
       }
-      if (tokenResponse.body?.error === 'authorization_pending') continue;
+      if (tokenResponse.body?.error === 'authorization_pending') {
+        if (pollCount % 3 === 0) {
+          this.onProgress({ provider: 'azure', stage: 'polling',
+            message: `Waiting for sign-in... (attempt ${pollCount})` });
+        }
+        continue;
+      }
       if (tokenResponse.body?.error === 'slow_down') { await new Promise(r => setTimeout(r, 5000)); continue; }
       if (tokenResponse.body?.error === 'expired_token')
         throw new CloudAuthError('TIMEOUT', 'Azure login timed out. Try again.');
@@ -364,9 +380,14 @@ class AzureCloudAuth extends CloudAuth {
 
   async _getIdentity(region) {
     if (!this.credentials?.accessToken) throw new CloudAuthError('NOT_AUTHENTICATED', 'Sign in to Azure first.');
-    const r = await httpsJson('GET',
-      'https://management.azure.com/subscriptions?api-version=2020-01-01', null,
-      { Authorization: `Bearer ${this.credentials.accessToken}` });
+    let r;
+    try {
+      r = await httpsJson('GET',
+        'https://management.azure.com/subscriptions?api-version=2020-01-01', null,
+        { Authorization: `Bearer ${this.credentials.accessToken}` }, 60000);
+    } catch (err) {
+      throw new CloudAuthError('AUTH_FAILED', `Azure identity check failed: ${err.message}`);
+    }
     if (r.status === 401) throw new CloudAuthError('EXPIRED_SESSION', 'Azure session expired. Sign in again.');
     const subs = r.body?.value || [];
     const sub = subs.find(s => s.state === 'Enabled') || subs[0];
