@@ -191,6 +191,13 @@ def build(onefile: bool = True) -> int:
         "--add-data", f"{BACKEND_DIR}{os.pathsep}backend",
     ]
 
+    # Add core/deploy scripts as real files so __file__-relative paths work.
+    # local_transformers_server.py does Path(__file__).parent/'deploy'/'serving_runtime.py'
+    # which resolves to _MEIPASS/core/deploy/serving_runtime.py in frozen mode.
+    core_deploy = BACKEND_DIR / "core" / "deploy"
+    if core_deploy.is_dir():
+        cmd += ["--add-data", f"{core_deploy}{os.pathsep}core/deploy"]
+
     # Bundle garak's data files (YAML configs, JSON prompts, text resources)
     # Without these, garak crashes at runtime looking for garak.core.yaml etc.
     if engines["garak"]:

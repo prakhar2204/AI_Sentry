@@ -765,6 +765,23 @@ if __name__ == "__main__":
         from garak import cli as garak_cli
         garak_cli.main(sys.argv[3:])
         sys.exit(0)
+    # Frozen exe used as Python interpreter for deploy scripts (e.g. serving_runtime.py).
+    # local_transformers_server.py spawns: sys.executable path/to/serving_runtime.py
+    # In a frozen bundle sys.executable == ipc_server.exe, so we intercept it here.
+    if len(sys.argv) > 1 and sys.argv[1].endswith('.py'):
+        import runpy
+        script_path = sys.argv[1]
+        # Also check in _MEIPASS/core/deploy/ if the path doesn't exist directly
+        if not os.path.exists(script_path):
+            meipass = getattr(sys, '_MEIPASS', None)
+            if meipass:
+                script_name = os.path.basename(script_path)
+                candidate = os.path.join(meipass, 'core', 'deploy', script_name)
+                if os.path.exists(candidate):
+                    script_path = candidate
+        sys.argv = sys.argv[1:]  # shift so script sees itself as argv[0]
+        runpy.run_path(script_path, run_name='__main__')
+        sys.exit(0)
     # W6.3 — Health check mode: python -m ipc_server --check
     # Returns engine availability JSON to stdout and exits 0.
     # Used by Electron's system:health-check IPC handler.
