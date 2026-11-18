@@ -200,8 +200,10 @@ def build(onefile: bool = True) -> int:
             src = garak_pkg / subdir
             if src.is_dir():
                 cmd += ["--add-data", f"{src}{os.pathsep}garak/{subdir}"]
-        # Also collect any package data PyInstaller might miss
-        cmd += ["--collect-data", "garak"]
+        # collect-all includes Python code + data + subpackages as real filesystem files.
+        # This is REQUIRED for garak which dynamically scans generators/, probes/,
+        # detectors/ etc. using os.listdir / Path.iterdir at runtime.
+        cmd += ["--collect-all", "garak"]
 
     # Exclude heavy packages that are test-only or not needed at runtime
     for exc in ["pytest", "hypothesis", "mypy", "ruff", "respx"]:
@@ -261,8 +263,8 @@ def copy_to_resources(onefile: bool) -> None:
 def main() -> None:
     import argparse
     parser = argparse.ArgumentParser(description="Build Sentryɸ Python backend")
-    parser.add_argument("--onefile", action="store_true", default=True,
-                        help="Build as single executable (default)")
+    parser.add_argument("--onefile", action="store_true", default=False,
+                        help="Build as single executable (slower cold start, packaging issues with dynamic plugins)")
     parser.add_argument("--onedir",  action="store_true",
                         help="Build as directory bundle (faster cold start)")
     parser.add_argument("--check",   action="store_true",
@@ -275,7 +277,7 @@ def main() -> None:
         print("All checks passed.")
         return
 
-    onefile = not args.onedir
+    onefile = args.onefile and not args.onedir  # default is onedir
     rc = build(onefile=onefile)
     if rc == 0:
         copy_to_resources(onefile=onefile)

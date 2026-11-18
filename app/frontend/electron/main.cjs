@@ -179,7 +179,12 @@ function findPython() {
   if (isDev && fs.existsSync(projectPython)) return projectPython;
   // In production, check for bundled PyInstaller executable first
   if (!isDev) {
-    // PyInstaller single-file bundle
+    // PyInstaller onedir bundle (preferred — garak needs real dirs for dynamic plugin discovery)
+    const onedirExe = path.join(process.resourcesPath, 'backend', 'ipc_server', 'ipc_server.exe');
+    if (fs.existsSync(onedirExe)) return onedirExe;
+    const onedirBin = path.join(process.resourcesPath, 'backend', 'ipc_server', 'ipc_server');
+    if (fs.existsSync(onedirBin)) return onedirBin;
+    // PyInstaller onefile bundle (fallback)
     const bundledExe = path.join(process.resourcesPath, 'backend', 'ipc_server.exe');
     if (fs.existsSync(bundledExe)) return bundledExe;
     const bundledBin = path.join(process.resourcesPath, 'backend', 'ipc_server');
