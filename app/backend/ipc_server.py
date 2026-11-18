@@ -761,9 +761,9 @@ if __name__ == "__main__":
         sys.exit(0)
     # A frozen executable is also the subprocess launcher used by GarakEngine.
     if sys.argv[1:3] == ["-m", "garak"]:
-        import runpy
-        sys.argv = ["garak"] + sys.argv[3:]
-        runpy.run_module("garak", run_name="__main__")
+        sys.stdout.reconfigure(encoding="utf-8")
+        from garak import cli as garak_cli
+        garak_cli.main(sys.argv[3:])
         sys.exit(0)
     # W6.3 — Health check mode: python -m ipc_server --check
     # Returns engine availability JSON to stdout and exits 0.
