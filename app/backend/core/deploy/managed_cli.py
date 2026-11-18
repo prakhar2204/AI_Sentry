@@ -349,26 +349,116 @@ class ManagedCli:
         raise RuntimeError(f'Azure operation not yet supported without CLI: {" ".join(args[:3])}')
 
     def _aws_rest(self, args, *, output=True, timeout=900):
-        """For AWS token mode, use boto3 if available, otherwise provide clear error."""
+        """For AWS token mode, use boto3 SDK — no CLI required."""
         try:
             import boto3
-            session = boto3.Session(
-                aws_access_key_id=self.env.get('AWS_ACCESS_KEY_ID'),
-                aws_secret_access_key=self.env.get('AWS_SECRET_ACCESS_KEY'),
-                aws_session_token=self.env.get('AWS_SESSION_TOKEN'),
-                region_name=self.region
-            )
-            if args[0] == 'sts' and args[1] == 'get-caller-identity':
-                return session.client('sts').get_caller_identity()
-            if args[0] == 'cloudformation':
-                cf = session.client('cloudformation')
-                if args[1] == 'create-stack':
-                    # Parse args to find stack parameters
-                    raise RuntimeError('AWS CloudFormation deployment via REST requires the AWS CLI or boto3 SDK.')
         except ImportError:
-            pass
-        raise RuntimeError(f'AWS operation not yet supported without CLI: {" ".join(args[:3])}. '
-                           f'Install the AWS CLI or run: pip install boto3')
+            raise RuntimeError(
+                'AWS deployment requires the boto3 package, which should be bundled. '
+                'If you see this in a development install, run: pip install boto3'
+            )
+
+        session = boto3.Session(
+            aws_access_key_id=self.env.get('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=self.env.get('AWS_SECRET_ACCESS_KEY'),
+            aws_session_token=self.env.get('AWS_SESSION_TOKEN'),
+            region_name=self.region
+        )
+
+        # ── STS ──
+        if args[0] == 'sts' and args[1] == 'get-caller-identity':
+            return session.client('sts').get_caller_identity()
+
+        # ── CloudFormation ──
+        if args[0] == 'cloudformation':
+            cf = session.client('cloudformation')
+            if args[1] == 'create-stack':
+                params = self._parse_aws_args(args[2:])
+                template_body = ''
+                template_path = params.get('--template-body', '')
+                if template_path.startswith('file://'):
+                    with open(template_path[7:], 'r') as f:
+                        template_body = f.read()
+                tags = []
+                if '--tags' in params:
+                    for tag_str in params['--tags']:
+                        parts = dict(kv.split('=', 1) for kv in tag_str.split(',') if '=' in tag_str)
+                        if 'Key' not in parts:
+                            parts = dict(kv.split('=', 1) for kv in [tag_str])
+                        tags.append({'Key': parts.get('Key', ''), 'Value': parts.get('Value', '')})
+                create_params = {
+                    'StackName': params.get('--stack-name', ''),
+                    'TemplateBody': template_body,
+                    'Capabilities': [params.get('--capabilities', 'CAPABILITY_IAM')],
+                    'Tags': tags,
+                }
+                if params.get('--client-request-token'):
+                    create_params['ClientRequestToken'] = params['--client-request-token']
+                result = cf.create_stack(**create_params)
+                return {'StackId': result['StackId']}
+            if args[1] == 'describe-stacks':
+                params = self._parse_aws_args(args[2:])
+                result = cf.describe_stacks(StackName=params.get('--stack-name', ''))
+                return {'Stacks': result['Stacks']}
+
+        # ── S3 ──
+        if args[0] == 's3' and args[1] == 'cp':
+            s3 = session.client('s3')
+            local_path = args[2]
+            s3_path = args[3]  # s3://bucket/key
+            bucket, key = s3_path.replace('s3://', '').split('/', 1)
+            s3.upload_file(local_path, bucket, key)
+            return {}
+
+        # ── CodeBuild ──
+        if args[0] == 'codebuild':
+            cb = session.client('codebuild')
+            if args[1] == 'start-build':
+                params = self._parse_aws_args(args[2:])
+                result = cb.start_build(
+                    projectName=params.get('--project-name', ''),
+                    idempotencyToken=params.get('--idempotency-token', '')
+                )
+                return {'build': {'id': result['build']['id']}}
+            if args[1] == 'batch-get-builds':
+                params = self._parse_aws_args(args[2:])
+                ids = params.get('--ids', '').split(',') if isinstance(params.get('--ids'), str) else [params.get('--ids', '')]
+                result = cb.batch_get_builds(ids=ids)
+                return {'builds': result['builds']}
+
+        # ── SageMaker ──
+        if args[0] == 'sagemaker' and args[1] == 'describe-endpoint':
+            sm = session.client('sagemaker')
+            params = self._parse_aws_args(args[2:])
+            return sm.describe_endpoint(EndpointName=params.get('--endpoint-name', ''))
+
+        raise RuntimeError(f'AWS operation not yet supported via boto3: {" ".join(args[:3])}')
+
+    @staticmethod
+    def _parse_aws_args(args):
+        """Parse CLI-style --key value pairs into a dict. Handles multi-value flags like --tags."""
+        result = {}
+        i = 0
+        while i < len(args):
+            if args[i].startswith('--'):
+                key = args[i]
+                values = []
+                i += 1
+                while i < len(args) and not args[i].startswith('--'):
+                    values.append(args[i])
+                    i += 1
+                if key == '--tags':
+                    result[key] = values
+                elif len(values) == 1:
+                    result[key] = values[0]
+                elif len(values) == 0:
+                    result[key] = True
+                else:
+                    result[key] = values
+            else:
+                i += 1
+        return result
+
 
     def verify(self):
         if self.auth_mode == 'token':

@@ -294,11 +294,12 @@ function submitCreds(){
 </script></body></html>`;
 
 // ─── Azure Authentication (Device Code OAuth2 Flow) ──────────────────────────
-// Uses Azure CLI's public client ID — no app registration required.
+// Uses Azure PowerShell's public client ID — no app registration required.
+// The old Azure CLI client ID (04b07795) no longer works with /common tenant.
 
-const AZURE_CLIENT_ID = '04b07795-a71b-4346-935f-02f9a1efa4ce'; // Azure CLI public client
+const AZURE_CLIENT_ID = '1950a258-227b-4e31-a9cf-717495945fc2'; // Azure PowerShell public client
 const AZURE_SCOPE = 'https://management.azure.com/.default offline_access';
-const AZURE_TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0';
+const AZURE_TOKEN_URL = 'https://login.microsoftonline.com/organizations/oauth2/v2.0';
 
 class AzureCloudAuth extends CloudAuth {
   constructor(options) { super('azure', options); this._polling = false; }
@@ -309,10 +310,17 @@ class AzureCloudAuth extends CloudAuth {
     this.onProgress({ provider: 'azure', stage: 'device_code', message: 'Requesting device code from Microsoft...' });
 
     // Step 1: Request device code
-    const dcResponse = await formPost(`${AZURE_TOKEN_URL}/devicecode`,
-      { client_id: AZURE_CLIENT_ID, scope: AZURE_SCOPE });
-    if (dcResponse.status !== 200 || !dcResponse.body?.device_code)
-      throw new CloudAuthError('AUTH_FAILED', 'Could not start Azure login. Try again.');
+    let dcResponse;
+    try {
+      dcResponse = await formPost(`${AZURE_TOKEN_URL}/devicecode`,
+        { client_id: AZURE_CLIENT_ID, scope: AZURE_SCOPE });
+    } catch (err) {
+      throw new CloudAuthError('AUTH_FAILED', `Azure login request failed: ${err.message}`);
+    }
+    if (!dcResponse.body?.device_code) {
+      const azureError = dcResponse.body?.error_description || dcResponse.body?.error || JSON.stringify(dcResponse.body).slice(0, 200);
+      throw new CloudAuthError('AUTH_FAILED', `Azure device code request failed (HTTP ${dcResponse.status}): ${azureError}`);
+    }
 
     const { device_code, user_code, verification_uri, interval, expires_in } = dcResponse.body;
     this.onProgress({

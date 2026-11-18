@@ -115,6 +115,10 @@ ALWAYS_HIDDEN = [
     "anyio",
     "sniffio",
     "h11",
+    # AWS SDK (token-based deployment without CLI)
+    "boto3",
+    "botocore",
+    "s3transfer",
 ]
 
 GARAK_HIDDEN = [
