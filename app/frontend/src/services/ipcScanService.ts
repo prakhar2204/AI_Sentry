@@ -33,6 +33,7 @@ import {
   CATEGORY_LABELS,
 } from "./scanTypes";
 import type { ScanReport } from "./reportTypes";
+import { getEstimate } from "./estimatorService";
 
 // ─────────────────────────────────────────────
 //  Stage mapping: Python stage strings → ScanLifecycleStage
@@ -104,9 +105,15 @@ export function startIpcScan(
   let preliminaryFindings = 0;
   let lifecycleStage: ScanLifecycleStage = "preparing";
   let probesDone = 0;
-  let probesTotal = config.total_probes || 1;
+  let probesTotal = 0; // Unknown until the real engine plan arrives.
   let elapsedSec = 0;
   let activeCategory: string | null = null;
+  const startedAt = Date.now();
+  let activityLabel = "Connecting to Python backend...";
+  const elapsedTimer = setInterval(() => {
+    elapsedSec = Math.floor((Date.now() - startedAt) / 1000);
+    emitProgress({ activity_label: activityLabel });
+  }, 1000);
   const categoryStates = buildCategoryStates(config.categories);
 
   // ── Cleanup functions to unsubscribe IPC listeners ──
@@ -115,12 +122,14 @@ export function startIpcScan(
   let unsubError: (() => void) | null = null;
 
   function cleanup() {
+    clearInterval(elapsedTimer);
     unsubProgress?.();
     unsubComplete?.();
     unsubError?.();
   }
 
   function emitProgress(overrides: Partial<ScanProgressEvent> = {}) {
+    if (overrides.activity_label) activityLabel = overrides.activity_label;
     const event: ScanProgressEvent = {
       stage: lifecycleStage,
       timestamp: new Date().toISOString(),
@@ -128,7 +137,7 @@ export function startIpcScan(
       probes_total: probesTotal,
       active_category: activeCategory,
       activity_label: overrides.activity_label ?? "Running...",
-      categories: categoryStates,
+      categories: categoryStates.map((c) => ({ ...c })),
       preliminary_findings: preliminaryFindings,
       elapsed_sec: elapsedSec,
       ...overrides,
@@ -143,6 +152,7 @@ export function startIpcScan(
 
     switch (data.type) {
       case "progress": {
+        if (data.category) activeCategory = data.category as string;
         const pct = (data.percent as number) ?? 0;
         probesDone = (data.probes_done as number) ?? probesDone;
         probesTotal = (data.probes_total as number) || probesTotal;
@@ -157,8 +167,9 @@ export function startIpcScan(
           if (catIdx >= 0) {
             categoryStates[catIdx] = {
               ...categoryStates[catIdx],
-              status: "active",
-              probes_completed: probesDone,
+              status: Number(data.category_done ?? 0) >= Number(data.category_total ?? Infinity) ? "complete" : "active",
+              probes_total: (data.category_total as number) ?? categoryStates[catIdx].probes_total,
+              probes_completed: (data.category_done as number) ?? categoryStates[catIdx].probes_completed,
             };
           }
         }
@@ -180,7 +191,7 @@ export function startIpcScan(
           categoryStates[catIdx] = {
             ...categoryStates[catIdx],
             status: "active",
-            probes_completed: (categoryStates[catIdx].probes_completed ?? 0) + 1,
+            probes_completed: categoryStates[catIdx].probes_completed,
           };
         }
 
@@ -280,12 +291,24 @@ export function startIpcScan(
     local_model_path: (config as any).local_model_path ?? "",
   };
 
-  api.startScan(ipcConfig).then((result) => {
+  getEstimate({ categories: config.categories, scan_depth: config.scan_depth,
+    mode: config.mode, engine: config.engine ?? "auto" }).then((plan) => {
+    if (isCancelled) return null;
+    probesTotal = plan.total_probes;
+    for (const category of categoryStates) {
+      category.probes_total = plan.per_category[category.id] ?? 0;
+    }
+    emitProgress({ activity_label: `Starting ${plan.engine} scan...` });
+    return api.startScan(ipcConfig);
+  }).then((result) => {
+    if (isCancelled) return;
+    if (!result) return;
     if (!result.started) {
       cleanup();
       handlers.onError(result.error ?? "Failed to start Python scan", "START_FAILED");
     }
   }).catch((err: Error) => {
+    if (isCancelled) return;
     cleanup();
     handlers.onError(err.message ?? "IPC start error", "IPC_ERROR");
   });

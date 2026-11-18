@@ -30,7 +30,7 @@
 
 import React, { useState, useCallback, useMemo } from "react";
 import { RiskGauge } from "../components/common/RiskGauge";
-import { useReportContext, selectFilteredFindings, pageFindings, buildSimulatedReport } from "../store/ReportContext";
+import { useReportContext, selectFilteredFindings, pageFindings } from "../store/ReportContext";
 import { REPORT_ACTIONS } from "../store/actions";
 import { useScanContext } from "../store/ScanContext";
 import { PageHeader } from "../components/layout/PageHeader";
@@ -56,6 +56,7 @@ import {
 // ─────────────────────────────────────────────
 
 interface ResultsPageProps {
+  onDeploy?: () => void;
   onViewActions: () => void;
   onExport:      () => void;
   onNewScan:     () => void;
@@ -85,6 +86,7 @@ function ScoreGauge({ score, level }: { score: number; level: string }) {
   return (
     <RiskGauge
       score={score}
+      riskLevel={level}
       size={160}
       strokeWidth={11}
       animated
@@ -624,32 +626,14 @@ function EngineFooter({ report }: { report: ScanReport }) {
 //  Main page component
 // ─────────────────────────────────────────────
 
-export function ResultsPage({ onViewActions, onExport, onNewScan }: ResultsPageProps) {
+export function ResultsPage({ onViewActions, onExport, onNewScan, onDeploy }: ResultsPageProps) {
   const { state: reportState, dispatch } = useReportContext();
   const { state: scanState } = useScanContext();
 
-  // ── If no report yet, build a simulated one ──
-  // This happens when we navigate from ScanPage in simulator mode.
+  // ── If no report yet, show nothing (a real scan must complete first) ──
   const report: ScanReport | null = useMemo(() => {
-    if (reportState.report) return reportState.report;
-
-    // Build from scan config — scan just completed
-    if (scanState.phase === "complete" || scanState.target) {
-      const simulated = buildSimulatedReport(
-        scanState.target || "https://api.example.com",
-        scanState.mode || "api",
-        scanState.scan_depth || "standard",
-        scanState.categories.length > 0
-          ? scanState.categories
-          : ["prompt_injection", "jailbreak", "data_leak", "harmful_output"]
-      );
-      // Store it in context for downstream screens
-      dispatch({ type: REPORT_ACTIONS.SET_REPORT, payload: simulated });
-      return simulated;
-    }
-
-    return null;
-  }, [reportState.report, scanState.phase, scanState.target, scanState.mode, scanState.scan_depth, scanState.categories, dispatch]);
+    return reportState.report || null;
+  }, [reportState.report]);
 
   // ── Filter/sort/page dispatch helpers ──
   const setCategory = useCallback((cat: string | null) => {
@@ -854,6 +838,7 @@ export function ResultsPage({ onViewActions, onExport, onNewScan }: ResultsPageP
 
       {/* ── H. Action Bar ── */}
       <div className="results-page__actions" id="results-actions">
+        {onDeploy && <button className="button button--primary" id="results-deploy" onClick={onDeploy}>Compare cloud deployments</button>}
         <button
           type="button"
           className="button button--primary"

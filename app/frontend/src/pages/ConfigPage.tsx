@@ -59,7 +59,7 @@ const DEPTH_OPTIONS = [
 
 /** Engine picker options with descriptions */
 const ENGINE_OPTIONS: { value: ScanEngine; label: string; desc: string }[] = [
-  { value: "auto",  label: "Auto (Recommended)",  desc: "Run Garak + PyRIT in parallel, merge results" },
+  { value: "auto",  label: "Auto (Recommended)",  desc: "Use Garak when available, otherwise PyRIT" },
   { value: "garak", label: "Garak Only",           desc: "NVIDIA adversarial probe framework" },
   { value: "pyrit", label: "PyRIT Only",           desc: "Microsoft red-team attack library" },
   { value: "mock",  label: "Mock (Testing)",       desc: "Deterministic test data — no real probes" },
@@ -82,7 +82,7 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
   const { state, dispatch } = useScanContext();
 
   // ── Determine if manifest strategy is available ──
-  const hasManifest = state.manifest_file !== null;
+  const hasManifest = !!state.manifest_file && !!state.manifest_config;
 
   // ── Local state ──
   const [strategy, setStrategy] = useState<ScanStrategy>(
@@ -126,8 +126,10 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
       // Reset categories on switch
       if (newStrategy === "full") {
         setCategories(ALL_CATEGORY_VALUES);
+        setDepth('deep');
       } else if (newStrategy === "manifest") {
-        setCategories([]);
+        setCategories(state.manifest_config!.categories);
+        setDepth(state.manifest_config!.scan_depth);
       } else {
         // manual — keep current selection or clear
         if (strategy !== "manual") {
@@ -135,7 +137,7 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
         }
       }
     },
-    [hasManifest, strategy]
+    [hasManifest, strategy, state.manifest_config]
   );
 
   // ── Category toggle handler ──
@@ -174,17 +176,17 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
 
     // Determine final categories
     const finalCategories =
-      strategy === "full" ? ALL_CATEGORY_VALUES : categories;
+      strategy === "full" ? ALL_CATEGORY_VALUES : strategy === "manifest" ? state.manifest_config!.categories : categories;
 
     // Update ScanContext
     dispatch({ type: SCAN_ACTIONS.SET_SCAN_STRATEGY, payload: strategy });
     dispatch({ type: SCAN_ACTIONS.SET_CATEGORIES,    payload: finalCategories });
-    dispatch({ type: SCAN_ACTIONS.SET_SCAN_DEPTH,    payload: depth });
+    dispatch({ type: SCAN_ACTIONS.SET_SCAN_DEPTH,    payload: strategy === "full" ? 'deep' : strategy === "manifest" ? state.manifest_config!.scan_depth : depth });
     dispatch({ type: SCAN_ACTIONS.SET_ENGINE,         payload: engine });
     dispatch({ type: SCAN_ACTIONS.START_CONFIRMING });
 
     onContinue();
-  }, [validate, strategy, categories, depth, engine, dispatch, onContinue]);
+  }, [validate, strategy, categories, depth, engine, dispatch, onContinue, state.manifest_config]);
 
   // ── Mode display label ──
   const modeLabel = state.mode === "api" ? "API Endpoint" : "Local Model";
@@ -270,7 +272,7 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
           <fieldset className="config-page__fieldset">
             <legend className="config-page__legend">Scan Engine</legend>
             <p className="config-page__hint">
-              Choose which security framework runs the probes. "Auto" is recommended for the most thorough scan.
+              Choose which security framework runs the probes. "Auto" selects an installed scan engine.
             </p>
             <div className="engine-picker">
               {ENGINE_OPTIONS.map((opt) => (

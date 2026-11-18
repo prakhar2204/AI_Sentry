@@ -150,7 +150,7 @@ def _make_handler(auth_result: _AuthResult, server_ref: list):
             if error:
                 self._send_html(
                     400,
-                    _ERROR_HTML.format(message=f"Provider error: {error}"),
+                    _ERROR_HTML.format(message=f"Provider error: {__import__('html').escape(error)}"),
                 )
                 auth_result.set({"error": error, "code": "", "state": state})
             elif code:
@@ -220,13 +220,17 @@ class OAuthCallbackServer:
         Returns:
             {"code": str, "state": str, "error": str} or None on timeout
         """
-        return self._auth_result.get(timeout=timeout)
+        try:
+            return self._auth_result.get(timeout=timeout)
+        finally:
+            self.stop()
 
     def stop(self) -> None:
         """Forcibly stop the server (e.g. on cancellation)."""
         if self._server_ref:
             try:
                 self._server_ref[0].shutdown()
+                self._server_ref[0].server_close()
             except Exception:  # noqa: BLE001
                 pass
 

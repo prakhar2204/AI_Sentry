@@ -165,10 +165,10 @@ class TestCalculateProbesPerCategory:
         assert result["prompt_injection"] == BASE_PROBES_PER_CATEGORY["prompt_injection"]
         assert result["data_leak"] == BASE_PROBES_PER_CATEGORY["data_leak"]
 
-    def test_all_four_categories(self):
+    def test_all_seven_categories(self):
         cats = list(ProbeCategory)
         result = calculate_probes_per_category(cats, ScanDepth.STANDARD)
-        assert len(result) == 4
+        assert len(result) == 7
 
     def test_returns_dict_of_ints(self):
         cats = [ProbeCategory.HARMFUL_OUTPUT]

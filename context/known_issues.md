@@ -1,5 +1,7 @@
 # Sentryɸ — Known Issues & Open Questions
 
+> **Verification update — 2026-11-15:** [PROJECT_AUDIT.md](../docs/PROJECT_AUDIT.md) contains current open issues. Garak is now pinned to 0.17.1. The local GGUF desktop scan passes all seven category selections. The 21-probe HTTP fixture includes successful Bullying/SlurUsage execution after detector dependencies became available; empty evaluations now fail explicitly. Quick jailbreak uses DanInTheWild instead of the ablation probe. Passing evaluations are excluded and duplicate records from one engine cannot claim cross-engine corroboration. Historical issue entries below are retained for context; see [SCAN_REPAIR.md](../docs/SCAN_REPAIR.md) for exact evidence and limits.
+
 **Last Updated:** 2026-11-02  
 **Phase:** 3 Complete (Garak B1–B6 + T2–T4, PyRIT P1–P6; 148 tests passing)  
 **Format:** Each entry has an ID, status, and resolution path.

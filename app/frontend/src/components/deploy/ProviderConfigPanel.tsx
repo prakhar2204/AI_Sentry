@@ -147,18 +147,23 @@ function TextInput({
 interface ProviderConfigPanelProps {
   provider:    DeployProvider;
   accountName: string;
+  initialRegion?: string;
+  initialConfig?: Record<string, string>;
   onSubmit:    (cfg: Record<string, string>) => void;
   onBack:      () => void;
 }
 
 export function ProviderConfigPanel({
-  provider, accountName, onSubmit, onBack,
+  provider, accountName, initialRegion, initialConfig = {}, onSubmit, onBack,
 }: ProviderConfigPanelProps) {
-  const regions =
+  const defaultRegions =
     provider === "aws"   ? AWS_REGIONS :
     provider === "azure" ? AZURE_REGIONS :
     provider === "gcp"   ? GCP_REGIONS :
     [{ value: "self-hosted", label: "Self-Hosted" }];
+  const regions = initialRegion && !defaultRegions.some(option => option.value === initialRegion)
+    ? [...defaultRegions, { value: initialRegion, label: initialRegion }]
+    : defaultRegions;
 
   const modes =
     provider === "private"
@@ -169,15 +174,19 @@ export function ProviderConfigPanel({
         ]
       : DEPLOY_MODES[provider as CloudProvider] ?? [];
 
-  const [region, setRegion]       = useState(regions[0]?.value ?? "");
-  const [mode,   setMode]         = useState(modes[0]?.value   ?? "");
-  const [scope,  setScope]        = useState("private");
-  const [instance, setInstance]   = useState(SAGEMAKER_INSTANCES[0]?.value ?? "");
+  const [region, setRegion]       = useState(initialRegion || regions[0]?.value || "");
+  const [mode,   setMode]         = useState(initialConfig.deployment_mode || modes[0]?.value || "");
+  const [scope,  setScope]        = useState(initialConfig.endpoint_scope || "private");
+  const [instance, setInstance]   = useState(initialConfig.instance_type || SAGEMAKER_INSTANCES[0]?.value || "");
   const [accel,    setAccel]      = useState(VERTEX_AI_ACCELERATORS[0]?.value ?? "");
   const [budget,   setBudget]     = useState("");
   const [projId,   setProjId]     = useState("");
   const [rg,       setRg]         = useState("");
   const [domain,   setDomain]     = useState("");
+  const [role, setRole] = useState(initialConfig.execution_role_arn || "");
+  const [image, setImage] = useState(initialConfig.container_image || "");
+  const [modelData, setModelData] = useState(initialConfig.model_data_url || "");
+  const [modelId, setModelId] = useState(initialConfig.model_id || "");
 
   const [cost, setCost] = useState(() =>
     provider !== "private"
@@ -204,8 +213,15 @@ export function ProviderConfigPanel({
     if (projId   && provider === "gcp")    cfg.gcp_project_id    = projId;
     if (rg       && provider === "azure")  cfg.azure_resource_group = rg;
     if (domain   && provider === "private") cfg.domain = domain;
+    if (provider === "private") cfg.stack = mode;
+    if (provider === "aws") {
+      cfg.execution_role_arn = role;
+      if (mode === "bedrock") cfg.model_id = modelId;
+      else cfg.container_image = image;
+      if (mode === "sagemaker") cfg.model_data_url = modelData;
+    }
     onSubmit(cfg);
-  }, [region, mode, scope, budget, instance, accel, projId, rg, domain, provider, onSubmit]);
+  }, [region, mode, scope, budget, instance, accel, projId, rg, domain, provider, onSubmit, role, image, modelData, modelId]);
 
   const providerIcons: Record<DeployProvider, string> = {
     aws: "🟠", azure: "🔵", gcp: "🔴", private: "🖥️",
@@ -248,6 +264,16 @@ export function ProviderConfigPanel({
           )}
 
           {/* SageMaker instance picker */}
+          {provider === "aws" && <>
+            <TextInput id="cfg-execution-role" label="Existing execution role ARN" value={role} onChange={setRole}
+              placeholder="arn:aws:iam::123456789012:role/InferenceRole" />
+            <p>The role must trust the selected service and grant model/artifact access. The signed-in identity needs permission to pass this role.</p>
+            {mode === "bedrock"
+              ? <TextInput id="cfg-model-id" label="Bedrock model / inference profile ID" value={modelId} onChange={setModelId} />
+              : <TextInput id="cfg-image" label="Inference container image (ECR URI)" value={image} onChange={setImage} />}
+            {mode === "sagemaker" && <TextInput id="cfg-model-data" label="Model artifact (S3 URL)" value={modelData} onChange={setModelData}
+              placeholder="s3://your-bucket/model.tar.gz" />}
+          </>}
           {provider === "aws" && mode === "sagemaker" && (
             <SelectField
               id="cfg-instance"
@@ -286,9 +312,12 @@ export function ProviderConfigPanel({
           {scope === "public" && (
             <div className="deploy-cfg__warning">
               ⚠️ Public endpoints expose your model to the internet.
-              Ensure authentication is configured before deploying.
+              {provider === "aws" ? "AWS requests require IAM authentication (SigV4)." : "Ensure authentication is configured before deploying."}
             </div>
           )}
+          {provider === "aws" && scope === "private" && <p role="status">
+            AWS private networking is not implemented yet. To proceed, explicitly select the IAM-authenticated public endpoint, or choose Private / Self-Hosted.
+          </p>}
 
           {/* Azure resource group */}
           {provider === "azure" && (
@@ -324,7 +353,7 @@ export function ProviderConfigPanel({
           )}
 
           {/* Budget alert */}
-          {provider !== "private" && (
+          {provider !== "private" && provider !== "aws" && (
             <div className="deploy-cfg__field">
               <label className="deploy-cfg__label" htmlFor="cfg-budget">
                 Monthly Budget Alert (USD, optional)
@@ -347,7 +376,7 @@ export function ProviderConfigPanel({
         </div>
 
         {/* Cost sidebar */}
-        {provider !== "private" && (
+        {provider !== "private" && provider !== "aws" && (
           <div className="deploy-cfg__sidebar">
             <CostEstimateDisplay
               min={cost.monthly_min}

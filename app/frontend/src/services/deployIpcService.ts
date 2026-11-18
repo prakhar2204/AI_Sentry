@@ -3,15 +3,15 @@
  * services/deployIpcService.ts
  *
  * Frontend bridge for all deploy:* commands sent to the Python backend
- * via the Electron IPC channel (same channel as scan commands).
+ * via a dedicated Electron request/response channel.
  *
- * Each deploy operation spawns a new ipc_server process with a deploy:*
- * command and waits for the typed response event.
+ * A persistent Python worker handles commands sequentially, retaining deployment
+ * state in memory and returning the typed result after each command completes.
  *
  * Command flow:
- *   1. User selects provider → deployIpcService.getAuthUrl(provider)
- *   2. Python opens OAuth server, returns auth URL → Electron opens browser
- *   3. User signs in → callback → Python emits deploy_auth_complete
+ *   1. User selects provider → cloudAuthService launches the official CLI
+ *   2. The CLI opens the system browser and owns the authentication session
+ *   3. Electron verifies identity and returns only public account metadata
  *   4. Frontend calls generatePlan() → shows plan to user
  *   5. User reviews + confirms → dryRun() → deploy()
  *   6. Results shown in DeployResultPage
@@ -24,7 +24,6 @@ import type {
   DryRunResult,
   DeployExecuteResult,
   CredentialValidationResult,
-  AuthCompleteResult,
   DeployStatusResult,
   DeployRollbackResult,
 } from "./deployIpcTypes";
@@ -62,50 +61,14 @@ async function invokeDeployCommand<T>(
     payload,
   };
 
-  // Use the existing startScan / IPC channel — deploy commands share the pipe
-  const result = await api.startScan(ipcPayload as never);
-  if (!result.started) {
-    throw new Error(result.error ?? `Deploy command failed: ${command}`);
-  }
-
-  // Return the result carried in the IPC response
-  return (result as unknown as { data: T }).data;
+  // Await the command result; a process-start acknowledgement is not a result.
+  return await api.runBackendCommand(ipcPayload) as T;
 }
 
 // ─────────────────────────────────────────────
 //  Public API
 // ─────────────────────────────────────────────
 
-/**
- * Step 1 — Get the OAuth login URL for the given provider.
- * Also starts the local callback server on the Python side.
- * Returns the URL to open in the user's browser.
- */
-export async function getAuthUrl(
-  provider: DeployProvider
-): Promise<string> {
-  const PROVIDER_PORTS: Record<DeployProvider, number> = {
-    aws:     9876,
-    azure:   9877,
-    gcp:     9878,
-    private: 0,
-  };
-  const port = PROVIDER_PORTS[provider];
-  const api  = getApi();
-
-  // Special case: private has no OAuth
-  if (provider === "private") return "";
-
-  // Invoke auth URL command — this also starts the callback server
-  const result = await api.startScan({
-    command:  "deploy:auth_url",
-    provider,
-    credentials: {},
-    payload: { redirect_port: port },
-  } as never);
-
-  return (result as unknown as { url?: string }).url ?? "";
-}
 
 /**
  * Step 1b — Validate credentials already in hand (access key, token, etc.)

@@ -78,7 +78,8 @@ class PyRITAdapter(BaseEngine):
             from core.pyrit_engine import PyRITEngine, ALL_CATEGORIES
 
             # Map manifest categories → pyrit category subset
-            requested = [c for c in manifest.categories if c in ALL_CATEGORIES]
+            aliases = {"data_leak": "data_leakage", "harmful_output": "toxicity"}
+            requested = list(dict.fromkeys(aliases.get(c.value, c.value) for c in manifest.categories))
             if not requested:
                 requested = list(ALL_CATEGORIES)
 
@@ -89,6 +90,9 @@ class PyRITAdapter(BaseEngine):
                 output_dir=self._output_dir,
                 api_key=manifest.api_key if hasattr(manifest, "api_key") else "",
                 depth=depth,
+                model_name=getattr(manifest, "model_name", ""),
+                on_progress=getattr(manifest, "on_progress", None),
+                progress_callback=getattr(manifest, "on_activity", lambda _: None),
             )
 
             t0 = time.monotonic()
@@ -98,7 +102,8 @@ class PyRITAdapter(BaseEngine):
             # Convert VulnerabilityFinding → ScanFinding
             scan_findings = [
                 ScanFinding(
-                    category=vf.category,
+                    category=("data_leak" if vf.category == "data_leakage" else
+                              "harmful_output" if vf.category == "toxicity" and "toxicity" not in manifest.categories else vf.category),
                     severity=_convert_severity(vf.severity),
                     confidence=vf.confidence,
                     evidence=_build_evidence(vf),
@@ -106,6 +111,7 @@ class PyRITAdapter(BaseEngine):
                     probe_id=vf.probe,
                 )
                 for vf in pyrit_result.findings
+                if vf.failed > 0
             ]
 
             total_probes = len(pyrit_result.attack_results)

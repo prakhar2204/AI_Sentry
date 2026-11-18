@@ -16,6 +16,10 @@ import { render, screen } from "@testing-library/react";
 import { RiskGauge } from "../components/common/RiskGauge";
 
 describe("RiskGauge", () => {
+  it("preserves the backend classification instead of applying different UI thresholds", () => {
+    render(<RiskGauge score={28} riskLevel="low" animated={false} />);
+    expect(screen.getByRole('img')).toHaveAttribute('aria-label', expect.stringContaining('LOW'));
+  });
   it("renders accessible label with score and level", () => {
     render(<RiskGauge score={72} animated={false} />);
     const gauge = screen.getByRole("img");

@@ -95,7 +95,9 @@ class TestNoProvisioningCodeExists:
             # Recommendation engine files are allowed
             allowed_prefixes = ("recommendation_engine", "__init__", "base", "cost_estimator",
                                 "aws_engine", "azure_engine", "gcp_engine", "private_engine",
-                                "oauth_server")
+                                "oauth_server", "aws_cli", "aws_templates", "state_store",
+                                "managed_cli", "managed_engine", "managed_templates",
+                                "model_package", "model_recommender", "serving_runtime")
             unexpected = [
                 f for f in deploy_files
                 if not any(f.startswith(p) for p in allowed_prefixes)

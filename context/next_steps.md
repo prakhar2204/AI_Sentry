@@ -1,5 +1,7 @@
 # Sentryɸ — Next Steps
 
+> **Updated priorities — 2026-11-15:** See the ordered remaining-work list in [PROJECT_AUDIT.md](../docs/PROJECT_AUDIT.md). The local scan failure has been repaired and verified through the desktop UI. Release packaging, engine-derived estimates, PyRIT validation, and incomplete cloud workflows take precedence over the historical next-step options below. Verification details: [SCAN_REPAIR.md](../docs/SCAN_REPAIR.md).
+
 **Last Updated:** 2026-10-03
 **Current Phase:** Phase 6d COMPLETE — Scan Progress Screen (Screen 5)
 **Immediately Next Phase:** Phase 6e — Results Dashboard (Screen 6)

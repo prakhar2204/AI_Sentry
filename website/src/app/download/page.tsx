@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import s from './download.module.css';
 
-const WIN_CHECKSUM = 'a3b7c9d1e4f5681234567890abcdef0123456789abcdef0123456789abcdef01';
-const LINUX_CHECKSUM = '9f8e7d6c5b4a3210fedcba9876543210fedcba9876543210fedcba9876543210';
+const VERSION = '1.0.0';
+const GITHUB_REPO = 'https://github.com/prakhar2204/AI_Sentry';
+const WIN_DOWNLOAD = `${GITHUB_REPO}/releases/download/v${VERSION}/Sentryphi-Setup-${VERSION}.exe`;
+const LINUX_DOWNLOAD = `${GITHUB_REPO}/releases/download/v${VERSION}/Sentryphi-${VERSION}.AppImage`;
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -37,7 +39,7 @@ export default function DownloadPage() {
             Free. Open Source. No setup required.
           </p>
           <p className={s.version}>
-            Current version: v1.0.0 — Released October 2026
+            Current version: v{VERSION} — Released November 2026
           </p>
         </div>
 
@@ -49,15 +51,11 @@ export default function DownloadPage() {
             <div className={s.platformMeta}>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Version</span>
-                <span>1.0.0</span>
+                <span>{VERSION}</span>
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Filename</span>
-                <span>SentryPhi-Setup-1.0.0.exe</span>
-              </div>
-              <div className={s.platformMetaRow}>
-                <span className={s.platformMetaLabel}>Size</span>
-                <span>~12 MB</span>
+                <span>Sentryphi-Setup-{VERSION}.exe</span>
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Requires</span>
@@ -65,20 +63,12 @@ export default function DownloadPage() {
               </div>
             </div>
 
-            <a href="#" className={s.downloadBtn}>
+            <a href={WIN_DOWNLOAD} className={s.downloadBtn}>
               ↓ &nbsp;Download for Windows
             </a>
 
-            <div>
-              <div className={s.checksumLabel}>SHA256 Checksum</div>
-              <div className={s.checksumBlock}>
-                <span className={s.checksumValue}>{WIN_CHECKSUM}</span>
-                <CopyButton text={WIN_CHECKSUM} />
-              </div>
-            </div>
-
             <div className={s.mirrorLink}>
-              <a href="#">Mirror download ↗</a>
+              <a href={`${GITHUB_REPO}/releases/tag/v${VERSION}`}>All releases on GitHub ↗</a>
             </div>
           </div>
 
@@ -88,15 +78,11 @@ export default function DownloadPage() {
             <div className={s.platformMeta}>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Version</span>
-                <span>1.0.0</span>
+                <span>{VERSION}</span>
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Filename</span>
-                <span>SentryPhi-1.0.0.AppImage</span>
-              </div>
-              <div className={s.platformMetaRow}>
-                <span className={s.platformMetaLabel}>Size</span>
-                <span>~18 MB</span>
+                <span>Sentryphi-{VERSION}.AppImage</span>
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Requires</span>
@@ -104,20 +90,12 @@ export default function DownloadPage() {
               </div>
             </div>
 
-            <a href="#" className={s.downloadBtn}>
+            <a href={LINUX_DOWNLOAD} className={s.downloadBtn}>
               ↓ &nbsp;Download for Linux
             </a>
 
-            <div>
-              <div className={s.checksumLabel}>SHA256 Checksum</div>
-              <div className={s.checksumBlock}>
-                <span className={s.checksumValue}>{LINUX_CHECKSUM}</span>
-                <CopyButton text={LINUX_CHECKSUM} />
-              </div>
-            </div>
-
             <div className={s.mirrorLink}>
-              Also available: <a href="#">.deb (Ubuntu/Debian)</a> &nbsp;·&nbsp; <a href="#">Mirror ↗</a>
+              <a href={`${GITHUB_REPO}/releases/tag/v${VERSION}`}>All releases on GitHub ↗</a>
             </div>
           </div>
         </div>
@@ -172,21 +150,21 @@ export default function DownloadPage() {
           </div>
         </div>
 
-        {/* ── Trust Verification ── */}
+        {/* ── What's Included ── */}
         <div className={s.trustBlock}>
-          <h3 className={s.trustTitle}>Trust &amp; Verification</h3>
+          <h3 className={s.trustTitle}>Everything Included — Nothing Extra to Install</h3>
           <div className={s.trustList}>
             <div className={s.trustItem}>
               <span className={s.trustCheck}>✓</span>
-              SHA256 checksums published on this page
+              AI security scanning engine with multi-layer probing
             </div>
             <div className={s.trustItem}>
               <span className={s.trustCheck}>✓</span>
-              Code-signed (Windows Authenticode certificate)
+              Built-in cloud authentication (AWS, Azure, GCP) — no CLI tools needed
             </div>
             <div className={s.trustItem}>
               <span className={s.trustCheck}>✓</span>
-              GPG-signed (Linux releases)
+              One-click cloud deployment with infrastructure-as-code
             </div>
             <div className={s.trustItem}>
               <span className={s.trustCheck}>✓</span>
@@ -194,7 +172,7 @@ export default function DownloadPage() {
             </div>
           </div>
           <div className={s.engineVersions}>
-            Analysis engine v1.0.0 — includes multi-layer probing, adversarial simulation, and behavioral evaluation
+            Analysis engine v{VERSION} — includes multi-layer probing, adversarial simulation, and behavioral evaluation
           </div>
         </div>
 
@@ -212,12 +190,12 @@ export default function DownloadPage() {
             </div>
             <div className={s.postStep}>
               <span className={s.postStepNum}>3.</span>
-              Follow the 4-screen guided setup
+              Point it at your AI model and start scanning
             </div>
           </div>
           <div className={s.postLinks}>
-            <a href="#">Getting Started Guide →</a>
-            <a href="#">Open an Issue on GitHub →</a>
+            <a href="/docs">Getting Started Guide →</a>
+            <a href={`${GITHUB_REPO}/issues`}>Open an Issue on GitHub →</a>
           </div>
         </div>
       </div>

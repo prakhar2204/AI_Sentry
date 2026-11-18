@@ -1,14 +1,16 @@
 # Sentryɸ — Build & Distribution Guide
 
+> **2026-11-15 verification:** Use `start-sentryphi.cmd` at the repository root to run the repaired desktop source. The validated runtime is Python 3.12 with `app/backend/requirements-scan.txt` (Garak 0.17.1). PyRIT and newly packaged installers have not been live-verified in this repair. See [SCAN_REPAIR.md](SCAN_REPAIR.md) and [PROJECT_AUDIT.md](PROJECT_AUDIT.md). Packaging instructions below describe the existing build pipeline, not a tested release of these fixes.
+
 ## Prerequisites
 
 | Tool | Version | Notes |
 |------|---------|-------|
 | Node.js | ≥ 18 | [nodejs.org](https://nodejs.org) |
-| Python | ≥ 3.10 | System-installed or virtualenv |
+| Python | 3.12 validated | Use the project virtualenv |
 | npm | ≥ 9 | Bundled with Node.js |
-| garak | ≥ 0.16.0 | `pip install garak` |
-| pyrit | = 1.1.0 | `pip install pyrit==1.1.0` |
+| garak | 0.17.1 | `pip install -r app/backend/requirements-scan.txt` from the repository root |
+| pyrit | 1.1.0 optional | Declared optional dependency; not live-validated in this repair |
 
 ---
 
@@ -21,6 +23,7 @@ npm install
 
 # 2. Install Python dependencies
 cd ../backend
+pip install -r requirements-scan.txt
 pip install -e ".[dev]"
 
 # 3. Start Vite dev server + Electron (in one command)
@@ -98,7 +101,7 @@ On first launch, the app checks:
 3. ✓ PyRIT engine (if bundled)
 4. Shows dependency status before allowing the user to start scanning
 
-If an engine is missing, the app falls back gracefully to **MockEngine** and warns the user.
+Auto selects an installed real engine (Garak, otherwise PyRIT). If neither is installed, the app reports an error. Mock must be selected explicitly and is not a replacement for a real scan.
 
 ---
 
@@ -135,7 +138,7 @@ python scripts/build-python.py --check
 ### Garak/PyRIT not available in bundled app
 These engines must be installed in the **same Python environment** that runs `build:python`.
 ```bash
-pip install garak>=0.16.0 pyrit==1.1.0
+pip install -r ../backend/requirements-scan.txt
 npm run build:python
 ```
 

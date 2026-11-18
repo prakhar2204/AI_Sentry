@@ -82,8 +82,8 @@ class TestConstants:
     def test_low_weight_is_2(self):
         assert SEVERITY_WEIGHTS["low"] == 2
 
-    def test_max_possible_score_is_120(self):
-        assert MAX_POSSIBLE_SCORE == 120.0
+    def test_max_possible_score_is_210(self):
+        assert MAX_POSSIBLE_SCORE == 210.0
 
     def test_low_threshold_is_30(self):
         assert RISK_THRESHOLD_LOW == 30
@@ -176,8 +176,8 @@ class TestNormalizeScore:
         assert isinstance(normalize_score(50.0), int)
 
     def test_small_value(self):
-        # 10 / 120 * 100 = 8.33 -> int = 8
-        assert normalize_score(10.0) == 8
+        # 10 / 210 * 100 = 4.76 -> int = 4
+        assert normalize_score(10.0) == 4
 
 
 # ═══════════════════════════════════════════════
@@ -386,7 +386,7 @@ class TestGenerateRiskReport:
         assert report.summary["high"] == 1
 
     def test_all_high_findings_high_risk(self):
-        findings = [_f(severity="high", confidence=1.0)] * 12
+        findings = [_f(severity="high", confidence=1.0)] * 21
         report = generate_risk_report(findings)
         assert report.risk_score == 100
         assert report.risk_level == "high"

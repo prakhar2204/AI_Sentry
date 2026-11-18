@@ -2859,47 +2859,7 @@ body {
    DEV MODE — Scan Bypass
    ───────────────────────────────────────────── */
 
-.scan-page__dev-bypass {
-  margin-top: var(--space-4);
-  padding: var(--space-3) var(--space-4);
-  border: 2px dashed var(--color-danger, #e53e3e);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--color-danger, #e53e3e) 8%, transparent);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  align-items: flex-start;
-}
-.scan-page__dev-bypass-label {
-  font-size: 0.65rem;
-  font-weight: var(--font-weight-semibold);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--color-danger, #e53e3e);
-  background: var(--color-danger-subtle, #fff5f5);
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-danger, #e53e3e);
-}
-.scan-page__dev-bypass-btn {
-  background: var(--color-danger, #e53e3e);
-  color: #fff;
-  border: none;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.scan-page__dev-bypass-btn:hover {
-  opacity: 0.85;
-}
-.scan-page__dev-bypass-note {
-  font-size: 0.72rem;
-  color: var(--fg-muted);
-  font-style: italic;
-}
+
 
 /* ─────────────────────────────────────────────
    SCREEN 10 — CLOUD COMPARE
@@ -3797,7 +3757,7 @@ body {
 
 
 /* -----------------------------------------------------------
-   W2 � Deploy Flow Wizard
+   W2 � Deploy Flow Wizard
    ----------------------------------------------------------- */
 
 .deploy-flow {
@@ -4140,7 +4100,7 @@ body {
 }
 
 /* -----------------------------------------------------------
-   W3 � Provider Select Screen + Config Panel
+   W3 � Provider Select Screen + Config Panel
    ----------------------------------------------------------- */
 
 /* -- Provider Select Screen -- */
@@ -4367,7 +4327,7 @@ body {
 .deploy-cfg__cost-note { font-size: 10px; color: var(--fg-muted); text-align: center; }
 
 /* -------------------------------------------------------
-   W4.2 � MICRO-ANIMATIONS & MOTION SYSTEM
+   W4.2 � MICRO-ANIMATIONS & MOTION SYSTEM
    ------------------------------------------------------- */
 
 /* -- Page Transition -- */
@@ -4573,7 +4533,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* -------------------------------------------------------
-   W4.3 � RISK GAUGE COMPONENT
+   W4.3 � RISK GAUGE COMPONENT
    ------------------------------------------------------- */
 
 .risk-gauge {
@@ -4630,7 +4590,7 @@ input:focus, select:focus, textarea:focus {
 .risk-gauge--critical .risk-gauge__label  { stroke: var(--severity-critical); fill: var(--severity-critical); }
 
 /* -------------------------------------------------------
-   W4.4 � SKELETON SCREENS
+   W4.4 � SKELETON SCREENS
    ------------------------------------------------------- */
 
 @keyframes skeleton-wave {
@@ -4692,7 +4652,7 @@ input:focus, select:focus, textarea:focus {
 .severity-badge--info     { background: var(--status-info-bg);    color: var(--severity-info);    border: 1px solid var(--status-info-border); }
 
 /* -------------------------------------------------------
-   W4.5 � ACCESSIBILITY
+   W4.5 � ACCESSIBILITY
    ------------------------------------------------------- */
 
 /* -- Skip Link -- */
@@ -4768,7 +4728,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* -------------------------------------------------------
-   W4.1 � DESIGN SYSTEM OVERHAUL (App Shell upgrade)
+   W4.1 � DESIGN SYSTEM OVERHAUL (App Shell upgrade)
    ------------------------------------------------------- */
 
 /* Refined scrollbar with cyan tint */
@@ -4795,7 +4755,7 @@ input:focus, select:focus, textarea:focus {
   transition: filter var(--duration-normal) ease;
 }
 
-/* Step nav � refined */
+/* Step nav � refined */
 .step-nav {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-default);
@@ -4806,7 +4766,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--accent-primary);
 }
 
-/* Page container � give content area breathing room */
+/* Page container � give content area breathing room */
 .page-container {
   flex: 1;
   display: flex;
@@ -4814,7 +4774,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* -------------------------------------------------------
-   W4.3 � OWASP COVERAGE HEATMAP ANIMATIONS
+   W4.3 � OWASP COVERAGE HEATMAP ANIMATIONS
    ------------------------------------------------------- */
 
 .owasp-grid__cell {
@@ -4846,7 +4806,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* -------------------------------------------------------
-   W4.4 � RESPONSIVE POLISH & EMPTY STATES
+   W4.4 � RESPONSIVE POLISH & EMPTY STATES
    ------------------------------------------------------- */
 
 /* Empty state illustration */

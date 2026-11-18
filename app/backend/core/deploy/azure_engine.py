@@ -2,18 +2,15 @@
 Sentryɸ — Azure Deploy Engine
 core/deploy/azure_engine.py
 
-Provisions a secure LLM endpoint on Azure using the azure-sdk.
+Legacy Azure provisioning code, disabled at the IPC boundary pending an
+official Azure CLI adapter. It is not a verified deployment implementation.
 
 Supported deployment modes:
   ai_services  → Azure OpenAI Service / Azure AI Services endpoint
   container    → Azure Container Instance (bring-your-own model)
   app_service  → Azure App Service (Python web app hosting the model)
 
-Auth flow:
-  Azure OAuth 2.0 device code flow or browser redirect:
-  1. call get_auth_url() → user opens URL in browser
-  2. User logs in → redirect to localhost callback
-  3. call exchange_auth_code() → returns access + refresh tokens
+Custom OAuth entry points are disabled. CloudAuth currently exposes an Azure stub.
 
 Dependencies (optional — gracefully imported):
   azure-identity>=1.17
@@ -25,9 +22,7 @@ Dependencies (optional — gracefully imported):
 
 from __future__ import annotations
 
-import os
 from typing import Any
-from urllib.parse import urlencode
 
 from .base import (
     BaseDeployEngine,
@@ -56,16 +51,6 @@ except ImportError:
 
 SENTRY_TAG        = {"SentryPhi": "true"}
 DEFAULT_LOCATION  = "eastus"
-AZURE_TENANT_ID   = os.environ.get("AZURE_TENANT_ID", "common")
-AZURE_CLIENT_ID   = os.environ.get("AZURE_CLIENT_ID", "")   # App registration client ID
-AZURE_REDIRECT    = "http://localhost:{port}/callback"
-AZURE_AUTH_URL    = (
-    "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/authorize?"
-    "client_id={client_id}&response_type=code&redirect_uri={redirect_uri}"
-    "&scope=https%3A%2F%2Fmanagement.azure.com%2F.default+offline_access"
-    "&state={state}"
-)
-AZURE_TOKEN_URL   = "https://login.microsoftonline.com/{tenant}/oauth2/v2.0/token"
 
 
 def _require_azure() -> None:
@@ -85,55 +70,11 @@ class AzureDeployEngine(BaseDeployEngine):
 
     # ── Auth ─────────────────────────────────────────────────────────────────
 
-    def get_auth_url(self, redirect_port: int = 9877) -> str:
-        import secrets
-        state       = secrets.token_urlsafe(16)
-        redirect_uri = AZURE_REDIRECT.format(port=redirect_port)
-        client_id   = AZURE_CLIENT_ID or "04b07795-8542-4c4e-967c-4e5cda52f1d8"  # Azure CLI app id (public)
-        url = (
-            f"https://login.microsoftonline.com/{AZURE_TENANT_ID}/oauth2/v2.0/authorize"
-            f"?client_id={client_id}"
-            f"&response_type=code"
-            f"&redirect_uri={redirect_uri}"
-            f"&scope=https%3A%2F%2Fmanagement.azure.com%2F.default+offline_access+openid+profile"
-            f"&state={state}"
-        )
-        return url
+    def get_auth_url(self, redirect_port=0):
+        raise RuntimeError("Use the official CLI adapter; custom OAuth is disabled")
 
-    def exchange_auth_code(self, code: str, state: str) -> CredentialResult:
-        """Exchange OAuth authorization code for access token."""
-        import urllib.request, urllib.parse, json
-        redirect_port = 9877
-        redirect_uri  = AZURE_REDIRECT.format(port=redirect_port)
-        client_id     = AZURE_CLIENT_ID or "04b07795-8542-4c4e-967c-4e5cda52f1d8"
-
-        body = urllib.parse.urlencode({
-            "client_id":    client_id,
-            "grant_type":   "authorization_code",
-            "code":         code,
-            "redirect_uri": redirect_uri,
-            "scope":        "https://management.azure.com/.default offline_access openid profile",
-        }).encode()
-
-        try:
-            req  = urllib.request.Request(
-                AZURE_TOKEN_URL.format(tenant=AZURE_TENANT_ID),
-                data=body,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-            )
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read())
-
-            return CredentialResult(
-                status  = CredentialStatus.VALID,
-                account = data.get("id_token", "")[:20] + "...",
-                message = f"Azure access token obtained (expires in {data.get('expires_in', 3600)}s)",
-            )
-        except Exception as exc:  # noqa: BLE001
-            return CredentialResult(
-                status  = CredentialStatus.INVALID,
-                message = str(exc),
-            )
+    def exchange_auth_code(self, code, state):
+        raise RuntimeError("OAuth codes are handled exclusively by the official CLI")
 
     def validate_credentials(self, credentials: dict[str, str]) -> CredentialResult:
         """Validate Azure credentials by calling the ARM subscriptions API."""

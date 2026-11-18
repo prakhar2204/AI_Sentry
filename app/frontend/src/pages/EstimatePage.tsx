@@ -40,11 +40,6 @@ interface GpuInfo {
 //  VRAM overhead estimate per depth (probe runner overhead only)
 // ─────────────────────────────────────────────
 
-const VRAM_ESTIMATE_MB: Record<string, number> = {
-  quick:    512,
-  standard: 1024,
-  deep:     2048,
-};
 
 // ─────────────────────────────────────────────
 //  Props
@@ -64,10 +59,6 @@ function formatVram(mb: number): string {
   return `${mb} MB`;
 }
 
-function vramSufficient(gpuInfo: GpuInfo, depth: string): boolean {
-  if (!gpuInfo.available || gpuInfo.vram_free_mb == null) return true;
-  return gpuInfo.vram_free_mb >= (VRAM_ESTIMATE_MB[depth] ?? 512);
-}
 
 // ─────────────────────────────────────────────
 //  Component
@@ -92,6 +83,9 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
         categories: state.categories,
         scan_depth: state.scan_depth,
         mode: state.mode || "api",
+        engine: state.engine,
+        local_model_path: state.local_model_path || undefined,
+        target: state.target || undefined,
       });
       setEstimate(result);
     } catch (err) {
@@ -103,7 +97,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
     } finally {
       setLoading(false);
     }
-  }, [state.categories, state.scan_depth, state.mode]);
+  }, [state.categories, state.scan_depth, state.mode, state.engine, state.local_model_path, state.target]);
 
   // ── Fetch GPU info (Electron only) ──
   const fetchGpuInfo = useCallback(async () => {
@@ -130,14 +124,15 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
 
   // ── Continue handler ──
   const handleContinue = useCallback(() => {
-    if (!estimate) return;
+    if (!estimate || estimate.capacity?.allowed === false) return;
     dispatch({ type: SCAN_ACTIONS.START_SCAN });
     onContinue();
   }, [estimate, dispatch, onContinue]);
 
   // ── Format cost ──
-  const formatCost = (usd: number): string => {
-    if (usd === 0) return "Free (local)";
+  const formatCost = (usd: number | null): string => {
+    if (usd === null) return "Depends on provider pricing and token usage";
+    if (usd === 0) return "No API charges";
     return `$${usd.toFixed(4)}`;
   };
 
@@ -156,6 +151,9 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
       />
 
       <div className="estimate-page__content">
+        {estimate?.capacity && <AlertBanner type={estimate.capacity.allowed ? 'info' : 'error'}
+          message={estimate.capacity.reason} />}
+        {estimate?.model_profile && <p>Model: {estimate.model_profile.name} · {estimate.model_profile.weights_gib} GiB weights · CPU RAM estimate {estimate.model_profile.required_ram_gib} GiB · Full GPU estimate {estimate.model_profile.recommended_vram_gib} GiB VRAM</p>}
 
         {/* ── Loading State ── */}
         {loading && (
@@ -189,9 +187,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
             type="warning"
             message={
               `Local model file detected: "${state.target}". ` +
-              `The scanner probes your model via its local inference server ` +
-              `(default: http://localhost:11434). ` +
-              `Ensure Ollama or llama.cpp server is running with this model loaded before starting.`
+              `The desktop app will load this model and start its local inference server automatically.`
             }
           />
         )}
@@ -232,7 +228,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                 <div className="estimate-page__stat-row">
                   <dt className="estimate-page__stat-label">Scan Depth</dt>
                   <dd className="estimate-page__stat-value" id="stat-depth">
-                    {state.scan_depth} ({estimate.depth_multiplier}x)
+                    {state.scan_depth}
                   </dd>
                 </div>
                 <div className="estimate-page__stat-row">
@@ -244,9 +240,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                 <div className="estimate-page__stat-row">
                   <dt className="estimate-page__stat-label">Scan Engine</dt>
                   <dd className="estimate-page__stat-value" id="stat-engine">
-                    {state.engine === "auto"
-                      ? "Auto (selects best available)"
-                      : state.engine ?? "auto"}
+                    {estimate.engine}
                   </dd>
                 </div>
               </dl>
@@ -278,7 +272,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                     >
                       {gpuInfo.available
                         ? gpuInfo.name ?? "Unknown"
-                        : "Not detected — CPU only"}
+                        : "Not detected"}
                     </dd>
                   </div>
 
@@ -297,15 +291,8 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                         <dd
                           className="estimate-page__stat-value"
                           id="stat-vram-free"
-                          style={{
-                            color: vramSufficient(gpuInfo, state.scan_depth)
-                              ? undefined
-                              : "var(--color-error, #ef4444)",
-                          }}
                         >
                           {formatVram(gpuInfo.vram_free_mb ?? 0)}
-                          {!vramSufficient(gpuInfo, state.scan_depth) &&
-                            " ⚠ May be insufficient"}
                         </dd>
                       </div>
 
@@ -330,12 +317,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                   <div className="estimate-page__stat-row">
                     <dt className="estimate-page__stat-label">Est. VRAM Required</dt>
                     <dd className="estimate-page__stat-value" id="stat-vram-req">
-                      {formatVram(VRAM_ESTIMATE_MB[state.scan_depth] ?? 512)}
-                      <span
-                        style={{ fontSize: "0.75em", opacity: 0.6, marginLeft: "6px" }}
-                      >
-                        (probe runner overhead)
-                      </span>
+                      Depends on model size and context length
                     </dd>
                   </div>
 
@@ -348,7 +330,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                         id="stat-acceleration"
                         style={{ color: "var(--color-warn, #f59e0b)" }}
                       >
-                        CPU only — scanning will be slower
+                        GPU acceleration has not been confirmed
                       </dd>
                     </div>
                   )}
@@ -365,6 +347,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
             {/* ── C. Per-Category Breakdown ── */}
             <section className="estimate-page__section">
               <h2 className="estimate-page__section-title">Category Breakdown</h2>
+              <p>{estimate.note}</p>
               <table className="estimate-page__table">
                 <thead>
                   <tr>
@@ -376,7 +359,11 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                   {Object.entries(estimate.per_category).map(
                     ([category, probes]) => (
                       <tr key={category} className="estimate-page__tr">
-                        <td className="estimate-page__td">{category}</td>
+                        <td className="estimate-page__td">
+                          {category}
+                          {estimate.shared_categories[category]?.length > 0 &&
+                            ` (shared with ${estimate.shared_categories[category].join(", ")})`}
+                        </td>
                         <td className="estimate-page__td">{probes}</td>
                       </tr>
                     )
@@ -402,7 +389,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
             type="button"
             className="button button--primary"
             onClick={handleContinue}
-            disabled={loading || !!error || !estimate}
+            disabled={loading || !!error || !estimate || estimate.capacity?.allowed === false}
             id="estimate-continue-button"
           >
             Start Scan

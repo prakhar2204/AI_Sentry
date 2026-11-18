@@ -13,6 +13,7 @@
     "dist": "npm run build:all",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:cloud-auth": "node --test electron/cloud-auth.test.cjs electron/cloud-auth-ipc.test.cjs",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "verify": "python scripts/verify-build.py",

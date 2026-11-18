@@ -31,7 +31,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useScanContext } from "../store/ScanContext";
 import { useReportContext } from "../store/ReportContext";
 import { SCAN_ACTIONS, REPORT_ACTIONS } from "../store/actions";
-import { buildSimulatedReport } from "../store/ReportContext";
+
 import { PageHeader } from "../components/layout/PageHeader";
 import { AlertBanner } from "../components/feedback/AlertBanner";
 import { startScan, buildScanConfig } from "../services/scanService";
@@ -110,6 +110,8 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
       if (controllerRef.current) {
         controllerRef.current.cancel();
       }
+      controllerRef.current = null;
+      hasStartedRef.current = false;
     };
   }, []);
 
@@ -140,12 +142,14 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
       effectiveCategories
     );
         // Attach engine from state so Python backend uses the right engine
-    (config as any).engine = state.engine || "mock";
+    (config as any).engine = state.engine || "auto";
 
     // For local mode with a .gguf file: pass local_model_path to backend.
     // The Python backend auto-launches llama.cpp server with CUDA GPU acceleration.
     // local_model_path is the REAL full disk path from the Electron native file picker.
-    const localModelPath = (state as any).local_model_path as string | null;
+    config.api_key = state.api_key || "";
+    config.model_name = state.model_name || "";
+    const localModelPath = state.local_model_path || (state.mode === "local" && !/^https?:/i.test(state.target || "") ? state.target : null);
     if (state.mode === "local" && localModelPath && !localModelPath.startsWith("http")) {
       (config as any).local_model_path = localModelPath;
       config.target = "http://127.0.0.1:11500/v1/chat/completions";
@@ -206,17 +210,8 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
         onComplete() {
           if (!mountedRef.current) return;
           // Build synthetic report for browser-mode results screens
-          const simulatedReport = buildSimulatedReport(
-            state.target || "https://api.example.com",
-            state.mode || "api",
-            state.scan_depth || "standard",
-            effectiveCategories
-          );
-          reportDispatch({
-            type: REPORT_ACTIONS.SET_REPORT,
-            payload: simulatedReport,
-          });
-          setIsCompleting(true);
+          // Browser mode: no real scan engine — inform user to use the desktop app
+          dispatch({ type: SCAN_ACTIONS.SCAN_FAILED, payload: 'Scanning requires the desktop app. Download Sentryɸ at sentryphi.dev/download.' });
         },
       });
     }
@@ -255,27 +250,7 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
     setShowCancelConfirm(false);
   }, []);
 
-  // ── DEV: Skip scan — injects simulated report and navigates to results ──
-  const handleDevSkip = useCallback(() => {
-    // Cancel any running scan controller
-    if (controllerRef.current) {
-      controllerRef.current.cancel();
-    }
-    // Build and inject a simulated report
-    const FALLBACK_CATEGORIES = ["prompt_injection", "jailbreak", "data_leak", "harmful_output"];
-    const effectiveCats = state.categories && state.categories.length > 0
-      ? state.categories
-      : FALLBACK_CATEGORIES;
-    const simReport = buildSimulatedReport(
-      state.target || "https://dev-bypass.example.com",
-      state.mode || "api",
-      state.scan_depth || "standard",
-      effectiveCats
-    );
-    reportDispatch({ type: REPORT_ACTIONS.SET_REPORT, payload: simReport });
-    dispatch({ type: SCAN_ACTIONS.SCAN_COMPLETE });
-    onComplete();
-  }, [state.target, state.mode, state.scan_depth, state.categories, reportDispatch, dispatch, onComplete]);
+
 
   // ── Retry after failure ──
   const handleRetry = useCallback(() => {
@@ -506,22 +481,7 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
                   Cancel Scan
                 </button>
 
-                {/* ── DEV MODE: Skip scan bypass ── */}
-                <div className="scan-page__dev-bypass" id="scan-dev-bypass">
-                  <div className="scan-page__dev-bypass-label">DEV MODE</div>
-                  <button
-                    type="button"
-                    className="button scan-page__dev-bypass-btn"
-                    onClick={handleDevSkip}
-                    id="scan-dev-skip-btn"
-                    title="Inject simulated report and skip to results (development only)"
-                  >
-                    ⚡ Skip Scan (inject simulated report)
-                  </button>
-                  <div className="scan-page__dev-bypass-note">
-                    For testing only. Injects a simulated assessment report and navigates to results.
-                  </div>
-                </div>
+
               </div>
             )}
 

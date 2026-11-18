@@ -18,7 +18,7 @@ interface TextInputProps {
   placeholder?: string;
   error?: string;
   disabled?: boolean;
-  type?: "text" | "url";
+  type?: "text" | "url" | "password";
 }
 
 export function TextInput({

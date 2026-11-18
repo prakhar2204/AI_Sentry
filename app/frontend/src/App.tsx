@@ -28,13 +28,15 @@ import { ExportPage } from "./pages/ExportPage";
 import { DeployConfigPage } from "./pages/DeployConfigPage";
 import { CloudComparePage } from "./pages/CloudComparePage";
 import { DeployExecutePage } from "./pages/DeployExecutePage";
-import { DeployProvider } from "./store/DeployContext";
-import { DeployFlowProvider } from "./store/DeployFlowContext";
+import { DeployProvider, useDeployContext } from "./store/DeployContext";
+import { DeployFlowProvider, useDeployFlow } from "./store/DeployFlowContext";
 import DeployFlowPage from "./pages/DeployFlowPage";
 import { StepNav, WIZARD_STEPS } from "./components/layout/StepNav";
 import { ThemeToggle } from "./components/layout/ThemeToggle";
 import { Logo } from "./components/Logo";
 import { isElectron } from "./utils/platform";
+import { ModelCloudPage } from './pages/ModelCloudPage';
+import type { CloudDeployConfig } from "./services/deployIpcTypes";
 
 // ─────────────────────────────────────────────
 //  Placeholder pages (to be implemented)
@@ -65,6 +67,8 @@ const STEP_NAV_SCREENS = new Set([
 function ScreenRouter() {
   const { currentScreen, navigateTo } = useNavigation();
   const { state } = useScanContext();
+  const { state: plannedDeployment } = useDeployContext();
+  const { dispatch: deployDispatch } = useDeployFlow();
   const [completedScreens, setCompletedScreens] = useState<string[]>([]);
 
   // Track completed screens when navigating forward
@@ -137,6 +141,7 @@ function ScreenRouter() {
       case "results":
         return (
           <ResultsPage
+            onDeploy={() => handleNavigate('deploy-config')}
             onViewActions={() => handleNavigate("actions")}
             onExport={() => handleNavigate("export")}
             onNewScan={() => navigateTo("input")}
@@ -162,10 +167,11 @@ function ScreenRouter() {
 
       case "deploy-config":
         return (
-          <DeployConfigPage
-            onBack={() => navigateTo("export")}
-            onProceed={() => navigateTo("deploy-compare")}
-          />
+          <ModelCloudPage onBack={() => navigateTo('results')} onSelect={(provider, config) => {
+            deployDispatch({ type: 'SET_PROVIDER', provider });
+            deployDispatch({ type: 'SET_CONFIG', config });
+            navigateTo('deploy-flow');
+          }} />
         );
 
       case "deploy-compare":
@@ -179,13 +185,25 @@ function ScreenRouter() {
       case "deploy-execute":
         return (
           <DeployExecutePage
+            onLiveDeploy={() => {
+              const cfg = plannedDeployment.config;
+              if (cfg.provider) {
+                deployDispatch({ type: "SET_PROVIDER", provider: cfg.provider });
+                deployDispatch({ type: "SET_CONFIG", config: {
+                  region: cfg.region || "", deployment_mode: cfg.mode || undefined,
+                  endpoint_scope: cfg.endpointScope, instance_type: cfg.instanceType || undefined,
+                  model_id: cfg.modelId,
+                } as Partial<CloudDeployConfig> });
+              }
+              navigateTo("deploy-flow");
+            }}
             onBack={() => navigateTo("deploy-compare")}
             onBackToConfig={() => navigateTo("deploy-config")}
           />
         );
 
       case "deploy-flow":
-        return <DeployFlowPage />;
+        return <DeployFlowPage onEdit={() => navigateTo('deploy-config')} />;
 
       default:
         return <PlaceholderPage name="Unknown Screen" />;

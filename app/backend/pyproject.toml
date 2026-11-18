@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 # ─────────────────────────────────────────────────────────────
 #  Project metadata
@@ -28,7 +28,7 @@ dependencies = [
 engines = [
     # Scanning engines — pinned to tested versions.
     # DO NOT change these versions without running the full test suite.
-    "garak>=0.16.0",            # D-002: Garak (latest stable; 0.17.0 not yet on PyPI)
+    "garak==0.17.1",            # Validated against the configured probe suite.
     "pyrit==1.1.0",             # D-020, D-021: PyRIT real package name; pinned to 1.1.0
 ]
 
@@ -67,9 +67,12 @@ aisentry  = "cli.main:main"    # legacy alias — preserved for compatibility
 #  Package discovery
 # ─────────────────────────────────────────────────────────────
 
+[tool.setuptools]
+py-modules = ["ipc_server", "export_handler"]
+
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cli*", "core*"]
+include = ["cli*", "core*", "services*"]
 
 # ─────────────────────────────────────────────────────────────
 #  Tool configuration

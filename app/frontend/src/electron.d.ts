@@ -9,7 +9,14 @@
 
 /** Shape of the electronAPI exposed via contextBridge */
 interface ElectronAPI {
+  getPathForFile?: (file: File) => string;
+  openModelFilePicker?: (folder?: boolean) => Promise<{ filePath: string; fileName: string } | null>;
+  cloudAuth: (config: { provider: string; action: string; options?: unknown }) => Promise<{
+    ok: boolean; result?: unknown; code?: string; message?: string;
+  }>;
+  onCloudAuthProgress: (callback: (event: { provider: string; stage: string; message: string }) => void) => () => void;
   // Scan lifecycle
+  runBackendCommand: (config: Record<string, unknown>) => Promise<unknown>;
   startScan: (config: unknown) => Promise<{
     started: boolean;
     error?:  string;

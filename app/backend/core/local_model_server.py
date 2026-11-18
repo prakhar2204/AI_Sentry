@@ -258,6 +258,7 @@ class LocalModelServer:
             "-t",         str(threads),
             "--host",     "127.0.0.1",
             "--port",     str(self._port),
+            "--parallel", "1",
         ]
 
         if on_log:
@@ -273,22 +274,37 @@ class LocalModelServer:
             stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace",
             bufsize=1, env=env, cwd=str(_BIN_DIR),
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
 
-        if on_log:
-            threading.Thread(
-                target=self._stream_logs,
-                args=(self._process, on_log),
-                daemon=True,
-            ).start()
+        threading.Thread(
+            target=self._stream_logs,
+            args=(self._process, on_log or (lambda _: None)),
+            daemon=True,
+        ).start()
 
         if on_log:
             on_log("Waiting for model to load (10-60 seconds)...")
 
-        if not _wait_for_port("127.0.0.1", self._port, timeout=120.0):
+        ready = False
+        deadline = time.monotonic() + 180
+        while time.monotonic() < deadline:
+            if self._process.poll() is not None:
+                code = self._process.returncode
+                self.stop()
+                raise RuntimeError(f"Model server exited during loading (code {code}). Check model logs.")
+            try:
+                with urllib.request.urlopen(f"http://127.0.0.1:{self._port}/health", timeout=2) as response:
+                    ready = response.status == 200
+            except (OSError, ValueError):
+                pass
+            if ready:
+                break
+            time.sleep(0.5)
+        if not ready:
             self.stop()
             raise RuntimeError(
-                f"Model server timed out (120s). Model: {model_path_obj.name}\n"
+                f"Model server timed out (180s). Model: {model_path_obj.name}\n"
                 "Possible causes: insufficient VRAM/RAM, unsupported GGUF format."
             )
 

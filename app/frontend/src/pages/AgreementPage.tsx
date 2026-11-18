@@ -12,7 +12,7 @@
  *   - Navigates to Input Screen (Step 2)
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useScanContext } from "../store/ScanContext";
 import { SCAN_ACTIONS } from "../store/actions";
 import { Logo } from "../components/Logo";
@@ -22,8 +22,12 @@ interface AgreementPageProps {
 }
 
 export function AgreementPage({ onAccept }: AgreementPageProps) {
-  const { dispatch } = useScanContext();
+  const { state, dispatch } = useScanContext();
   const [agreed, setAgreed] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  useEffect(() => {
+    if (submitted && state.consent_given) onAccept();
+  }, [submitted, state.consent_given, onAccept]);
 
   const handleCheckboxChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,8 +39,8 @@ export function AgreementPage({ onAccept }: AgreementPageProps) {
   const handleAccept = useCallback(() => {
     if (!agreed) return;
     dispatch({ type: SCAN_ACTIONS.ACCEPT_CONSENT });
-    onAccept();
-  }, [agreed, dispatch, onAccept]);
+    setSubmitted(true);
+  }, [agreed, dispatch]);
 
   return (
     <div className="agreement-page">

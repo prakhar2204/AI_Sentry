@@ -1,5 +1,7 @@
 # Sentryɸ — AI Handoff & Continuity Briefing
 
+> **Current handoff — 2026-11-15:** Start with [PROJECT_AUDIT.md](../docs/PROJECT_AUDIT.md) and [SCAN_REPAIR.md](../docs/SCAN_REPAIR.md). The real desktop GGUF scan is verified; several deployment/release features remain incomplete. Launch current code using `start-sentryphi.cmd`. The older “Verified Zero Errors” section below is historical and must not be treated as evidence that every workflow works. Changes are present in the working tree and have not been committed by this repair.
+
 **Document:** `context/AI_HANDOFF_STATUS.md`  
 **Timestamp:** 2026-11-03  
 **Active Plan:** `context/MASTER_WORKFLOW_V2.md`  

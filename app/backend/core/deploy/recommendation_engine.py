@@ -191,6 +191,7 @@ _CATEGORY_CONTROLS = {
     "prompt_injection":  "Input validation / system prompt hardening",
     "jailbreak":         "Content moderation guardrails (Bedrock / Azure AI Safety)",
     "data_leakage":      "Output scanning and PII redaction layer",
+    "data_leak":         "Output scanning and PII redaction layer",
     "encoding_injection": "Request sanitization for encoded payloads",
     "malware_generation": "Strict output content filtering + human review loop",
     "toxicity":          "Toxicity classifier on model output",
@@ -201,6 +202,7 @@ _CATEGORY_WARNINGS = {
     "prompt_injection":  "⚠ Prompt injection detected — do not expose system prompt to users",
     "jailbreak":         "⚠ Jailbreak vulnerability — enforce guardrails before public deployment",
     "data_leakage":      "⚠ Data leakage risk — add output scanning layer",
+    "data_leak":         "⚠ Data leakage risk — add output scanning layer",
     "encoding_injection": "⚠ Encoding injection — sanitize and decode all inputs server-side",
     "malware_generation": "🔴 Malware generation capability — DO NOT deploy publicly without controls",
     "toxicity":          "⚠ Toxic output detected — mandatory content moderation required",
@@ -291,7 +293,7 @@ def generate_deployment_recommendation(scan_report: dict) -> DeploymentRecommend
         DeploymentRecommendation with fully populated per-provider configs.
     """
     # Extract scan metadata
-    risk_score: int = int(scan_report.get("risk_score", 0))
+    risk_score: int = int(scan_report.get("summary", {}).get("risk_score", scan_report.get("risk_score", 0)))
     findings:   list[dict] = scan_report.get("findings", [])
 
     risk_level = _determine_risk_level(risk_score)

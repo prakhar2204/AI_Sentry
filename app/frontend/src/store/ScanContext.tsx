@@ -26,6 +26,7 @@ import React, {
   type Dispatch,
 } from "react";
 import { SCAN_ACTIONS } from "./actions";
+import type { UploadedManifest } from "../services/manifestInput";
 import type {
   ScanLifecycleStage,
   ScanProgressEvent,
@@ -107,12 +108,15 @@ export interface ScanState {
   error_details: string | null;
   consent_given: boolean;
   manifest_file: string | null;
+  manifest_config: UploadedManifest | null;
   /** Extended scan execution state (null when not scanning) */
   scan_execution: ScanExecutionState | null;
   /** True when scan is actively running — used for navigation protection */
   scan_active: boolean;
   /** Full disk path to local .gguf model file — set via Electron file picker. */
   local_model_path: string | null;
+  api_key: string;
+  model_name: string;
 }
 
 // ─────────────────────────────────────────────
@@ -153,9 +157,12 @@ function createInitialState(): ScanState {
     error_details: null,
     consent_given: consent,
     manifest_file: null,
+    manifest_config: null,
     scan_execution: null,
     scan_active: false,
     local_model_path: null,
+    api_key: "",
+    model_name: "",
   };
 }
 
@@ -166,6 +173,9 @@ function createInitialState(): ScanState {
 type ScanAction =
   | { type: typeof SCAN_ACTIONS.ACCEPT_CONSENT }
   | { type: typeof SCAN_ACTIONS.SET_TARGET; payload: string }
+  | { type: typeof SCAN_ACTIONS.SET_LOCAL_MODEL_PATH; payload: string | null }
+  | { type: "SET_API_CONFIG"; payload: { api_key: string; model_name: string } }
+  | { type: "SET_MANIFEST_CONFIG"; payload: UploadedManifest | null }
   | { type: typeof SCAN_ACTIONS.SET_MODE; payload: ScanMode }
   | { type: typeof SCAN_ACTIONS.SET_SCAN_DEPTH; payload: ScanDepth }
   | { type: typeof SCAN_ACTIONS.SET_CATEGORIES; payload: string[] }
@@ -202,6 +212,14 @@ function scanReducer(state: ScanState, action: ScanAction): ScanState {
 
     case SCAN_ACTIONS.SET_TARGET:
       return { ...state, target: action.payload };
+
+    case SCAN_ACTIONS.SET_LOCAL_MODEL_PATH:
+      return { ...state, local_model_path: action.payload };
+
+    case "SET_API_CONFIG":
+      return { ...state, ...action.payload };
+    case "SET_MANIFEST_CONFIG":
+      return { ...state, manifest_config: action.payload };
 
     case SCAN_ACTIONS.SET_MODE:
       return { ...state, mode: action.payload };
@@ -340,6 +358,9 @@ function scanReducer(state: ScanState, action: ScanAction): ScanState {
         ...state,
         phase: state.consent_given ? "consented" : "idle",
         target: null,
+        local_model_path: null,
+        api_key: "",
+        model_name: "",
         mode: null,
         scan_depth: "standard",
         scan_strategy: "manual",
@@ -349,6 +370,7 @@ function scanReducer(state: ScanState, action: ScanAction): ScanState {
         error: null,
         error_details: null,
         manifest_file: null,
+        manifest_config: null,
         scan_execution: null,
         scan_active: false,
       };

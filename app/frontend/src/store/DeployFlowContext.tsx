@@ -100,14 +100,15 @@ function deployFlowReducer(
         ...state,
         deployResult: action.result,
         isLoading:    false,
-        step: action.result.status === "complete" ? "complete" : "error",
+        step: ["complete", "rolled_back"].includes(action.result.status) ? "complete"
+          : ["running", "pending"].includes(action.result.status) ? "deploying" : "error",
         error: action.result.errors.length > 0
           ? action.result.errors.join("; ")
           : null,
       };
 
     case "SET_LOADING":
-      return { ...state, isLoading: action.loading, error: null };
+      return { ...state, isLoading: action.loading, error: action.loading ? null : state.error };
 
     case "SET_ERROR":
       return { ...state, error: action.error, isLoading: false, step: "error" };

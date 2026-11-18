@@ -38,6 +38,8 @@ from core.manifest_display import display_and_confirm
 from core.estimator import estimate_scan
 from core.scan_guard import check_scan_safety
 from core.engine_runner import run_engine, display_results, print_scan_error
+from core.garak_engine import GarakEngine, GarakScanResult, ALL_CATEGORIES
+from core.pyrit_engine import PyRITEngine, PyRITScanResult, ALL_CATEGORIES as PYRIT_ALL_CATEGORIES
 from core.scorer import score_scan_result, display_risk_report
 from core.recommender import generate_recommendations, display_recommendations
 from core.report_generator import (
@@ -323,11 +325,9 @@ def handle_healthcheck() -> int:
     Entry point for the `healthcheck` command.
     No consent required -- read-only operation.
     """
-    # TODO (Phase 1d): Replace with real EnvironmentChecker implementation.
     print("\nSentryɸ -- Environment Health Check\n")
-    print("  [Phase 1 placeholder] Health check logic will be implemented")
-    print("  as part of the EnvironmentChecker module in Phase 1d.\n")
-    return 0
+    from core.health import run_health_check
+    return 0 if run_health_check() else 1
 
 
 def handle_version() -> int:
@@ -744,6 +744,11 @@ def _print_divider() -> None:
 # ─────────────────────────────────────────────
 
 def main() -> None:
+    # Windows redirected consoles can default to cp1252, which cannot encode
+    # the product name or probe diagnostics. Keep CLI output UTF-8 like IPC.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     parser = build_parser()
     args = parser.parse_args()
 

@@ -29,6 +29,8 @@ import { PageHeader } from "../components/layout/PageHeader";
 import { RadioGroup } from "../components/forms/RadioGroup";
 import { TextInput } from "../components/forms/TextInput";
 import { FileDropZone } from "../components/forms/FileDropZone";
+import { ModelDownload } from '../components/forms/ModelDownload';
+import { parseManifestInput, type UploadedManifest } from "../services/manifestInput";
 
 // ─────────────────────────────────────────────
 //  Constants
@@ -91,16 +93,26 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
 
   // ── Local state ──
   const [mode, setMode] = useState<ScanMode>(state.mode || "local");
+  const [apiKey, setApiKey] = useState(state.api_key || "");
+  const [modelName, setModelName] = useState(state.model_name || "");
   const [apiUrl, setApiUrl] = useState(
     state.mode === "api" && state.target ? state.target : ""
   );
   const [localPath, setLocalPath] = useState(
     state.mode === "local" && state.target ? state.target : ""
   );
-  const [localFileName, setLocalFileName] = useState<string | null>(null);
-  const [manifestFileName, setManifestFileName] = useState<string | null>(
-    null
+  const [localFileName, setLocalFileName] = useState<string | null>(
+    state.local_model_path?.split(/[\\/]/).pop() || null
   );
+  const [manifestFileName, setManifestFileName] = useState<string | null>(
+    state.manifest_file
+  );
+  const [manifestConfig, setManifestConfig] = useState<UploadedManifest | null>(state.manifest_config);
+  const [manifestLoading, setManifestLoading] = useState(false);
+  const [downloadBusy, setDownloadBusy] = useState(false);
+  const downloaded = useCallback((path: string, name: string) => {
+    setLocalPath(path); setLocalFileName(name); setTargetError(null);
+  }, []);
   const [manifestFilePath, setManifestFilePath] = useState<string | null>(
     state.manifest_file
   );
@@ -132,10 +144,10 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
    * Native Electron file picker — gets the REAL full disk path.
    * The browser File API only gives filename, not the path Python needs.
    */
-  const handleNativeFilePicker = useCallback(async () => {
+  const handleNativeFilePicker = useCallback(async (folder = false) => {
     const api = (window as any).electronAPI;
     if (api?.openModelFilePicker) {
-      const result = await api.openModelFilePicker();
+      const result = await api.openModelFilePicker(folder);
       if (result) {
         setLocalFileName(result.fileName);
         setLocalPath(result.filePath);   // REAL full path, e.g. D:\models\model.gguf
@@ -154,7 +166,7 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
   const handleLocalFile = useCallback((file: File) => {
     setLocalFileName(file.name);
     // In Electron, file.path is available via the File API (Chromium extension)
-    const electronPath = (file as any).path;
+    const electronPath = window.electronAPI?.getPathForFile?.(file) || (file as any).path;
     if (electronPath) {
       setLocalPath(electronPath);  // Real path via Electron's File.path extension
     } else {
@@ -163,22 +175,35 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
     setTargetError(null);
   }, []);
 
-  const handleManifestFile = useCallback((file: File) => {
+  const handleManifestFile = useCallback(async (file: File) => {
+    setManifestConfig(null);
+    setManifestFilePath(null);
+    setManifestFileName(null);
     // Validate it's a JSON file
     if (!file.name.toLowerCase().endsWith(".json")) {
       setManifestError("Invalid file type. Expected a .json file.");
       return;
     }
-    setManifestFileName(file.name);
-    setManifestFilePath(file.name);
-    setManifestError(null);
+    setManifestLoading(true);
+    try {
+      const parsed = parseManifestInput(await file.text());
+      setManifestConfig(parsed);
+      setManifestFileName(file.name);
+      setManifestFilePath(file.name);
+      setManifestError(null);
+    } catch (error) {
+      setManifestError(`Invalid manifest: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setManifestLoading(false);
+    }
   }, []);
 
   // ── Determine if form is submittable ──
   const hasTarget = useMemo(() => {
+    if (downloadBusy) return false;
     if (mode === "api") return apiUrl.trim().length > 0;
     return localPath.trim().length > 0 || localFileName !== null;
-  }, [mode, apiUrl, localPath, localFileName]);
+  }, [mode, apiUrl, localPath, localFileName, downloadBusy]);
 
   // ── Submit handler ──
   const handleContinue = useCallback(() => {
@@ -205,6 +230,8 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
     // Update ScanContext
     dispatch({ type: SCAN_ACTIONS.SET_MODE, payload: mode });
     dispatch({ type: SCAN_ACTIONS.SET_TARGET, payload: target });
+    dispatch({ type: "SET_API_CONFIG", payload: { api_key: mode === "api" ? apiKey : "", model_name: modelName } });
+    dispatch({ type: "SET_MANIFEST_CONFIG", payload: manifestConfig });
     dispatch({
       type: SCAN_ACTIONS.SET_MANIFEST_FILE,
       payload: manifestFilePath,
@@ -212,12 +239,12 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
     // Store full disk path separately so Python backend can auto-load the model
     if (mode === "local" && localPath && !localPath.startsWith("http")) {
       dispatch({
-        type: SCAN_ACTIONS.SET_LOCAL_MODEL_PATH as any,
+        type: SCAN_ACTIONS.SET_LOCAL_MODEL_PATH,
         payload: localPath,
       });
     } else {
       dispatch({
-        type: SCAN_ACTIONS.SET_LOCAL_MODEL_PATH as any,
+        type: SCAN_ACTIONS.SET_LOCAL_MODEL_PATH,
         payload: null,
       });
     }
@@ -230,6 +257,9 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
     localPath,
     localFileName,
     manifestFilePath,
+    manifestConfig,
+    apiKey,
+    modelName,
     dispatch,
     onContinue,
   ]);
@@ -262,7 +292,7 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
             {/* Primary: native file picker button (Electron) or drag-drop (browser) */}
             {(window as any).electronAPI?.openModelFilePicker ? (
               <div className="input-page__native-picker">
-                <div className="input-page__native-picker-label">Model File (.gguf)</div>
+                <div className="input-page__native-picker-label">GGUF file or Transformers safetensors package</div>
                 {localFileName ? (
                   <div className="input-page__native-picker-selected" id="selected-model-display">
                     <span className="input-page__file-icon">&#x1F916;</span>
@@ -278,7 +308,7 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
                   <button
                     type="button"
                     className="input-page__native-picker-btn"
-                    onClick={handleNativeFilePicker}
+                    onClick={() => handleNativeFilePicker()}
                     id="browse-model-button"
                   >
                     <span className="input-page__file-icon">&#x1F4C2;</span>
@@ -289,8 +319,9 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
                   <p className="input-page__field-error" role="alert">{targetError}</p>
                 )}
                 <p className="input-page__native-picker-hint">
-                  Supports .gguf format. GPU acceleration applied automatically.
+                  GGUF supports automatic GPU offload. Complete Transformers safetensors folders run on CPU. Other formats require conversion or an inference endpoint.
                 </p>
+                <button type="button" className="button button--secondary" onClick={() => handleNativeFilePicker(true)}>Browse model folder</button>
               </div>
             ) : (
               /* Browser fallback: drag-and-drop */
@@ -305,6 +336,10 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
               />
             )}
 
+            {window.electronAPI?.openModelFilePicker && <FileDropZone label="Drop a model file" id="desktop-model-drop"
+              accept=".gguf,.safetensors" onFile={handleLocalFile} disabled={downloadBusy} />}
+            <ModelDownload onComplete={downloaded} onBusy={setDownloadBusy} />
+
             <div className="input-page__separator">
               <span className="input-page__separator-text">or enter server URL</span>
             </div>
@@ -312,13 +347,11 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
             <TextInput
               label="Local Server URL (if already running)"
               id="local-model-path"
-              value={localPath.startsWith("http") ? localPath : ""}
+              value={localFileName ? "" : localPath}
               onChange={(val) => {
-                if (val.trim()) {
                   setLocalPath(val);
                   setLocalFileName(null);
                   setTargetError(null);
-                }
               }}
               placeholder="http://localhost:11434/v1/chat/completions"
               error={!localFileName && !localPath.startsWith("http") ? targetError || undefined : undefined}
@@ -341,6 +374,8 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
               placeholder="https://api.openai.com/v1"
               error={targetError || undefined}
             />
+            <TextInput label="API key (if required)" id="api-key" type="password" value={apiKey} onChange={setApiKey} />
+            <TextInput label="Model ID (if required)" id="api-model" value={modelName} onChange={setModelName} />
           </section>
         )}
 
@@ -355,13 +390,14 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
             error={manifestError || undefined}
             disabled={false}
           />
-          {manifestFileName && (
+          {(manifestFileName || manifestError) && (
             <button
               type="button"
               className="button button--ghost"
               onClick={() => {
                 setManifestFileName(null);
                 setManifestFilePath(null);
+                setManifestConfig(null);
                 setManifestError(null);
               }}
               id="clear-manifest-button"
@@ -376,7 +412,7 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
           <button
             type="button"
             className="button button--primary"
-            disabled={!hasTarget}
+            disabled={!hasTarget || manifestLoading || !!manifestError}
             onClick={handleContinue}
             id="input-continue-button"
           >

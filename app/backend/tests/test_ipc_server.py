@@ -32,6 +32,7 @@ BACKEND_DIR = Path(__file__).parent.parent
 PYTHON_EXE = sys.executable
 
 QUICK_CONFIG = json.dumps({
+    "engine": "mock",
     "target":     "http://localhost:8080",
     "mode":       "api",
     "scan_depth": "quick",
@@ -39,6 +40,7 @@ QUICK_CONFIG = json.dumps({
 })
 
 STANDARD_CONFIG = json.dumps({
+    "engine": "mock",
     "target":     "http://localhost:9000",
     "mode":       "local",
     "scan_depth": "standard",
@@ -279,7 +281,7 @@ def test_report_meta_target_matches_config():
     events, _ = run_ipc_server(QUICK_CONFIG)
     complete = next(e for e in events if e.get("type") == "complete")
     meta = complete["report"]["meta"]
-    assert meta["target"] == "http://localhost:8080", f"Wrong target: {meta}"
+    assert meta["target"] == "http://localhost:8080/v1/chat/completions", f"Wrong target: {meta}"
 
 
 # ─────────────────────────────────────────────

@@ -14,12 +14,20 @@
 
 'use strict';
 
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  getPathForFile: file => webUtils.getPathForFile(file),
   // ── Scan lifecycle ──────────────────────────────────────
   /** Start a scan with the given config. Returns { started: boolean, error?: string } */
   startScan: (config) => ipcRenderer.invoke('scan:start', config),
+  runBackendCommand: (config) => ipcRenderer.invoke('backend:command', config),
+  cloudAuth: (config) => ipcRenderer.invoke('cloud-auth:command', config),
+  onCloudAuthProgress: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('cloud-auth:progress', handler);
+    return () => ipcRenderer.removeListener('cloud-auth:progress', handler);
+  },
 
   /** Cancel the currently running scan */
   cancelScan: () => ipcRenderer.invoke('scan:cancel'),
@@ -115,7 +123,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * Use this instead of the browser File API — it gives the REAL full disk path
    * that Python needs to load the model file.
    */
-  openModelFilePicker: () => ipcRenderer.invoke('dialog:open-model-file'),
+  openModelFilePicker: (folder = false) => ipcRenderer.invoke('dialog:open-model-file', folder === true),
 
   // ── Platform detection ──────────────────────────────────
   /** Always true when running inside Electron */

@@ -192,9 +192,9 @@ class TestSelectEngine:
         engine = _select_engine("mock")
         assert isinstance(engine, MockEngine)
 
-    def test_unknown_returns_mock_engine(self):
-        engine = _select_engine("unknown_xyz")
-        assert isinstance(engine, MockEngine)
+    def test_unknown_engine_is_rejected(self):
+        with pytest.raises(ValueError, match="Unknown scan engine"):
+            _select_engine("unknown_xyz")
 
     def test_empty_returns_mock_engine(self):
         engine = _select_engine("")

@@ -1,5 +1,9 @@
 # Sentryɸ — Current Phase Status
 
+> **2026-11-16 cloud update:** AWS-first official CLI sign-in and CLI-backed CloudFormation deployment are implemented with offline tests; see [CLOUD_SIGN_IN.md](../docs/CLOUD_SIGN_IN.md). No live login/deployment has been run. Azure/GCP are disabled stubs under the latest user instruction. [DEPLOYMENT_WORKLOG.md](../docs/DEPLOYMENT_WORKLOG.md) tracks unfinished work; historical completion labels below do not override these limits.
+
+> **Current verification — 2026-11-15:** The local GGUF scan now passes the actual desktop wizard across all seven categories. Read [PROJECT_AUDIT.md](../docs/PROJECT_AUDIT.md) for current implementation gaps and [SCAN_REPAIR.md](../docs/SCAN_REPAIR.md) for evidence and launch instructions. The phase labels below are historical; they do not establish working cloud authentication/provisioning or a repaired packaged release.
+
 **Last Updated:** 2026-11-03
 **Active Plan:** `context/MASTER_WORKFLOW_V2.md` (Supersedes P1–P9)
 **Current Phase:** W3 — Deploy UI + OAuth Sign-In Flow (COMPLETE & VERIFIED)

@@ -30,6 +30,8 @@ Usage:
 from __future__ import annotations
 
 import json
+import os
+import re
 import subprocess
 import sys
 import time
@@ -52,9 +54,9 @@ CATEGORY_PROBE_MAP: dict[str, list[str]] = {
         "probes.promptinject.HijackLongPrompt",
     ],
     "jailbreak": [
-        "probes.dan.Ablation_Dan_11_0",
-        "probes.dan.AutoDANCached",
         "probes.dan.DanInTheWild",
+        "probes.dan.Dan_11_0",
+        "probes.dan.Dan_10_0",
     ],
     "encoding_injection": [
         "probes.encoding.InjectBase64",
@@ -215,9 +217,14 @@ class GarakEngine:
         model_name:        str  = "",
         request_timeout:   int  = 60,
         prompt_cap:        int  = 50,
+        on_progress=None,
     ) -> None:
         self.target_url      = target_url.rstrip("/")
-        self.output_dir      = Path(output_dir)
+        from urllib.parse import urlsplit
+        parsed_target = urlsplit(self.target_url)
+        if parsed_target.scheme not in ("http", "https") or not parsed_target.hostname:
+            raise ValueError("Garak requires an HTTP inference endpoint. Load local GGUF files through the local model server first.")
+        self.output_dir      = Path(output_dir).resolve()
         self.api_key         = api_key
         self.timeout         = timeout
         self.generations     = generations
@@ -226,6 +233,7 @@ class GarakEngine:
         self.model_name      = model_name
         self.request_timeout = request_timeout
         self.prompt_cap      = max(1, int(prompt_cap))  # garak minimum is 1
+        self.on_progress = on_progress
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -273,11 +281,18 @@ class GarakEngine:
         )
 
         slice_n = _DEPTH_SLICE[self.depth]
+        total = len(self.probe_specs_for_depth(categories))
+        completed = 0
 
         for category in categories:
             probes = CATEGORY_PROBE_MAP[category][:slice_n]
             for spec in probes:
+                if self.on_progress:
+                    self.on_progress(category, completed, total, f"Running {spec}")
                 probe_result = self._run_probe(spec, category, config_path, run_id)
+                completed += 1
+                if self.on_progress:
+                    self.on_progress(category, completed, total, f"Finished {spec}")
                 result.probe_results.append(probe_result)
                 result.findings.extend(probe_result.findings)
                 if not probe_result.success:
@@ -328,41 +343,22 @@ class GarakEngine:
         """
         config_path = self.output_dir / f"garak_config_{run_id}.yaml"
 
-        headers_block = "          Content-Type: application/json\n"
+        headers = {"Content-Type": "application/json"}
         if self.api_key:
-            headers_block += (
-                f"          Authorization: Bearer {self.api_key}\n"
-            )
-
-        # Build the req_template_json_object block — proper OpenAI chat format.
-        # $INPUT is substituted by garak's RestGenerator with the attack prompt.
+            headers["Authorization"] = "Bearer $KEY"
+        body = {"max_tokens": 256, "messages": [{"role": "user", "content": "$INPUT"}]}
         if self.model_name:
-            model_line = f"          model: {self.model_name}\n"
-        else:
-            # Omit the model field; most hosted APIs auto-select
-            model_line = ""
-
-        config_yaml = (
-            "plugins:\n"
-            "  generators:\n"
-            "    rest:\n"
-            "      RestGenerator:\n"
-            f"        uri: {self.target_url}\n"
-            "        method: post\n"
-            "        response_json: true\n"
-            "        response_json_field: \"$.choices[0].message.content\"\n"
-            f"        request_timeout: {self.request_timeout}\n"
-            "        req_template_json_object:\n"
-            + model_line +
-            "          messages:\n"
-            "            - role: user\n"
-            "              content: \"$INPUT\"\n"
-            "        headers:\n"
-            + headers_block
-            + "run:\n"
-            + f"  soft_probe_prompt_cap: {self.prompt_cap}\n"
-        )
-
+            body["model"] = self.model_name
+        # JSON is valid YAML and safely quotes URLs, model IDs and credentials.
+        config_yaml = json.dumps({
+            "plugins": {"generators": {"rest": {"RestGenerator": {
+                "uri": self.target_url, "method": "post", "response_json": True,
+                "response_json_field": "$.choices[0].message.content",
+                "request_timeout": self.request_timeout,
+                "req_template_json_object": body, "headers": headers,
+            }}}},
+            "run": {"soft_probe_prompt_cap": self.prompt_cap},
+        }, indent=2)
         config_path.write_text(config_yaml, encoding="utf-8")
         return config_path
 
@@ -391,9 +387,14 @@ class GarakEngine:
         ]
 
         t0 = time.monotonic()
+        env = os.environ.copy()
+        if self.api_key:
+            env["REST_API_KEY"] = self.api_key
         try:
             proc = subprocess.run(
                 cmd,
+                env=env,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
@@ -439,6 +440,10 @@ class GarakEngine:
         # that found vulnerable behaviour.  Only rc<0 or rc>1, or the presence
         # of error markers in the output, indicates a genuine failure.
         combined = proc.stdout + proc.stderr
+        diagnostic = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", combined)
+        if self.api_key:
+            diagnostic = diagnostic.replace(self.api_key, "[REDACTED]")
+        Path(str(report_prefix) + ".log").write_text(diagnostic, encoding="utf-8")
         error_markers = [
             "Traceback", "ImportError", "ModuleNotFoundError",
             "invalid --spec", "No module", "AttributeError",
@@ -455,13 +460,19 @@ class GarakEngine:
         findings: list[VulnerabilityFinding] = []
         if report_path and report_path.exists():
             findings = list(self._parse_report(report_path, spec, category))
+        evaluated = bool(report_path and any(
+            row.get("entry_type") == "eval" and row.get("total_evaluated", 0) > 0
+            for row in _read_jsonl(report_path)
+        ))
+        if not evaluated:
+            has_error = True
 
         return ProbeRunResult(
             spec=spec,
             category=category,
             returncode=proc.returncode,
             success=not has_error,
-            error="" if not has_error else self._extract_error(combined),
+            error="" if not has_error else (self._extract_error(diagnostic) or f"No evaluated probe results were produced. Details: {report_prefix}.log"),
             report_path=report_path,
             duration_s=duration,
             findings=findings,
@@ -551,14 +562,16 @@ class GarakEngine:
     @staticmethod
     def _extract_error(combined_output: str) -> str:
         """Extract the first error-like line from combined stdout+stderr."""
+        combined_output = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", combined_output)
         error_markers = [
             "Traceback", "Error:", "ImportError", "ModuleNotFoundError",
             "invalid --spec", "No module", "Exception", "AttributeError",
+            "No connection adapters", "Connection refused", "timed out", "REST URI",
         ]
-        for line in combined_output.splitlines():
+        for line in reversed(combined_output.splitlines()):
             if any(m in line for m in error_markers):
                 return line.strip()
-        return combined_output.strip()[-300:] if combined_output.strip() else ""
+        return ""
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -15,11 +15,23 @@
 
 'use strict';
 
+// ── Global crash protection ─────────────────────────────────────────
+// Prevent Electron from showing fatal "A JavaScript error occurred in the
+// main process" dialogs when spawn ENOENT or AbortSignal errors bubble up.
+process.on('uncaughtException', (err) => {
+  console.error('[main] Uncaught exception (handled gracefully):', err?.message || err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[main] Unhandled rejection (handled gracefully):', reason?.message || reason);
+});
+
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const readline = require('readline');
 const fs = require('fs');
+const { BackendCommands } = require('./backend-commands.cjs');
+const { AwsCloudAuth, AzureCloudAuth, GcpCloudAuth } = require('./cloud-auth.cjs');
 
 // ─────────────────────────────────────────────
 //  Environment
@@ -34,6 +46,68 @@ const DEV_URL = 'http://localhost:5173';
 
 let scanProcess = null;
 let mainWindow = null;
+const cloudAuthMap = new Map();
+function getCloudAuth(provider) {
+  if (!['aws', 'azure', 'gcp'].includes(provider)) throw new Error('Unsupported cloud provider');
+  if (!cloudAuthMap.has(provider)) {
+    const options = {
+      onProgress: event => {
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('cloud-auth:progress', event);
+      },
+      openExternal: url => shell.openExternal(url),
+    };
+    const AuthClass = provider === 'aws' ? AwsCloudAuth : provider === 'azure' ? AzureCloudAuth : GcpCloudAuth;
+    cloudAuthMap.set(provider, new AuthClass(options));
+  }
+  return cloudAuthMap.get(provider);
+}
+function focusApplication() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show(); mainWindow.focus();
+  }
+}
+ipcMain.handle('cloud-auth:command', async (_event, config) => {
+  try {
+    const auth = getCloudAuth(config?.provider);
+    if (!['check_cli', 'login', 'whoami', 'select_scope', 'logout', 'cancel'].includes(config?.action))
+      throw new Error('Unsupported authentication action');
+    const result = await auth[config.action](config.options || {});
+    if (config.action === 'login') focusApplication();
+    return { ok: true, result: result ?? { cancelled: true } };
+  } catch (error) {
+    return { ok: false, code: error.code || 'AUTH_FAILED', message: error.message };
+  }
+});
+const backendCommands = new BackendCommands(() => {
+  const executable = findPython();
+  const bundled = /ipc_server(?:\.exe)?$/.test(executable);
+  return { executable, args: bundled ? [] : ['-m', 'ipc_server'],
+    options: { cwd: bundled ? path.dirname(executable) : getBackendPath(),
+      env: { ...process.env, PYTHONIOENCODING: 'utf-8', PYTHONUNBUFFERED: '1',
+        SENTRYPHI_DATA_DIR: app.getPath('userData'), SENTRYPHI_CLOUD_AUTH_ROOT: path.join(app.getPath('userData'), 'cloud') } } };
+}, async url => {
+  if (typeof url !== 'string' || !url.startsWith('https://')) throw new Error('Invalid authentication URL');
+  await shell.openExternal(url);
+});
+
+ipcMain.handle('backend:command', async (_event, config) => {
+  if (!config || !(String(config.command).startsWith('deploy:') || ['scan:estimate', 'model:inspect', 'model:download', 'model:download_status', 'model:download_cancel', 'cloud:recommend'].includes(config.command))) throw new Error('Unsupported backend command');
+  if (config.command.startsWith('deploy:') && config.provider !== 'private') {
+    const auth = getCloudAuth(config.provider);
+    if (!auth.scope) throw new Error('Sign in and confirm your cloud account first');
+    // Pass credentials as env vars to the Python backend (no CLI needed)
+    const credentialsEnv = auth.getCredentialsEnv();
+    config = { ...config, credentials: {
+      auth_mode: 'token',
+      account_id: auth.scope.account,
+      identity: auth.scope.identity,
+      region: auth.scope.region,
+      env: credentialsEnv,
+    } };
+  }
+  return backendCommands.run(config);
+});
 
 // ─────────────────────────────────────────────
 //  Window creation
@@ -59,7 +133,7 @@ function createWindow() {
   // Remove native menu bar on Windows/Linux
   mainWindow.setMenu(null);
 
-  if (isDev) {
+  if (isDev && process.env.SENTRYPHI_USE_BUILD !== '1') {
     // Load Vite dev server
     mainWindow.loadURL(DEV_URL);
     // Open DevTools in development
@@ -100,6 +174,9 @@ function createWindow() {
 
 /** Find the Python executable on the system */
 function findPython() {
+  if (process.env.SENTRYPHI_PYTHON) return process.env.SENTRYPHI_PYTHON;
+  const projectPython = path.join(__dirname, '../../../.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
+  if (isDev && fs.existsSync(projectPython)) return projectPython;
   // In production, check for bundled PyInstaller executable first
   if (!isDev) {
     // PyInstaller single-file bundle
@@ -131,10 +208,16 @@ function getBackendPath() {
 
 function killScanProcess() {
   if (scanProcess) {
-    try {
-      scanProcess.kill('SIGTERM');
-    } catch (_) {}
+    const child = scanProcess;
     scanProcess = null;
+    try {
+      if (process.platform === 'win32' && child.pid) {
+        const killer = spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true });
+        killer.on('error', () => child.kill());
+      } else {
+        child.kill('SIGTERM');
+      }
+    } catch (_) {}
   }
 }
 
@@ -153,7 +236,6 @@ ipcMain.handle('scan:start', async (event, config) => {
   console.log('[scan:start] ========== SCAN STARTING ==========');
   console.log('[scan:start] pythonPath:', pythonPath);
   console.log('[scan:start] backendPath:', backendPath);
-  console.log('[scan:start] config:', JSON.stringify(config));
   console.log('[scan:start] mainWindow exists:', !!mainWindow);
 
   try {
@@ -165,11 +247,28 @@ ipcMain.handle('scan:start', async (event, config) => {
     console.log('[scan:start] spawnArgs:', spawnArgs);
     console.log('[scan:start] spawnCwd:', spawnCwd);
 
-    scanProcess = spawn(pythonPath, spawnArgs, {
+    const child = spawn(pythonPath, spawnArgs, {
       cwd: spawnCwd,
+      windowsHide: true,
       stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, PYTHONUNBUFFERED: '1', PYTHONUTF8: '1' },
     });
+    scanProcess = child;
+    let terminal = false;
+    let stderrTail = '';
+    const fail = (message) => {
+      if (terminal || scanProcess !== child) return;
+      terminal = true;
+      mainWindow?.webContents.send('scan:error', {type: 'error', message, code: 'PROCESS_ERROR'});
+    };
+    child.on('error', (err) => fail(`Cannot start scan backend: ${err.message}`));
+    child.stdin.on('error', (err) => fail(`Cannot send scan configuration: ${err.message}`));
+    const startupTimer = setTimeout(() => {
+      fail('Scan backend did not respond within 60 seconds. Check the Python environment.');
+      if (scanProcess === child) killScanProcess();
+    }, 60000);
+    child.once('close', () => clearTimeout(startupTimer));
+    child.stderr.on('data', (data) => { stderrTail = (stderrTail + data.toString()).slice(-4000); });
 
     console.log('[scan:start] Python spawned, PID:', scanProcess.pid);
 
@@ -191,6 +290,8 @@ ipcMain.handle('scan:start', async (event, config) => {
       }
       try {
         const evt = JSON.parse(trimmed);
+        if (scanProcess !== child) return;
+        clearTimeout(startupTimer);
         // Always use mainWindow — getFocusedWindow() returns null when the user
         // has any other window focused (alt-tab, clicking elsewhere), which would
         // silently drop ALL scan events leaving the UI stuck at "Preparing... 0%".
@@ -208,12 +309,12 @@ ipcMain.handle('scan:start', async (event, config) => {
             win.webContents.send('scan:progress', evt);
             break;
           case 'complete':
+            terminal = true;
             win.webContents.send('scan:complete', evt);
-            scanProcess = null;
             break;
           case 'error':
+            terminal = true;
             win.webContents.send('scan:error', evt);
-            scanProcess = null;
             break;
         }
       } catch (_) {
@@ -227,17 +328,17 @@ ipcMain.handle('scan:start', async (event, config) => {
       console.error('[Python stderr]', data.toString());
     });
 
-    scanProcess.on('exit', (code) => {
+    child.on('close', (code) => {
       console.log('[scan:start] Python exited with code:', code, '| stdout lines received:', lineCount);
       const win = mainWindow;
-      if (code !== 0 && code !== null && win && !win.isDestroyed()) {
+      if (!terminal && scanProcess === child && win && !win.isDestroyed()) {
         win.webContents.send('scan:error', {
           type: 'error',
-          message: `Python process exited with code ${code}`,
+          message: `Scan backend exited before completing (code ${code}). ${stderrTail}`,
           code: 'PROCESS_EXIT',
         });
       }
-      scanProcess = null;
+      if (scanProcess === child) scanProcess = null;
     });
 
     console.log('[scan:start] Listeners attached, returning started=true');
@@ -296,70 +397,14 @@ ipcMain.handle('report:export', async (event, reportData, format) => {
 
   if (canceled || !filePath) return { saved: false };
 
-  // Invoke Python export_handler via subprocess
-  const py = findPython();
-  const backendDir = path.join(__dirname, '..', '..', 'backend');
-  const exportScript = path.join(backendDir, 'export_handler.py');
-
-  // Payload sent to Python via stdin
-  const payload = JSON.stringify({
-    action:      'export',
-    format:      format,
-    output_path: filePath,
-    report:      reportData,
-  });
-
-  return new Promise((resolve) => {
-    let stdout = '';
-    let stderr = '';
-
-    const proc = spawn(py, [exportScript], {
-      cwd:   backendDir,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    proc.stdin.write(payload, 'utf-8');
-    proc.stdin.end();
-
-    proc.stdout.on('data', (d) => { stdout += d.toString(); });
-    proc.stderr.on('data', (d) => { stderr += d.toString(); });
-
-    proc.on('exit', (code) => {
-      try {
-        // export_handler.py prints a single JSON result line to stdout
-        const trimmed = stdout.trim();
-        if (trimmed) {
-          const result = JSON.parse(trimmed);
-          if (result.success) {
-            resolve({
-              saved:      true,
-              filePath:   result.path,
-              size_bytes: result.size_bytes || 0,
-              fallback:   result.fallback || null,
-            });
-          } else {
-            resolve({ saved: false, error: result.error || 'Export failed' });
-          }
-        } else {
-          // Script printed nothing — use exit code
-          if (code === 0) {
-            const size = (() => {
-              try { return fs.statSync(filePath).size; } catch (_) { return 0; }
-            })();
-            resolve({ saved: true, filePath, size_bytes: size });
-          } else {
-            resolve({ saved: false, error: stderr.trim() || `Python exited ${code}` });
-          }
-        }
-      } catch (parseErr) {
-        resolve({ saved: false, error: `Parse error: ${parseErr.message}. Stderr: ${stderr.trim()}` });
-      }
-    });
-
-    proc.on('error', (err) => {
-      resolve({ saved: false, error: `Spawn failed: ${err.message}` });
-    });
-  });
+  try {
+    const result = await backendCommands.run({ command: 'report:export',
+      format, output_path: filePath, report: reportData });
+    return { saved: result.success, filePath: result.path, size_bytes: result.size_bytes,
+      fallback: result.fallback || null, error: result.error || null };
+  } catch (error) {
+    return { saved: false, error: error.message };
+  }
 });
 
 /** shell:openPath — open a file with the default OS application */
@@ -402,15 +447,15 @@ ipcMain.handle('dialog:save', async (event, options) => {
  *
  * Returns: { filePath, fileName } or null if cancelled.
  */
-ipcMain.handle('dialog:open-model-file', async () => {
+ipcMain.handle('dialog:open-model-file', async (_event, folder = false) => {
   const result = await dialog.showOpenDialog(mainWindow, {
-    title: 'Select GGUF Model File',
+    title: folder === true ? 'Select Transformers Model Folder' : 'Select Model File',
     buttonLabel: 'Select Model',
     filters: [
-      { name: 'GGUF Model Files', extensions: ['gguf'] },
+      { name: 'Model Files', extensions: ['gguf', 'safetensors'] },
       { name: 'All Files', extensions: ['*'] },
     ],
-    properties: ['openFile'],
+    properties: [folder === true ? 'openDirectory' : 'openFile'],
   });
   if (result.canceled || result.filePaths.length === 0) return null;
   const fullPath = result.filePaths[0];
@@ -593,5 +638,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  for (const auth of cloudAuth.values()) auth.cancel();
   killScanProcess();
+  backendCommands.stop();
 });

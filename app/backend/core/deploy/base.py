@@ -5,9 +5,10 @@ core/deploy/base.py
 Abstract base class that every cloud/private deploy engine must implement.
 All engines follow the same lifecycle: validate → plan → estimate → dry_run → deploy → rollback.
 
-Security invariants (enforced by this base class):
-  - Credentials are NEVER stored to disk. They live in process memory only for the duration
-    of the deployment session (passed in via deploy() call from IPC).
+Security contract:
+  - The active AWS path receives public identity/scope metadata in the legacy
+    `credentials` argument. Only the official CLI handles credential/session files.
+    Azure/GCP legacy implementations are disabled pending official CLI adapters.
   - dry_run is called by default before any real deploy; callers must explicitly pass
     confirmed=True to execute live provisioning.
   - Every deploy tags all created resources with SentryPhi=true for clean rollback.
@@ -35,6 +36,7 @@ class CredentialStatus(str, Enum):
 
 
 class DeployStatus(str, Enum):
+    UNKNOWN    = "unknown"
     PENDING    = "pending"
     RUNNING    = "running"
     COMPLETE   = "complete"
@@ -51,6 +53,7 @@ class CredentialResult:
     status:  CredentialStatus
     account: str = ""          # Account ID / email displayed in UI
     message: str = ""          # Human-readable status detail
+    credentials: dict[str, str] = field(default_factory=dict, repr=False)
 
     def to_dict(self) -> dict[str, Any]:
         return {"status": self.status.value, "account": self.account, "message": self.message}
@@ -97,6 +100,7 @@ class DeployPlan:
             "resources":      [r.to_dict() for r in self.resources],
             "estimated_cost": self.estimated_cost,
             "security_notes": self.security_notes,
+            "raw_config": self.raw_config,
         }
 
 
@@ -162,9 +166,9 @@ class BaseDeployEngine(ABC):
     All deploy engines must implement this interface.
 
     Credential handling contract:
-      - credentials dict is passed per-call, never stored as instance state
-      - Never write credentials to disk or log them
-      - Clear from local variables immediately after SDK session is established
+      - The legacy credentials argument carries public CLI identity/scope in AWS.
+      - Never read, write, display or log tokens or credential files.
+      - Deployment journals contain public ownership/resource metadata only.
     """
 
     PROVIDER_ID: str = ""   # "aws" | "azure" | "gcp" | "private"

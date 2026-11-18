@@ -1,0 +1,5 @@
+.model-cloud-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 24px; }
+.model-cloud-grid .deploy-flow__panel { min-width: 0; }
+.model-cloud-grid input, .model-cloud-grid select { width: 100%; margin-top: 6px; }
+.model-cloud-grid p, .model-cloud-grid li { overflow-wrap: anywhere; }
+@media (max-width: 900px) { .model-cloud-grid { grid-template-columns: 1fr; } }

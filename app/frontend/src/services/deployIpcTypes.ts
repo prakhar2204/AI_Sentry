@@ -20,6 +20,7 @@ export type CredentialStatus =
   | "unknown";
 
 export type DeployStatus =
+  | "unknown"
   | "pending"
   | "running"
   | "complete"
@@ -74,10 +75,19 @@ export interface PrivateDeployConfig {
 }
 
 export type CloudDeployConfig =
+  | ManagedModelConfig
   | AwsDeployConfig
   | AzureDeployConfig
   | GcpDeployConfig
   | PrivateDeployConfig;
+
+export interface ManagedModelConfig {
+  deployment_mode: 'managed_model'; region: string; instance_type: string;
+  replicas: number; hours_per_month: number; context_length: number; concurrency: number;
+  model_source: string; model_fingerprint: string; model_format: string;
+  accelerator: 'cpu' | 'gpu'; endpoint_scope: 'authenticated'; scan_id: string;
+  estimated_monthly_usd: number;
+}
 
 // ─────────────────────────────────────────────
 //  Deploy Resource
@@ -116,6 +126,7 @@ export interface CredentialValidationResult {
 }
 
 export interface AuthCompleteResult {
+  credentials: Record<string, string>;
   status:  CredentialStatus;
   account: string;
   message: string;
@@ -172,7 +183,7 @@ export interface ProviderInfo {
   name:        string;
   description: string;
   icon:        string;   // emoji or icon class
-  authType:    "oauth" | "apikey" | "none";
+  authType:    "cli" | "none";
   docUrl:      string;
 }
 
@@ -182,7 +193,7 @@ export const PROVIDER_INFO: Record<DeployProvider, ProviderInfo> = {
     name:        "Amazon Web Services",
     description: "Bedrock, SageMaker, or Lambda + API Gateway",
     icon:        "🟠",
-    authType:    "oauth",
+    authType:    "cli",
     docUrl:      "https://aws.amazon.com/console/",
   },
   azure: {
@@ -190,7 +201,7 @@ export const PROVIDER_INFO: Record<DeployProvider, ProviderInfo> = {
     name:        "Microsoft Azure",
     description: "Azure AI Services, Container Instances, or App Service",
     icon:        "🔵",
-    authType:    "oauth",
+    authType:    "cli",
     docUrl:      "https://portal.azure.com/",
   },
   gcp: {
@@ -198,7 +209,7 @@ export const PROVIDER_INFO: Record<DeployProvider, ProviderInfo> = {
     name:        "Google Cloud Platform",
     description: "Vertex AI, Cloud Run, or Cloud Functions",
     icon:        "🔴",
-    authType:    "oauth",
+    authType:    "cli",
     docUrl:      "https://console.cloud.google.com/",
   },
   private: {

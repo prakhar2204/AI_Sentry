@@ -38,7 +38,10 @@ import json
 import sys
 import time
 import traceback
+import threading
 from datetime import datetime, timezone
+
+_emit_lock = threading.Lock()
 
 
 # ─────────────────────────────────────────────
@@ -48,7 +51,8 @@ from datetime import datetime, timezone
 def _emit(event: dict) -> None:
     """Write a single JSON event to stdout and flush immediately."""
     try:
-        print(json.dumps(event), flush=True)
+        with _emit_lock:
+            print(json.dumps(event), flush=True)
     except BrokenPipeError:
         # Electron closed the pipe (e.g. window closed mid-scan)
         sys.exit(0)
@@ -149,7 +153,7 @@ def _parse_config(raw: dict) -> dict:
     categories  = raw.get("categories") or None  # None → use depth defaults
     api_key     = raw.get("api_key", "")
     notes       = raw.get("notes", "")
-    engine      = raw.get("engine", "mock")   # "garak" | "pyrit" | "mock" | "auto"
+    engine      = raw.get("engine", "auto")   # mock requires explicit selection
 
     return {
         "target":     target,
@@ -159,6 +163,7 @@ def _parse_config(raw: dict) -> dict:
         "api_key":    api_key,
         "notes":      notes,
         "engine":     engine,
+        "output_dir": raw.get("output_dir", "./scan_artifacts"),
     }
 
 
@@ -273,12 +278,33 @@ def run_scan_pipeline(config: dict) -> None:
     # (full CUDA GPU acceleration via n_gpu_layers=-1), replace the target with
     # the local server URL. No Ollama or manual setup required by the user.
     _local_model_server = None
+    scanned_model_profile = None
     local_model_path = config.get("local_model_path", "")
+    if params["mode"] == "local" and not params["target"].lower().startswith(("http://", "https://")):
+        local_model_path = local_model_path or params["target"]
     is_local_gguf = (
         params.get("mode") == "local"
         and bool(local_model_path)
         and not str(local_model_path).startswith("http")
     )
+
+    if is_local_gguf:
+        from core.model_profile import inspect_model, capacity_check, artifact_digest
+        try:
+            scanned_model_profile = inspect_model(local_model_path)
+        except (OSError, ValueError) as error:
+            raise RuntimeError(f'Could not load model: {error}') from error
+        capacity = capacity_check(scanned_model_profile)
+        if not capacity['allowed']:
+            raise RuntimeError(capacity['reason'])
+        _emit_stage('init', 'Verifying model artifact identity...')
+        scanned_model_profile['content_sha256'] = artifact_digest(scanned_model_profile)
+        if scanned_model_profile['format'] == 'transformers':
+            from core.local_transformers_server import LocalTransformersServer
+            _emit_stage('init', 'Loading local safetensors model on CPU...')
+            _local_model_server = LocalTransformersServer()
+            params['target'] = _local_model_server.start(scanned_model_profile)
+            is_local_gguf = False
 
     if is_local_gguf:
         import pathlib as _pathlib
@@ -300,7 +326,7 @@ def run_scan_pipeline(config: dict) -> None:
                 _emit_activity(
                     f"GPU detected: {gpu_info['name']} "
                     f"({gpu_info['vram_total_mb']} MB VRAM, "
-                    f"{gpu_info['vram_free_mb']} MB free) — using CUDA",
+                    f"{gpu_info['vram_free_mb']} MB free) — using Vulkan",
                     "info",
                 )
             else:
@@ -308,7 +334,7 @@ def run_scan_pipeline(config: dict) -> None:
                     "No NVIDIA GPU detected — running on CPU (will be slower)", "warn"
                 )
 
-            accel = "GPU (CUDA)" if gpu_info["available"] else "CPU"
+            accel = "GPU (Vulkan)" if gpu_info["available"] else "CPU"
             _emit_progress("init", 5, 0, 0, 0, f"Loading {model_name} into {accel}...")
             _emit_stage("init", f"Loading {model_name} — please wait (10–60 seconds)...")
 
@@ -326,21 +352,9 @@ def run_scan_pipeline(config: dict) -> None:
             _emit_progress("init", 10, 0, 0, 0, "Model loaded — starting security scan...")
 
         except ImportError as ie:
-            _emit_activity(
-                f"Model server module not available: {ie}. "
-                "Falling back to MockEngine for demonstration scan.",
-                "warn",
-            )
-            _emit_progress("init", 8, 0, 0, 0, "Model server unavailable — using MockEngine...")
-            # Don't crash — MockEngine will run simulated probes
+            raise RuntimeError(f"Local model support unavailable: {ie}") from ie
         except Exception as model_err:
-            _emit_activity(
-                f"Could not start model server for {model_name}: {model_err}. "
-                "Falling back to MockEngine for demonstration scan.",
-                "warn",
-            )
-            _emit_progress("init", 8, 0, 0, 0, "Model server failed — using MockEngine...")
-            # Don't crash — MockEngine will run simulated probes
+            raise RuntimeError(f"Could not load {model_name}: {model_err}") from model_err
     # ─────────────────────────────────────────────────────────────────────────────
 
     _emit_activity(
@@ -355,17 +369,38 @@ def run_scan_pipeline(config: dict) -> None:
     from core.manifest import create_manifest
     engine_name = params.pop("engine", "mock")  # extract before create_manifest call
 
-    # Force MockEngine if local model server didn't start successfully.
-    # Without a live inference endpoint, real engines can't probe the model.
-    if is_local_gguf and _local_model_server is None:
-        engine_name = "mock"
-        _emit_activity(
-            "Using MockEngine (model server not available). "
-            "Scan will produce simulated but realistic security findings.",
-            "warn",
-        )
+    from urllib.parse import urlsplit
+    endpoint = urlsplit(params["target"])
+    if endpoint.scheme not in ("http", "https") or not endpoint.hostname:
+        raise ValueError("The scan target must be an HTTP endpoint or a local GGUF file in Local mode.")
+    if not endpoint.path or endpoint.path == "/":
+        params["target"] = endpoint._replace(path="/v1/chat/completions").geturl()
+    elif endpoint.path.rstrip("/") == "/v1":
+        params["target"] = endpoint._replace(path="/v1/chat/completions").geturl()
 
     manifest = create_manifest(**params)
+    manifest.model_name = config.get("model_name", "")
+    category_counts = {}
+    def on_probe_progress(category, done, total, message, category_total=None):
+        ui_category = "data_leak" if category == "data_leakage" else category
+        category_counts.setdefault(ui_category, 0)
+        if message.startswith("Finished "):
+            category_counts[ui_category] += 1
+        from core.garak_engine import CATEGORY_PROBE_MAP, _DEPTH_SLICE
+        if category_total is None:
+            category_total = len(CATEGORY_PROBE_MAP[category][:_DEPTH_SLICE[manifest.scan_depth]])
+        ui_categories = [ui_category]
+        if category == "toxicity":
+            ui_categories = [c.value for c in manifest.categories if c.value in ("toxicity", "harmful_output")]
+        for display_category in ui_categories:
+            _emit({"type": "progress", "stage": "scanning", "category": display_category,
+                   "percent": 10 + int(80 * done / max(total, 1)),
+                   "category_done": category_counts[ui_category], "category_total": category_total,
+                   "probes_done": done, "probes_total": total,
+                   "elapsed_ms": int((time.time() - t_start) * 1000), "message": message})
+        _emit_activity(message)
+    manifest.on_progress = on_probe_progress
+    manifest.on_activity = _emit_activity
 
     cat_names = ", ".join(c.value for c in manifest.categories)
     _emit_activity(f"Manifest created — ID: {manifest.manifest_id[:8]}... · categories: {cat_names}", "info")
@@ -386,7 +421,7 @@ def run_scan_pipeline(config: dict) -> None:
         out_dir_path = pathlib.Path(os.path.join(manifest.output_dir, f"engine_{engine_name}"))
         scan_result_real = run_engine(manifest, engine_name=engine_name, output_dir=out_dir_path)
         findings = scan_result_real.findings
-        scan_engine_name = engine_name
+        scan_engine_name = scan_result_real.engine_name
         for f in findings:
             _emit_finding(
                 category   = f.category,
@@ -396,17 +431,20 @@ def run_scan_pipeline(config: dict) -> None:
                 probe_id   = f.probe_id,
             )
         if scan_result_real.error:
-            _emit_activity(f"Engine warning: {scan_result_real.error}", "warn")
+            raise RuntimeError(scan_result_real.error)
+        if scan_result_real.total_probes == 0:
+            raise RuntimeError("The engine completed without executing any probes.")
 
     elapsed_ms = int((time.time() - t_start) * 1000)
-    _emit_progress("scanning", 90, len(findings), len(findings), elapsed_ms,
+    completed_probes = len(findings) if engine_name == "mock" else scan_result_real.total_probes
+    _emit_progress("scanning", 90, completed_probes, completed_probes, elapsed_ms,
                    f"Scan complete — {len(findings)} finding(s) detected")
     _emit_activity(f"Engine finished: {len(findings)} total finding(s)", "info")
 
 
     # ── 4. Score findings ──────────────────────────────────────────────────
     _emit_stage("scoring", "Running severity classifier and risk scorer...")
-    _emit_progress("scoring", 92, len(findings), len(findings), elapsed_ms, "Scoring findings...")
+    _emit_progress("scoring", 92, completed_probes, completed_probes, elapsed_ms, "Scoring findings...")
 
     from core.engine_interface import ScanResult
     from core.scorer import score_scan_result
@@ -415,7 +453,7 @@ def run_scan_pipeline(config: dict) -> None:
         findings     = findings,
         engine_name  = scan_engine_name,
         manifest_id  = manifest.manifest_id,
-        total_probes = len(findings),
+        total_probes = len(findings) if engine_name == "mock" else scan_result_real.total_probes,
         duration_sec = time.time() - t_start,
         error        = None,
     )
@@ -447,7 +485,7 @@ def run_scan_pipeline(config: dict) -> None:
 
     # ── 5. Generate recommendations ────────────────────────────────────────
     _emit_stage("recommendations", "Generating remediation recommendations...")
-    _emit_progress("recommendations", 95, len(findings), len(findings), elapsed_ms,
+    _emit_progress("recommendations", 95, completed_probes, completed_probes, elapsed_ms,
                    "Generating recommendations...")
 
     from core.recommender import generate_recommendations
@@ -456,13 +494,13 @@ def run_scan_pipeline(config: dict) -> None:
 
     # ── 6. Assemble report and emit complete ───────────────────────────────
     _emit_stage("complete", "Assembling final report...")
-    _emit_progress("complete", 98, len(findings), len(findings), elapsed_ms, "Assembling report...")
+    _emit_progress("complete", 98, completed_probes, completed_probes, elapsed_ms, "Assembling report...")
 
     from core.report_generator import generate_full_report
     report = generate_full_report(manifest, scan_result, risk_report, rec_report)
 
     elapsed_ms = int((time.time() - t_start) * 1000)
-    _emit_progress("complete", 100, len(findings), len(findings), elapsed_ms, "Scan complete")
+    _emit_progress("complete", 100, completed_probes, completed_probes, elapsed_ms, "Scan complete")
     _emit_activity(
         f"Report ready — {len(findings)} finding(s) · risk score {risk_report.risk_score}/100 · {elapsed_ms}ms total",
         "info",
@@ -470,6 +508,10 @@ def run_scan_pipeline(config: dict) -> None:
 
     # ── Complete event: full report + normalization/OWASP data ────────────
     report_dict = report.to_dict()
+    if scanned_model_profile:
+        if artifact_digest(scanned_model_profile) != scanned_model_profile['content_sha256']:
+            raise RuntimeError('Model files changed during scanning. Scan the updated artifact again before deployment.')
+        report_dict['model_profile'] = scanned_model_profile
     if norm_dict:
         report_dict["normalization"] = norm_dict
 
@@ -511,8 +553,15 @@ def _run_deploy_command(config: dict) -> None:
     payload     = config.get("payload", {})
 
     try:
-        from core.deploy import DEPLOY_ENGINES, get_callback_server, OAuthCallbackServer
-        engine = DEPLOY_ENGINES.get(provider)
+        from core.deploy import DEPLOY_ENGINES
+        from core.deploy.managed_engine import MANAGED_ENGINES
+        from core.deploy.state_store import DeploymentStore
+        model_config = payload.get('config', payload.get('plan', {}).get('raw_config', {}))
+        journal = DeploymentStore().load(payload['deployment_id']) if payload.get('deployment_id') else None
+        managed = model_config.get('deployment_mode') == 'managed_model' or (journal or {}).get('kind') == 'managed_model'
+        if provider in ("azure", "gcp") and not managed:
+            raise RuntimeError("This provider is disabled until its official CLI adapter is implemented")
+        engine = (MANAGED_ENGINES if managed else DEPLOY_ENGINES).get(provider)
         if not engine:
             _emit({"type": "deploy_error", "message": f"Unknown provider: {provider}", "code": "UNKNOWN_PROVIDER"})
             return
@@ -522,28 +571,7 @@ def _run_deploy_command(config: dict) -> None:
 
     try:
         if command == "deploy:auth_url":
-            # Start OAuth callback server + return auth URL
-            port       = payload.get("redirect_port", 9876)
-            auth_url   = engine.get_auth_url(redirect_port=port)
-            _emit({"type": "deploy_auth_url", "url": auth_url, "port": port})
-
-            if auth_url:
-                # Start callback server and wait for the browser redirect
-                cb_server = OAuthCallbackServer(port=port)
-                cb_server.start()
-                _emit_activity(f"OAuth callback server listening on port {port}", "info")
-
-                result = cb_server.wait_for_callback(timeout=300.0)
-                if result and result.get("code"):
-                    cred_result = engine.exchange_auth_code(result["code"], result.get("state", ""))
-                    _emit({
-                        "type":    "deploy_auth_complete",
-                        "status":  cred_result.status.value,
-                        "account": cred_result.account,
-                        "message": cred_result.message,
-                    })
-                else:
-                    _emit({"type": "deploy_error", "message": "Auth timeout or cancelled", "code": "AUTH_TIMEOUT"})
+            raise RuntimeError("Use official CLI sign-in through CloudAuth; custom OAuth is disabled")
 
         elif command == "deploy:validate_credentials":
             result = engine.validate_credentials(credentials)
@@ -629,6 +657,49 @@ def _dict_to_plan(d: dict):
 #  Entry point
 # ─────────────────────────────────────────────
 
+def run_command(config: dict) -> None:
+    command = config.get("command", "")
+    if command in ('model:download', 'model:download_status', 'model:download_cancel'):
+        from core.model_download import DOWNLOADS
+        if command == 'model:download':
+            result = DOWNLOADS.start(config['url'])
+        elif command == 'model:download_cancel':
+            result = DOWNLOADS.cancel(config['download_id'])
+        else:
+            result = DOWNLOADS.status(config['download_id'])
+        _emit({'type': 'estimate_result', 'result': result})
+    elif command == 'model:inspect':
+        from core.model_profile import inspect_model, capacity_check
+        profile = inspect_model(config['source'])
+        _emit({'type': 'estimate_result', 'result': {'model': profile, 'capacity': capacity_check(profile)}})
+    elif command == 'cloud:recommend':
+        from core.deploy.model_recommender import recommendations
+        _emit({'type': 'estimate_result', 'result': recommendations(config['source'], config.get('edits'), config.get('scanned_fingerprint'))})
+    elif command == "scan:estimate":
+        from core.scan_plan import get_scan_plan
+        _emit({"type": "estimate_result", "result": get_scan_plan(config)})
+    elif command.startswith("deploy:"):
+        _run_deploy_command(config)
+    elif command == "report:export":
+        from dataclasses import asdict
+        from export_handler import export_report
+        if not config.get("output_path") or not config.get("report"):
+            raise ValueError("Report data and output path are required")
+        result = export_report(config["report"], config.get("format", "json"), config["output_path"])
+        _emit({"type": "export_result", "result": asdict(result)})
+    else:
+        raise ValueError(f"Unknown backend command: {command}")
+
+
+def command_loop() -> None:
+    for line in sys.stdin.buffer:
+        try:
+            run_command(json.loads(line.decode("utf-8-sig")))
+        except Exception as exc:
+            _emit_error(str(exc), "COMMAND_FAILED")
+        _emit({"type": "command_done"})
+
+
 def main() -> None:
     """
     IPC entry point. Reads one JSON config from stdin, runs the scan
@@ -679,9 +750,21 @@ def main() -> None:
         print(tb, file=sys.stderr, flush=True)
         _emit_error(f"Unexpected error: {exc}", "ENGINE_FAILED")
         sys.exit(1)
+    finally:
+        from core.local_model_server import stop_local_model
+        stop_local_model()
 
 
 if __name__ == "__main__":
+    if "--commands" in sys.argv:
+        command_loop()
+        sys.exit(0)
+    # A frozen executable is also the subprocess launcher used by GarakEngine.
+    if sys.argv[1:3] == ["-m", "garak"]:
+        import runpy
+        sys.argv = ["garak"] + sys.argv[3:]
+        runpy.run_module("garak", run_name="__main__")
+        sys.exit(0)
     # W6.3 — Health check mode: python -m ipc_server --check
     # Returns engine availability JSON to stdout and exits 0.
     # Used by Electron's system:health-check IPC handler.

@@ -2,19 +2,15 @@
 Sentryɸ — GCP Deploy Engine
 core/deploy/gcp_engine.py
 
-Provisions a secure LLM endpoint on Google Cloud Platform.
+Legacy GCP provisioning code, disabled at the IPC boundary pending an
+official Google Cloud CLI adapter. It is not a verified deployment implementation.
 
 Supported deployment modes:
   vertex_ai       → Vertex AI managed model endpoint
   cloud_run       → Cloud Run container service
   cloud_functions → Cloud Functions (serverless, small models)
 
-Auth flow:
-  Google OAuth 2.0 web application flow:
-  1. get_auth_url() → Google consent screen URL
-  2. User authorizes → redirect to localhost callback with ?code=
-  3. exchange_auth_code() → returns access + refresh tokens
-  4. Access token passed in credentials dict for all subsequent calls
+Custom OAuth entry points are disabled. CloudAuth currently exposes a GCP stub.
 
 Dependencies (optional — gracefully imported):
   google-auth>=2.29
@@ -24,8 +20,6 @@ Dependencies (optional — gracefully imported):
 from __future__ import annotations
 
 import json
-import os
-import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -54,11 +48,6 @@ except ImportError:
 
 SENTRY_LABEL      = {"sentryphi": "true"}
 DEFAULT_REGION    = "us-central1"
-GCP_CLIENT_ID     = os.environ.get("GCP_OAUTH_CLIENT_ID", "")
-GCP_CLIENT_SECRET = os.environ.get("GCP_OAUTH_CLIENT_SECRET", "")
-GCP_AUTH_URL      = "https://accounts.google.com/o/oauth2/v2/auth"
-GCP_TOKEN_URL     = "https://oauth2.googleapis.com/token"
-GCP_SCOPES        = "https://www.googleapis.com/auth/cloud-platform"
 
 
 def _gcp_headers(access_token: str) -> dict[str, str]:
@@ -92,52 +81,11 @@ class GcpDeployEngine(BaseDeployEngine):
 
     # ── Auth ─────────────────────────────────────────────────────────────────
 
-    def get_auth_url(self, redirect_port: int = 9878) -> str:
-        import secrets
-        state        = secrets.token_urlsafe(16)
-        redirect_uri = f"http://localhost:{redirect_port}/callback"
-        client_id    = GCP_CLIENT_ID or "32555940559.apps.googleusercontent.com"  # gcloud public client
+    def get_auth_url(self, redirect_port=0):
+        raise RuntimeError("Use the official CLI adapter; custom OAuth is disabled")
 
-        params = {
-            "client_id":     client_id,
-            "redirect_uri":  redirect_uri,
-            "response_type": "code",
-            "scope":         GCP_SCOPES,
-            "access_type":   "offline",
-            "state":         state,
-            "prompt":        "consent",
-        }
-        return f"{GCP_AUTH_URL}?{urllib.parse.urlencode(params)}"
-
-    def exchange_auth_code(self, code: str, state: str) -> CredentialResult:
-        redirect_port = 9878
-        redirect_uri  = f"http://localhost:{redirect_port}/callback"
-        client_id     = GCP_CLIENT_ID or "32555940559.apps.googleusercontent.com"
-        client_secret = GCP_CLIENT_SECRET
-
-        body = urllib.parse.urlencode({
-            "code":          code,
-            "client_id":     client_id,
-            "client_secret": client_secret,
-            "redirect_uri":  redirect_uri,
-            "grant_type":    "authorization_code",
-        }).encode()
-
-        try:
-            req = urllib.request.Request(
-                GCP_TOKEN_URL, data=body,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-            )
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                data = json.loads(resp.read())
-
-            return CredentialResult(
-                status  = CredentialStatus.VALID,
-                account = data.get("id_token", "")[:20] + "...",
-                message = f"GCP access token obtained (expires in {data.get('expires_in', 3600)}s)",
-            )
-        except Exception as exc:  # noqa: BLE001
-            return CredentialResult(status=CredentialStatus.INVALID, message=str(exc))
+    def exchange_auth_code(self, code, state):
+        raise RuntimeError("OAuth codes are handled exclusively by the official CLI")
 
     def validate_credentials(self, credentials: dict[str, str]) -> CredentialResult:
         access_token = credentials.get("gcp_access_token", "")
@@ -359,7 +307,7 @@ class GcpDeployEngine(BaseDeployEngine):
         )
         body = {
             "name":   f"projects/{project_id}/locations/{region}/services/{svc_name}",
-            "labels": {"sentryphi": "true"},
+            "labels": {"sentryphi": "true", "deployment-id": plan.deployment_id},
             "template": {
                 "containers": [{
                     "image": plan.raw_config.get("container_image", "python:3.11-slim"),
@@ -409,7 +357,7 @@ class GcpDeployEngine(BaseDeployEngine):
                 "availableMemory": "512M",
                 "ingressSettings": "ALLOW_ALL" if plan.raw_config.get("endpoint_scope") == "public" else "ALLOW_INTERNAL_ONLY",
             },
-            "labels": {"sentryphi": "true"},
+            "labels": {"sentryphi": "true", "deployment-id": plan.deployment_id},
         }
         try:
             data = _gcp_request(url, access_token, body)
@@ -454,7 +402,7 @@ class GcpDeployEngine(BaseDeployEngine):
 
             for asset in assets:
                 labels = asset.get("resource", {}).get("data", {}).get("labels", {})
-                if labels.get("sentryphi") == "true":
+                if labels.get("sentryphi") == "true" and labels.get("deployment-id") == deployment_id:
                     name = asset.get("name", "")
                     try:
                         _gcp_request(

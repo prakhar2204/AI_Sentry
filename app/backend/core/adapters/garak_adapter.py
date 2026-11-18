@@ -77,8 +77,8 @@ class GarakAdapter(BaseEngine):
     def __init__(
         self,
         output_dir: Path | None = None,
-        timeout: int = 120,
-        request_timeout: int = 60,
+        timeout: int = 600,
+        request_timeout: int = 180,
         prompt_cap: int = 50,
     ) -> None:
         self._output_dir = output_dir or Path("./aisentry-garak-reports")
@@ -94,9 +94,8 @@ class GarakAdapter(BaseEngine):
     def is_available() -> bool:
         """Return True if garak is installed in the current environment."""
         try:
-            import importlib
-            importlib.import_module("garak")
-            return True
+            import importlib.util
+            return importlib.util.find_spec("garak") is not None
         except ImportError:
             return False
 
@@ -123,7 +122,8 @@ class GarakAdapter(BaseEngine):
             from core.garak_engine import GarakEngine, ALL_CATEGORIES
 
             # Map manifest categories → garak category subset
-            requested = [c for c in manifest.categories if c in ALL_CATEGORIES]
+            aliases = {"data_leak": "data_leakage", "harmful_output": "toxicity"}
+            requested = list(dict.fromkeys(aliases.get(c.value, c.value) for c in manifest.categories))
             if not requested:
                 # If none match, run all known categories
                 requested = list(ALL_CATEGORIES)
@@ -134,10 +134,12 @@ class GarakAdapter(BaseEngine):
                 target_url=manifest.target,
                 output_dir=self._output_dir,
                 api_key=manifest.api_key if hasattr(manifest, "api_key") else "",
-                timeout=self._timeout,
+                model_name=getattr(manifest, "model_name", ""),
+                timeout=max(self._timeout, 1800 if depth == "deep" else 600),
                 depth=depth,
                 request_timeout=self._request_timeout,
-                prompt_cap=self._prompt_cap,
+                prompt_cap=min(self._prompt_cap, {"quick": 2, "standard": 8, "deep": 20}[depth]),
+                on_progress=getattr(manifest, "on_progress", None),
             )
 
             t0 = time.monotonic()
@@ -147,7 +149,8 @@ class GarakAdapter(BaseEngine):
             # Convert VulnerabilityFinding → ScanFinding
             scan_findings = [
                 ScanFinding(
-                    category=vf.category,
+                    category=("data_leak" if vf.category == "data_leakage" else
+                              "harmful_output" if vf.category == "toxicity" and "toxicity" not in manifest.categories else vf.category),
                     severity=_convert_severity(vf.severity),
                     confidence=vf.confidence,
                     evidence=_build_evidence(vf),
@@ -155,11 +158,10 @@ class GarakAdapter(BaseEngine):
                     probe_id=vf.probe,
                 )
                 for vf in garak_result.findings
+                if vf.failed > 0
             ]
 
-            total_probes = sum(
-                len(pr.findings) for pr in garak_result.probe_results
-            ) or len(garak_result.probe_results)
+            total_probes = len(garak_result.probe_results)
 
             error = garak_result.errors[0] if garak_result.errors else None
 

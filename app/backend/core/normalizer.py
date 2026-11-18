@@ -305,7 +305,7 @@ class Deduplicator:
         )
 
         # Confidence boost: +0.10 per additional engine (cap 1.0)
-        extra_engines = len(group) - 1
+        extra_engines = len({e for r in group for e in r.engine_sources}) - 1
         boosted_conf = min(primary.confidence + 0.10 * extra_engines, 1.0)
 
         # Merge engine sources and probe_ids
@@ -331,8 +331,8 @@ class Deduplicator:
         merged.engine_sources = all_engines
         merged.probe_ids     = all_probes
         merged.all_evidence  = all_evidence
-        merged.corroborated  = True
-        merged.source_count  = len(group)
+        merged.corroborated  = len(all_engines) > 1
+        merged.source_count  = len(all_engines)
 
         return merged
 

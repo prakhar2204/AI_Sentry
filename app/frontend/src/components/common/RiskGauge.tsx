@@ -22,6 +22,7 @@ interface RiskGaugeProps {
   animated?: boolean;    // Enable animation (default true)
   label?: string;        // Below-score label (default "Risk Score")
   className?: string;
+  riskLevel?: string;   // Use the report's classification when supplied.
 }
 
 function getRiskLevel(score: number): RiskLevel {
@@ -56,9 +57,12 @@ export function RiskGauge({
   animated = true,
   label = "Risk Score",
   className = "",
+  riskLevel,
 }: RiskGaugeProps) {
   const clampedScore = Math.max(0, Math.min(100, score));
-  const level = getRiskLevel(clampedScore);
+  const reportedLevel = riskLevel?.toLowerCase();
+  const level = reportedLevel && ['low', 'medium', 'high', 'critical'].includes(reportedLevel)
+    ? reportedLevel as RiskLevel : getRiskLevel(clampedScore);
   const color = getRiskColor(level);
 
   // SVG arc math

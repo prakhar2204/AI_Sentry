@@ -335,9 +335,9 @@ class TestValidateCategories:
         assert "xyz" in issue.message
 
     def test_single_unknown_category_returns_issue(self):
-        issue = validate_categories(["toxicity"])
+        issue = validate_categories(["unknown_category"])
         assert issue is not None
-        assert "toxicity" in issue.message
+        assert "unknown_category" in issue.message
 
     def test_integer_item_returns_issue(self):
         issue = validate_categories([42])

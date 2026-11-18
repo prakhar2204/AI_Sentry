@@ -57,10 +57,10 @@ def _select_engine(
       "garak" → GarakAdapter (fails gracefully if garak not installed)
       "pyrit" → PyRITAdapter (fails gracefully if pyrit not installed)
       "mock"  → MockEngine (always available)
-      "auto"  → GarakAdapter if garak installed, else MockEngine
+      "auto"  → GarakAdapter if installed, otherwise PyRITAdapter
 
-    Never raises — unavailable real engines return an error ScanResult
-    via their run_scan() method.
+    Auto raises when neither real engine is available. Explicit real adapters
+    report missing dependencies through their run_scan() result.
     """
     engine_name = (engine_name or "mock").lower().strip()
 
@@ -68,20 +68,25 @@ def _select_engine(
         try:
             from core.adapters.garak_adapter import GarakAdapter
             if engine_name == "auto" and not GarakAdapter.is_available():
-                return MockEngine()
+                from core.adapters.pyrit_adapter import PyRITAdapter
+                if PyRITAdapter.is_available():
+                    return PyRITAdapter(output_dir=output_dir)
+                raise RuntimeError("No real scan engine installed. Install garak or pyrit in the backend environment.")
             return GarakAdapter(output_dir=output_dir)
         except ImportError:
-            return MockEngine()
+            raise RuntimeError("Garak unavailable in the backend environment.")
 
     if engine_name == "pyrit":
         try:
             from core.adapters.pyrit_adapter import PyRITAdapter
             return PyRITAdapter(output_dir=output_dir)
         except ImportError:
-            return MockEngine()
+            raise RuntimeError("PyRIT unavailable in the backend environment.")
 
     # Default: mock (covers "mock", unknown values)
-    return MockEngine()
+    if engine_name == "mock":
+        return MockEngine()
+    raise ValueError(f"Unknown scan engine: {engine_name}")
 
 
 # ─────────────────────────────────────────────

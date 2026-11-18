@@ -247,6 +247,7 @@ class PyRITEngine:
         depth:               str   = "standard",
         model_name:          str   = "",
         progress_callback:   Callable[[str], None] | None = None,
+        on_progress=None,
     ) -> None:
         self.target_url        = target_url.rstrip("/")
         self.output_dir        = Path(output_dir)
@@ -255,6 +256,7 @@ class PyRITEngine:
         self.depth             = depth if depth in _DEPTH_SLICE else "standard"
         self.model_name        = model_name
         self.progress_callback = progress_callback or _default_progress
+        self.on_progress = on_progress
 
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -357,10 +359,14 @@ class PyRITEngine:
         for category in categories:
             specs = PYRIT_CATEGORY_MAP[category][:slice_n]
             for spec in specs:
+                if self.on_progress:
+                    self.on_progress(category, len(result.attack_results), len(self.attack_specs_for_depth(categories)), f"Running {spec['name']}", len(specs))
                 attack_result = await self._run_attack(
                     spec, category, target, normalizer, run_id
                 )
                 result.attack_results.append(attack_result)
+                if self.on_progress:
+                    self.on_progress(category, len(result.attack_results), len(self.attack_specs_for_depth(categories)), f"Finished {spec['name']}", len(specs))
                 result.findings.extend(attack_result.findings)
                 if not attack_result.success:
                     result.all_ok = False

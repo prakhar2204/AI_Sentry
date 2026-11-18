@@ -43,6 +43,7 @@ import {
 // ─────────────────────────────────────────────
 
 interface DeployExecutePageProps {
+  onLiveDeploy?: () => void;
   onBack:         () => void; // → Screen 10
   onBackToConfig: () => void; // → Screen 9 (when config invalid)
 }
@@ -291,7 +292,7 @@ function ConfigSummaryStrip({ plan }: { plan: DryRunPlan }) {
 
 type PageState = "review" | "generating" | "done";
 
-export function DeployExecutePage({ onBack, onBackToConfig }: DeployExecutePageProps) {
+export function DeployExecutePage({ onBack, onBackToConfig, onLiveDeploy }: DeployExecutePageProps) {
   const { state: deployState }  = useDeployContext();
   const { state: reportState }  = useReportContext();
 
@@ -622,8 +623,8 @@ export function DeployExecutePage({ onBack, onBackToConfig }: DeployExecutePageP
               this application remains <strong>Not deployed</strong>.
             </p>
             <p className="execute-disclaimer__body">
-              To initiate a real deployment, a production-grade deployment adapter is required.
-              This feature is not available in Sentryɸ v1.
+              Continue to account sign-in to configure and validate a real deployment.
+              You will review the account, region and resource plan before provisioning.
             </p>
           </section>
 
@@ -643,6 +644,9 @@ export function DeployExecutePage({ onBack, onBackToConfig }: DeployExecutePageP
 
       {/* ── Actions ── */}
       <div className="execute-page__actions" id="execute-page-actions">
+        {onLiveDeploy && <button type="button" className="button button--primary"
+          id="execute-live-deploy" disabled={!allDone || isPlanStale}
+          onClick={onLiveDeploy}>Continue to Account Sign-In</button>}
         <button
           type="button"
           className="button button--secondary"

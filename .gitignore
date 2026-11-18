@@ -57,9 +57,9 @@ scan_artifacts/
 .env.*.local
 
 # Temporary files
+.tools/
 *.tmp
 test_output.txt
 pytest_result.txt
 run_smoke_tests.py
-app/backend/tests
 app/backend/.deepeval

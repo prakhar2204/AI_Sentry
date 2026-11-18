@@ -297,6 +297,9 @@ class PrivateDeployEngine(BaseDeployEngine):
 
     PROVIDER_ID = "private"
 
+    def __init__(self):
+        self._artifact_dirs: dict[str, str] = {}
+
     def get_auth_url(self, redirect_port: int = 0) -> str:
         return ""   # No browser auth for private deployments
 
@@ -321,6 +324,8 @@ class PrivateDeployEngine(BaseDeployEngine):
         scan_report: dict[str, Any],
     ) -> DeployPlan:
         stack = config.get("stack", "docker_compose")
+        if stack not in ("docker_compose", "kubernetes", "bare_metal"):
+            raise ValueError(f"Unknown private deployment stack: {stack}")
 
         resources: list[DeployResource] = []
         if stack == "docker_compose":
@@ -400,7 +405,12 @@ class PrivateDeployEngine(BaseDeployEngine):
 
         import datetime
         stack      = plan.raw_config.get("stack", "docker_compose")
-        output_dir = credentials.get("output_dir", os.path.join(os.getcwd(), "sentryphi-deploy"))
+        output_root = os.path.abspath(credentials.get("output_dir") or os.path.join(os.getcwd(), "sentryphi-deploy"))
+        import re
+        if not re.fullmatch(r"sp-[a-zA-Z0-9_-]+", plan.deployment_id):
+            raise ValueError("Invalid deployment ID")
+        output_dir = os.path.join(output_root, plan.deployment_id)
+        self._artifact_dirs[plan.deployment_id] = output_dir
         os.makedirs(output_dir, exist_ok=True)
 
         model_image  = plan.raw_config.get("model_image", "python:3.11-slim")
@@ -533,7 +543,7 @@ class PrivateDeployEngine(BaseDeployEngine):
             errors.append(f"{fname}: {exc}")
 
     def get_deployment_status(self, deployment_id: str, credentials: dict[str, str]) -> DeployResult:
-        output_dir = credentials.get("output_dir", "")
+        output_dir = self._artifact_dirs.get(deployment_id, "")
         exists     = os.path.isdir(output_dir) if output_dir else False
         return DeployResult(
             status        = DeployStatus.COMPLETE if exists else DeployStatus.UNKNOWN,
@@ -544,11 +554,12 @@ class PrivateDeployEngine(BaseDeployEngine):
     def rollback(self, deployment_id: str, credentials: dict[str, str]) -> RollbackResult:
         """Remove generated artifact directory."""
         import shutil
-        output_dir = credentials.get("output_dir", "")
+        output_dir = self._artifact_dirs.get(deployment_id, "")
         if not output_dir or not os.path.isdir(output_dir):
             return RollbackResult(success=True, message="Nothing to remove")
         try:
             shutil.rmtree(output_dir)
+            self._artifact_dirs.pop(deployment_id, None)
             return RollbackResult(success=True, deleted=[output_dir], message=f"Removed {output_dir}")
         except Exception as exc:  # noqa: BLE001
             return RollbackResult(success=False, errors=[str(exc)])
