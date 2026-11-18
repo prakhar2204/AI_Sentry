@@ -45,6 +45,7 @@
   "build": {
     "appId": "com.sentryphi.app",
     "productName": "Sentryφ",
+    "artifactName": "Sentryphi-Setup-${version}.${ext}",
     "directories": {
       "output": "release"
     },

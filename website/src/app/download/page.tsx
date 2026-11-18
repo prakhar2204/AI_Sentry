@@ -5,8 +5,8 @@ import s from './download.module.css';
 
 const VERSION = '1.0.0';
 const GITHUB_REPO = 'https://github.com/prakhar2204/AI_Sentry';
-const WIN_DOWNLOAD = `${GITHUB_REPO}/releases/download/v${VERSION}/Sentryphi-Setup-${VERSION}.exe`;
-const LINUX_DOWNLOAD = `${GITHUB_REPO}/releases/download/v${VERSION}/Sentryphi-${VERSION}.AppImage`;
+const WIN_DOWNLOAD = `${GITHUB_REPO}/releases/download/v${VERSION}/Sentry.Setup.${VERSION}.exe`;
+const LINUX_DOWNLOAD = `${GITHUB_REPO}/releases/download/v${VERSION}/Sentry.Setup.${VERSION}.AppImage`;
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);

@@ -63,3 +63,9 @@ test_output.txt
 pytest_result.txt
 run_smoke_tests.py
 app/backend/.deepeval
+
+# PyInstaller build output
+app/frontend/dist_python/
+app/frontend/resources/backend/ipc_server.exe
+app/frontend/resources/backend/ipc_server
+
