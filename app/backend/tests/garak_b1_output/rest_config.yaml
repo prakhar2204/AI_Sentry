@@ -1,0 +1,13 @@
+generators:
+  rest:
+    RestGenerator:
+      headers:
+        Content-Type: application/json
+      method: post
+      req_template_json_object:
+        messages:
+        - content: $INPUT
+          role: user
+      response_json: true
+      response_json_field: choices[0].message.content
+      uri: http://127.0.0.1:18765

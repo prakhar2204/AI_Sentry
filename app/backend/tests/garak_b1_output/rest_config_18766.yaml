@@ -1,0 +1,11 @@
+plugins:
+  generators:
+    rest:
+      RestGenerator:
+        uri: http://127.0.0.1:18766
+        method: post
+        response_json: true
+        response_json_field: "$.choices[0].message.content"
+        req_template: "$INPUT"
+        headers:
+          Content-Type: application/json

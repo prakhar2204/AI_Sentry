@@ -1,0 +1,15 @@
+plugins:
+  generators:
+    rest:
+      RestGenerator:
+        uri: http://127.0.0.1:8080/v1/chat/completions
+        method: post
+        response_json: true
+        response_json_field: "$.choices[0].message.content"
+        req_template_json_object:
+          model: smollm2-135m
+          messages:
+            - role: user
+              content: "$INPUT"
+        headers:
+          Content-Type: application/json
