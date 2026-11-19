@@ -27,7 +27,6 @@ import {
   useScanContext,
   type ScanDepth,
   type ScanStrategy,
-  type ScanEngine,
 } from "../store/ScanContext";
 import { SCAN_ACTIONS } from "../store/actions";
 import { PageHeader } from "../components/layout/PageHeader";
@@ -57,13 +56,9 @@ const DEPTH_OPTIONS = [
   { value: "deep",     label: "Deep (2-6 hrs)" },
 ];
 
-/** Engine picker options with descriptions */
-const ENGINE_OPTIONS: { value: ScanEngine; label: string; desc: string }[] = [
-  { value: "auto",  label: "Auto (Recommended)",  desc: "Use Garak when available, otherwise PyRIT" },
-  { value: "garak", label: "Garak Only",           desc: "NVIDIA adversarial probe framework" },
-  { value: "pyrit", label: "PyRIT Only",           desc: "Microsoft red-team attack library" },
-  { value: "mock",  label: "Mock (Testing)",       desc: "Deterministic test data — no real probes" },
-];
+// Engine is always "auto" — backend routes to the appropriate scan framework.
+// The engine names (Garak, PyRIT, mock) are internal implementation details
+// and are intentionally not exposed in the UI.
 
 // ─────────────────────────────────────────────
 //  Props
@@ -94,7 +89,7 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
     state.categories.length > 0 ? state.categories : []
   );
   const [depth, setDepth] = useState<ScanDepth>(state.scan_depth);
-  const [engine, setEngine] = useState<ScanEngine>(state.engine);
+
   const [categoryError, setCategoryError] = useState<string | null>(null);
 
   // ── Strategy options ──
@@ -182,11 +177,11 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
     dispatch({ type: SCAN_ACTIONS.SET_SCAN_STRATEGY, payload: strategy });
     dispatch({ type: SCAN_ACTIONS.SET_CATEGORIES,    payload: finalCategories });
     dispatch({ type: SCAN_ACTIONS.SET_SCAN_DEPTH,    payload: strategy === "full" ? 'deep' : strategy === "manifest" ? state.manifest_config!.scan_depth : depth });
-    dispatch({ type: SCAN_ACTIONS.SET_ENGINE,         payload: engine });
+    dispatch({ type: SCAN_ACTIONS.SET_ENGINE,         payload: "auto" });
     dispatch({ type: SCAN_ACTIONS.START_CONFIRMING });
 
     onContinue();
-  }, [validate, strategy, categories, depth, engine, dispatch, onContinue, state.manifest_config]);
+  }, [validate, strategy, categories, depth, dispatch, onContinue, state.manifest_config]);
 
   // ── Mode display label ──
   const modeLabel = state.mode === "api" ? "API Endpoint" : "Local Model";
@@ -267,38 +262,7 @@ export function ConfigPage({ onContinue, onBack }: ConfigPageProps) {
           />
         </section>
 
-        {/* ── Engine Selection (W1.1) ── */}
-        <section className="config-page__section">
-          <fieldset className="config-page__fieldset">
-            <legend className="config-page__legend">Scan Engine</legend>
-            <p className="config-page__hint">
-              Choose which security framework runs the probes. "Auto" selects an installed scan engine.
-            </p>
-            <div className="engine-picker">
-              {ENGINE_OPTIONS.map((opt) => (
-                <label
-                  key={opt.value}
-                  className={`engine-picker__card ${
-                    engine === opt.value ? "engine-picker__card--active" : ""
-                  }`}
-                  htmlFor={`engine-${opt.value}`}
-                >
-                  <input
-                    type="radio"
-                    id={`engine-${opt.value}`}
-                    name="scan-engine"
-                    value={opt.value}
-                    checked={engine === opt.value}
-                    onChange={() => setEngine(opt.value)}
-                    className="engine-picker__radio"
-                  />
-                  <span className="engine-picker__label">{opt.label}</span>
-                  <span className="engine-picker__desc">{opt.desc}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-        </section>
+        {/* Engine is fixed to "auto" — backend selects the best available framework */}
 
         {/* ── Primary Action ── */}
         <div className="config-page__actions">
