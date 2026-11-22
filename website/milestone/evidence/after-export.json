@@ -1,0 +1,301 @@
+{
+  "captured": "2026-11-21T20:18:29.185786+00:00",
+  "source": "after-export",
+  "pages": [
+    {
+      "path": "/",
+      "title": "SentryPhi | AI Red Teaming Tool for LLM Security",
+      "description": "Evaluate language model behavior before deployment with SentryPhi, an AI red teaming tool for local scans, evidence-backed findings and risk reports.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/",
+      "og": "https://sentryphi.me/",
+      "schema": [
+        "Organization",
+        "SoftwareApplication",
+        "FAQPage"
+      ],
+      "words": 1152,
+      "body_links": [
+        [
+          "guide to the 2025 OWASP GenAI Top 10",
+          "/blog/owasp-llm-top-10-guide/",
+          null
+        ]
+      ],
+      "broken_internal": [],
+      "internal_destinations": [
+        "#how-it-works",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/blog/owasp-llm-top-10-guide/",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/about/",
+      "title": "Meet the SentryPhi Security Team",
+      "description": "Meet Prakhar Gupta and Harshit Gupta at Bennett University and learn why they built SentryPhi for pre-deployment language model security reviews.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/about/",
+      "og": "https://sentryphi.me/about/",
+      "schema": [
+        "Organization",
+        "BreadcrumbList"
+      ],
+      "words": 222,
+      "body_links": [
+        [
+          "guide to OWASP risks",
+          "/blog/owasp-llm-top-10-guide/",
+          null
+        ]
+      ],
+      "broken_internal": [],
+      "internal_destinations": [
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/blog/owasp-llm-top-10-guide/",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/docs/",
+      "title": "SentryPhi Documentation and Getting Started Guide",
+      "description": "Find installation instructions, scan configuration guidance and resources for interpreting LLM security reports.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/docs/",
+      "og": "https://sentryphi.me/docs/",
+      "schema": [
+        "Organization",
+        "BreadcrumbList"
+      ],
+      "words": 210,
+      "body_links": [],
+      "broken_internal": [],
+      "internal_destinations": [
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/blog/owasp-llm-top-10-guide/",
+        "/blog/scan-llm-security-vulnerabilities/#scan-results",
+        "/blog/scan-llm-security-vulnerabilities/#scan-workflow",
+        "/docs",
+        "/download",
+        "/download/",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/download/",
+      "title": "Download SentryPhi for Windows and Linux",
+      "description": "Get the Windows installer, check Linux availability, and review system requirements before your first model security scan.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/download/",
+      "og": "https://sentryphi.me/download/",
+      "schema": [
+        "Organization",
+        "BreadcrumbList"
+      ],
+      "words": 205,
+      "body_links": [],
+      "broken_internal": [],
+      "internal_destinations": [
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/blog/",
+      "title": "LLM Security Research and Tutorials | SentryPhi",
+      "description": "Read practical guides to reviewing language models, understanding OWASP risks and interpreting evidence before deployment.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/blog/",
+      "og": "https://sentryphi.me/blog/",
+      "schema": [
+        "Organization",
+        "BreadcrumbList"
+      ],
+      "words": 284,
+      "body_links": [],
+      "broken_internal": [],
+      "internal_destinations": [
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/blog/owasp-llm-top-10-guide/",
+        "/blog/scan-llm-security-vulnerabilities/",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/blog/owasp-llm-top-10-guide/",
+      "title": "AI Red Teaming Risks Based on OWASP GenAI Top 10",
+      "description": "Use the OWASP GenAI risk categories to plan an LLM security review, choose the evidence to collect and explain the limits of a model scan.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/blog/owasp-llm-top-10-guide/",
+      "og": "https://sentryphi.me/blog/owasp-llm-top-10-guide/",
+      "schema": [
+        "Organization",
+        "BreadcrumbList",
+        "Article"
+      ],
+      "words": 777,
+      "body_links": [
+        [
+          "OWASP GenAI Top 10",
+          "https://genai.owasp.org/llm-top-10/",
+          null
+        ],
+        [
+          "Seona Labs",
+          "https://seonalabs.com",
+          null
+        ],
+        [
+          "LLM scanning guide",
+          "/blog/scan-llm-security-vulnerabilities/",
+          null
+        ],
+        [
+          "project documentation",
+          "/docs/",
+          null
+        ]
+      ],
+      "broken_internal": [],
+      "internal_destinations": [
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/blog/",
+        "/blog/scan-llm-security-vulnerabilities/",
+        "/docs",
+        "/docs/",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/blog/scan-llm-security-vulnerabilities/",
+      "title": "How to Scan an LLM for Security Vulnerabilities",
+      "description": "Follow the SentryPhi scanning workflow from selecting a model and scope to reading findings and planning remediation.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/blog/scan-llm-security-vulnerabilities/",
+      "og": "https://sentryphi.me/blog/scan-llm-security-vulnerabilities/",
+      "schema": [
+        "Organization",
+        "BreadcrumbList",
+        "Article"
+      ],
+      "words": 719,
+      "body_links": [],
+      "broken_internal": [],
+      "internal_destinations": [
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/blog/",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/privacy/",
+      "title": "SentryPhi Privacy Policy",
+      "description": "Read about desktop scan data, website analytics, cookies and third-party model providers.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/privacy/",
+      "og": "https://sentryphi.me/privacy/",
+      "schema": [
+        "Organization",
+        "BreadcrumbList"
+      ],
+      "words": 249,
+      "body_links": [
+        [
+          "project issue tracker",
+          "https://github.com/prakhar2204/AI_Sentry/issues",
+          null
+        ]
+      ],
+      "broken_internal": [],
+      "internal_destinations": [
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/terms/",
+      "title": "SentryPhi Terms of Service",
+      "description": "Review the terms for using SentryPhi, including authorized security testing, licensing and use of external services.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.me/terms/",
+      "og": "https://sentryphi.me/terms/",
+      "schema": [
+        "Organization",
+        "BreadcrumbList"
+      ],
+      "words": 284,
+      "body_links": [
+        [
+          "project repository",
+          "https://github.com/prakhar2204/AI_Sentry/issues",
+          null
+        ]
+      ],
+      "broken_internal": [],
+      "internal_destinations": [
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "environment": "localhost static preview",
+  "url": "http://127.0.0.1:51676/",
+  "timestamp": "2026-11-21T20:17:36.902Z",
+  "version": "13.6.0",
+  "formFactor": "mobile",
+  "throttling": {
+    "rttMs": 150,
+    "throughputKbps": 1638.4,
+    "requestLatencyMs": 562.5,
+    "downloadThroughputKbps": 1474.5600000000002,
+    "uploadThroughputKbps": 675,
+    "cpuSlowdownMultiplier": 4
+  },
+  "score": 100,
+  "metrics": {
+    "largest-contentful-paint": 1353.8603,
+    "total-blocking-time": 24,
+    "cumulative-layout-shift": 7.41777163632473e-05,
+    "total-byte-weight": 643013
+  }
+}

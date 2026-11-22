@@ -1,0 +1,389 @@
+{
+  "captured": "2026-11-21T20:07:59.265702+00:00",
+  "source": "before-live",
+  "pages": [
+    {
+      "path": "/",
+      "title": "Sentryɸ — Pre-Deployment LLM Security Platform",
+      "description": "Sentryɸ is a free, open-source LLM security platform that scans AI models for vulnerabilities before deployment. Multi-layer security analysis, adaptive vulnerability detection, explainable risk scoring, and actionable remediation — in a single desktop application.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/",
+      "og": "https://sentryphi.dev/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList"
+      ],
+      "words": 1146,
+      "body_links": [],
+      "broken_internal": [
+        "#",
+        "#roadmap"
+      ],
+      "internal_destinations": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/about/",
+      "title": "About — The Team Behind Sentryɸ | Sentryɸ",
+      "description": "Learn about Sentryɸ, the open-source LLM security platform. Our mission: make pre-deployment AI security testing accessible to every development team, not just security specialists.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/about/",
+      "og": "https://sentryphi.dev/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList"
+      ],
+      "words": 209,
+      "body_links": [],
+      "broken_internal": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap"
+      ],
+      "internal_destinations": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/docs/",
+      "title": "Documentation — Getting Started & Reference | Sentryɸ",
+      "description": "Complete documentation for Sentryɸ. Learn how to install, configure, and run LLM security scans. Covers scan depth profiles, manifest configuration, report interpretation, and cloud deployment.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/docs/",
+      "og": "https://sentryphi.dev/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList"
+      ],
+      "words": 215,
+      "body_links": [],
+      "broken_internal": [
+        "#",
+        "#aws",
+        "#categories",
+        "#cli",
+        "#depth",
+        "#features",
+        "#first-scan",
+        "#how-it-works",
+        "#install",
+        "#layers",
+        "#manifest",
+        "#owasp",
+        "#reports",
+        "#results",
+        "#roadmap",
+        "#scoring"
+      ],
+      "internal_destinations": [
+        "#",
+        "#aws",
+        "#categories",
+        "#cli",
+        "#depth",
+        "#features",
+        "#first-scan",
+        "#how-it-works",
+        "#install",
+        "#layers",
+        "#manifest",
+        "#owasp",
+        "#reports",
+        "#results",
+        "#roadmap",
+        "#scoring",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/download/",
+      "title": "Sentryɸ — Pre-Deployment LLM Security Platform",
+      "description": "Sentryɸ is a free, open-source LLM security platform that scans AI models for vulnerabilities before deployment. Multi-layer security analysis, adaptive vulnerability detection, explainable risk scoring, and actionable remediation — in a single desktop application.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/",
+      "og": "https://sentryphi.dev/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList"
+      ],
+      "words": 267,
+      "body_links": [],
+      "broken_internal": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap"
+      ],
+      "internal_destinations": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/blog/",
+      "title": "Blog — LLM Security Research & Tutorials | Sentryɸ",
+      "description": "Articles on LLM security research, prompt injection defense, jailbreak prevention, AI red teaming methodologies, and pre-deployment security best practices from the Sentryφ team.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/blog/",
+      "og": "https://sentryphi.dev/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList"
+      ],
+      "words": 283,
+      "body_links": [],
+      "broken_internal": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap"
+      ],
+      "internal_destinations": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/blog/owasp-llm-top-10-guide",
+        "/blog/scan-llm-security-vulnerabilities",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/blog/owasp-llm-top-10-guide/",
+      "title": "OWASP LLM Top 10: What Every Developer Should Know | Sentryɸ",
+      "description": "A practical breakdown of all 10 OWASP LLM security categories — with real-world attack examples, detection methods, and remediation strategies for each category.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/blog/owasp-llm-top-10-guide/",
+      "og": "https://sentryphi.dev/blog/owasp-llm-top-10-guide/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList",
+        "Article"
+      ],
+      "words": 1061,
+      "body_links": [
+        [
+          "[email protected]",
+          "/cdn-cgi/l/email-protection",
+          null
+        ]
+      ],
+      "broken_internal": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/cdn-cgi/l/email-protection"
+      ],
+      "internal_destinations": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/cdn-cgi/l/email-protection",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/blog/scan-llm-security-vulnerabilities/",
+      "title": "How to Scan Your LLM for Security Vulnerabilities Before Deployment | Sentryɸ",
+      "description": "A practical step-by-step guide to scanning large language models for prompt injection, jailbreak, data leakage, and harmful output vulnerabilities using Sentryφ before you ship.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/blog/scan-llm-security-vulnerabilities/",
+      "og": "https://sentryphi.dev/blog/scan-llm-security-vulnerabilities/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList",
+        "Article"
+      ],
+      "words": 719,
+      "body_links": [],
+      "broken_internal": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap"
+      ],
+      "internal_destinations": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/privacy/",
+      "title": "Privacy Policy | Sentryɸ",
+      "description": "Sentryɸ privacy policy. We collect zero telemetry, require no accounts, and process all scan data locally on your machine.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/privacy/",
+      "og": "https://sentryphi.dev/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList"
+      ],
+      "words": 241,
+      "body_links": [
+        [
+          "[email protected]",
+          "/cdn-cgi/l/email-protection",
+          null
+        ]
+      ],
+      "broken_internal": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/cdn-cgi/l/email-protection"
+      ],
+      "internal_destinations": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/cdn-cgi/l/email-protection",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    },
+    {
+      "path": "/terms/",
+      "title": "Terms of Service | Sentryɸ",
+      "description": "Sentryɸ terms of service. Authorized use only. MIT licensed. No warranty.",
+      "h1": 1.0,
+      "canonical": "https://sentryphi.dev/terms/",
+      "og": "https://sentryphi.dev/",
+      "schema": [
+        "SoftwareApplication",
+        "Organization",
+        "FAQPage",
+        "BreadcrumbList"
+      ],
+      "words": 288,
+      "body_links": [
+        [
+          "[email protected]",
+          "/cdn-cgi/l/email-protection",
+          null
+        ]
+      ],
+      "broken_internal": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/cdn-cgi/l/email-protection"
+      ],
+      "internal_destinations": [
+        "#",
+        "#features",
+        "#how-it-works",
+        "#roadmap",
+        "/",
+        "/#features",
+        "/#how-it-works",
+        "/about",
+        "/blog",
+        "/cdn-cgi/l/email-protection",
+        "/docs",
+        "/download",
+        "/privacy",
+        "/terms"
+      ]
+    }
+  ]
+}

@@ -2,24 +2,23 @@ import { Logo, BrandTitle } from './Logo';
 import styles from './Footer.module.css';
 
 const PRODUCT_LINKS = [
-  { label: 'Features', href: '#features' },
-  { label: 'How It Works', href: '#how-it-works' },
-  { label: 'Download', href: '/download' },
-  { label: 'Changelog', href: '#' },
-  { label: 'Roadmap', href: '#roadmap' },
+  { label: 'Features', href: '/#features' },
+  { label: 'How It Works', href: '/#how-it-works' },
+  { label: 'Download', href: '/download/' },
+  { label: 'Changelog', href: 'https://github.com/prakhar2204/AI_Sentry/releases' },
 ];
 
 const DEV_LINKS = [
-  { label: 'Documentation', href: '/docs' },
-  { label: 'GitHub', href: '#' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'About', href: '/about' },
+  { label: 'Documentation', href: '/docs/' },
+  { label: 'GitHub', href: 'https://github.com/prakhar2204/AI_Sentry' },
+  { label: 'Blog', href: '/blog/' },
+  { label: 'About', href: '/about/' },
 ];
 
 const LEGAL_LINKS = [
-  { label: 'Privacy Policy', href: '/privacy' },
-  { label: 'Terms of Service', href: '/terms' },
-  { label: 'Contact', href: '#' },
+  { label: 'Privacy Policy', href: '/privacy/' },
+  { label: 'Terms of Service', href: '/terms/' },
+  { label: 'Contact', href: 'https://github.com/prakhar2204/AI_Sentry/issues' },
 ];
 
 export function Footer() {

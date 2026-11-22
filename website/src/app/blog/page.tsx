@@ -1,12 +1,11 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 import s from '@/styles/pages.module.css';
 
-export const metadata: Metadata = {
-  title: 'Blog — LLM Security Research & Tutorials',
-  description:
-    'Articles on LLM security research, prompt injection defense, jailbreak prevention, AI red teaming methodologies, and pre-deployment security best practices from the Sentryφ team.',
-  alternates: { canonical: 'https://sentryphi.dev/blog' },
-};
+export const metadata = pageMetadata(
+  '/blog/',
+  "LLM Security Research and Tutorials | SentryPhi",
+  "Read practical guides to reviewing language models, understanding OWASP risks and interpreting evidence before deployment.",
+);
 
 const POSTS = [
   {
@@ -15,15 +14,15 @@ const POSTS = [
     date: 'November 2026',
     category: 'Security Fundamentals',
     readTime: '10 min read',
-    href: '/blog/scan-llm-security-vulnerabilities',
+    href: '/blog/scan-llm-security-vulnerabilities/',
   },
   {
-    title: 'OWASP LLM Top 10: What Every Developer Should Know',
-    excerpt: 'The OWASP LLM Top 10 defines the most critical security risks for large language models. We map each category to real-world attack patterns, detection methods, and remediation strategies.',
+    title: 'AI Red Teaming Risks Based on OWASP GenAI Top 10',
+    excerpt: 'The OWASP LLM Top 10 defines the most critical security risks for large language models. Review the 2025 categories, the controls they involve, and the evidence worth collecting.',
     date: 'November 2026',
     category: 'OWASP',
-    readTime: '15 min read',
-    href: '/blog/owasp-llm-top-10-guide',
+    readTime: '4 min read',
+    href: '/blog/owasp-llm-top-10-guide/',
   },
   {
     title: "Multi-Layer Security Analysis: Why One Scanner Isn't Enough",
@@ -38,7 +37,7 @@ const POSTS = [
     excerpt: "Black-box risk scores create more confusion than clarity. We explain the weighted formula behind Sentryφ's dual-axis scoring — and why separation of severity and confidence matters.",
     date: 'Coming soon',
     category: 'Deep Dive',
-    readTime: '15 min read',
+    readTime: '4 min read',
     href: null,
   },
   {

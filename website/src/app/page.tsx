@@ -21,6 +21,11 @@ export default function HomePage() {
 
   return (
     <main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org', '@type': 'SoftwareApplication', name: 'SentryPhi',
+        applicationCategory: 'SecurityApplication', operatingSystem: 'Windows',
+        url: 'https://sentryphi.me/', offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+      }) }} />
       <HeroSection />
       <TrustBar />
       <ProblemSolution />

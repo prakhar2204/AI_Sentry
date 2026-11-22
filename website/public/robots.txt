@@ -1,7 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /_next/
 
 # Block AI training crawlers
 User-agent: GPTBot
@@ -19,4 +18,4 @@ Disallow: /
 User-agent: Google-Extended
 Disallow: /
 
-Sitemap: https://sentryphi.dev/sitemap.xml
+Sitemap: https://sentryphi.me/sitemap.xml

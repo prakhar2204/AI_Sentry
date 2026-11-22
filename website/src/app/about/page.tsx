@@ -1,13 +1,12 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 import { Logo } from '@/components/Logo';
 import s from '@/styles/pages.module.css';
 
-export const metadata: Metadata = {
-  title: 'About — The Team Behind Sentryɸ',
-  description:
-    'Learn about Sentryɸ, the open-source LLM security platform. Our mission: make pre-deployment AI security testing accessible to every development team, not just security specialists.',
-  alternates: { canonical: 'https://sentryphi.dev/about' },
-};
+export const metadata = pageMetadata(
+  '/about/',
+  "Meet the SentryPhi Security Team",
+  "Meet Prakhar Gupta and Harshit Gupta at Bennett University and learn why they built SentryPhi for pre-deployment language model security reviews.",
+);
 
 const STATS = [
   { value: '100+', label: 'Security Probes' },
@@ -49,14 +48,14 @@ export default function AboutPage() {
             letterSpacing: '-1.5px', lineHeight: 1.1,
             color: 'var(--text-primary)', marginBottom: '20px',
           }}>
-            Making LLM security<br />accessible to everyone.
+            Meet the SentryPhi security team
           </h1>
           <p style={{
             fontSize: '18px', lineHeight: 1.7,
             color: 'var(--text-secondary)', maxWidth: '640px',
             margin: '0 auto',
           }}>
-            Sentryɸ exists because pre-deployment security testing shouldn&apos;t require a dedicated
+            Prakhar Gupta and Harshit Gupta build SentryPhi at Bennett University. Sentryɸ exists because pre-deployment security testing shouldn&apos;t require a dedicated
             security team, a six-figure budget, or weeks of manual configuration. We&apos;re building
             the security gate that every AI deployment deserves.
           </p>
@@ -64,7 +63,7 @@ export default function AboutPage() {
 
         {/* Stats */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
           gap: '1px', backgroundColor: 'var(--border-subtle)',
           borderRadius: 'var(--radius-lg)', overflow: 'hidden',
           marginBottom: '80px',
@@ -136,10 +135,10 @@ export default function AboutPage() {
             maxWidth: '480px', margin: '0 auto 24px',
           }}>
             Sentryɸ is open source under the MIT license.
-            Contributions, issues, and security audits are welcome.
+            Read our <a href="/blog/owasp-llm-top-10-guide/">guide to OWASP risks</a> or explore the source below.
           </p>
           <a
-            href="#"
+            href="https://github.com/prakhar2204/AI_Sentry"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px',
               padding: '12px 24px', fontSize: '14px', fontWeight: 600,

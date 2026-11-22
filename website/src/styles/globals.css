@@ -3,7 +3,6 @@
    ───────────────────────────────────────────── */
 
 @import url('./tokens.css');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 /* ── Reset ── */
 *, *::before, *::after {
@@ -160,4 +159,18 @@ pre {
 @keyframes logoScan {
   0%, 100% { opacity: 0.3; transform: translateY(-2px); }
   50%      { opacity: 0.9; transform: translateY(2px); }
+}
+
+.breadcrumbs { position: relative; top: var(--nav-height); padding: 10px var(--space-lg); font-size: 0.85rem; color: var(--text-secondary); }
+.breadcrumbs a { color: var(--accent); }
+
+.analytics-preference { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px; padding: 16px; color: var(--text-secondary); }
+.analytics-preference button { background: var(--bg-surface); color: var(--text-primary); padding: 6px 10px; border: 1px solid var(--border-subtle); border-radius: 4px; cursor: pointer; }
+
+@media (max-width: 640px) {
+  .animate-left, .animate-right { transform: translateY(12px); }
+  .animate-left.visible, .animate-right.visible { transform: none; }
+}
+@media (prefers-reduced-motion: reduce), (scripting: none) {
+  .animate-in, .animate-scale, .animate-left, .animate-right { opacity: 1; transform: none; transition: none; }
 }

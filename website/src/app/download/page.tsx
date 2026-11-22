@@ -1,36 +1,13 @@
-'use client';
-
-import { useState } from 'react';
 import s from './download.module.css';
 
 const VERSION = '1.0.0';
 const GITHUB_REPO = 'https://github.com/prakhar2204/AI_Sentry';
 const WIN_DOWNLOAD = `${GITHUB_REPO}/releases/download/v${VERSION}/Sentryphi-Setup-${VERSION}.exe`;
-const LINUX_DOWNLOAD = `${GITHUB_REPO}/releases/download/v${VERSION}/Sentryphi-Setup-${VERSION}.AppImage`;
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      /* clipboard API not available */
-    }
-  };
-
-  return (
-    <button className={s.copyBtn} onClick={handleCopy}>
-      {copied ? 'Copied' : 'Copy'}
-    </button>
-  );
-}
 
 export default function DownloadPage() {
   return (
-    <div className={s.downloadPage}>
+    <main className={s.downloadPage}>
       <div className={s.inner}>
         {/* ── Header ── */}
         <div className={s.header}>
@@ -63,7 +40,7 @@ export default function DownloadPage() {
               </div>
             </div>
 
-            <a href={WIN_DOWNLOAD} className={s.downloadBtn}>
+            <a href={WIN_DOWNLOAD} data-download-platform="windows" className={s.downloadBtn}>
               ↓ &nbsp;Download for Windows
             </a>
 
@@ -82,7 +59,7 @@ export default function DownloadPage() {
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Filename</span>
-                <span>Sentryphi-{VERSION}.AppImage</span>
+                <span>Linux installer pending</span>
               </div>
               <div className={s.platformMetaRow}>
                 <span className={s.platformMetaLabel}>Requires</span>
@@ -90,8 +67,8 @@ export default function DownloadPage() {
               </div>
             </div>
 
-            <a href={LINUX_DOWNLOAD} className={s.downloadBtn}>
-              ↓ &nbsp;Download for Linux
+            <a href={`${GITHUB_REPO}/releases/tag/v${VERSION}`} className={s.downloadBtn}>
+              View available release assets
             </a>
 
             <div className={s.mirrorLink}>
@@ -152,7 +129,7 @@ export default function DownloadPage() {
 
         {/* ── What's Included ── */}
         <div className={s.trustBlock}>
-          <h3 className={s.trustTitle}>Everything Included — Nothing Extra to Install</h3>
+          <h3 className={s.trustTitle}>What the download includes</h3>
           <div className={s.trustList}>
             <div className={s.trustItem}>
               <span className={s.trustCheck}>✓</span>
@@ -160,7 +137,7 @@ export default function DownloadPage() {
             </div>
             <div className={s.trustItem}>
               <span className={s.trustCheck}>✓</span>
-              Built-in cloud authentication (AWS, Azure, GCP) — no CLI tools needed
+              Cloud account sign-in through provider tools
             </div>
             <div className={s.trustItem}>
               <span className={s.trustCheck}>✓</span>
@@ -194,11 +171,11 @@ export default function DownloadPage() {
             </div>
           </div>
           <div className={s.postLinks}>
-            <a href="/docs">Getting Started Guide →</a>
+            <a href="/docs/">Getting Started Guide →</a>
             <a href={`${GITHUB_REPO}/issues`}>Open an Issue on GitHub →</a>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

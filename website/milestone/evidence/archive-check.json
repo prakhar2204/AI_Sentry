@@ -1,0 +1,19 @@
+{
+  "created": "2026-11-22T11:26:46.451219+00:00",
+  "archives": [
+    {
+      "name": "SentryPhi-M2-Cloudflare.zip",
+      "bytes": 449770,
+      "sha256": "e11d6c45013d7aa792ea7b73e707be527e57fd4272443f0c0898b2f6ea276d63",
+      "entries": 81,
+      "all_member_bytes_verified": true
+    },
+    {
+      "name": "SentryPhi-M2-static-backup.zip",
+      "bytes": 577684,
+      "sha256": "3b5e753fa0465cbe8473972c0accb12fe039d56db800f70d13cd46af4ca8ecc4",
+      "entries": 132,
+      "all_member_bytes_verified": true
+    }
+  ]
+}

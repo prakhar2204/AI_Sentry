@@ -18,12 +18,10 @@ export function HeroSection() {
             <span className={s.heroAccent}>before it ships.</span>
           </h1>
           <p className={s.heroSub}>
-            Sentryɸ runs multi-layer security analysis, adaptive vulnerability
-            detection, and model behavior stress testing — in a single scan.
-            One report. Every risk. Actionable fixes.
+            SentryPhi is an AI red teaming tool for language models. Review model behavior before deployment and trace findings back to the evidence in your scan report.
           </p>
           <div className={s.heroCtas}>
-            <a href="/download" className={s.heroPrimary}>
+            <a href="/download/" className={s.heroPrimary}>
               Get Started — Free
               <span className={s.heroArrow}>→</span>
             </a>
@@ -539,9 +537,9 @@ export function OwaspSection() {
       <div className={s.owaspInner}>
         <div className={`${s.sectionHeader} animate-in`}>
           <span className={s.sectionLabel}>Coverage</span>
-          <h2 className={s.sectionTitle}>OWASP LLM Top 10 coverage.</h2>
+          <h2 className={s.sectionTitle}>OWASP LLM Top 10 coverage (2023–24).</h2>
           <p className={s.sectionSub}>
-            We show what we cover — and what we do not.
+            The grid uses the report’s original category numbers. Read our <a href="/blog/owasp-llm-top-10-guide/">guide to the 2025 OWASP GenAI Top 10</a> for the newer taxonomy.
           </p>
         </div>
         <div className={`${s.owaspGrid} stagger`}>
@@ -646,11 +644,11 @@ export function FinalCTA() {
           Download and run your first scan today.
         </p>
         <div className={s.ctaButtons}>
-          <a href="/download" className={s.heroPrimary}>
+          <a href="/download/" className={s.heroPrimary}>
             Get Started — Free
             <span className={s.heroArrow}>→</span>
           </a>
-          <a href="#" className={s.heroSecondary}>
+          <a href="https://github.com/prakhar2204/AI_Sentry" className={s.heroSecondary}>
             View on GitHub
           </a>
         </div>
@@ -717,16 +715,16 @@ const FAQ_ITEMS = [
     a: 'Sentryɸ is 100% free and open source under the MIT license. The only cost is API usage when scanning remote models — Sentryɸ estimates this cost before you approve any scan.',
   },
   {
-    q: 'Does Sentryɸ collect any data or telemetry?',
+    q: 'Does the Sentryɸ desktop scanner collect telemetry?',
     a: 'No. Sentryɸ collects zero telemetry, requires no account registration, and stores all scan data locally on your machine. API keys are stored in your operating system\'s native secure keychain.',
   },
   {
     q: 'What vulnerabilities does Sentryɸ detect?',
-    a: 'Sentryɸ covers the OWASP LLM Top 10 including: prompt injection (LLM01), insecure output handling (LLM02), training data poisoning indicators (LLM03), denial of service vectors (LLM04), sensitive information disclosure (LLM06), excessive agency (LLM08), and overreliance patterns (LLM09).',
+    a: 'The desktop report uses the 2023–24 OWASP LLM taxonomy, including prompt injection (LLM01), insecure output handling (LLM02), training data poisoning indicators (LLM03), denial of service vectors (LLM04), sensitive information disclosure (LLM06), excessive agency (LLM08), and overreliance patterns (LLM09).',
   },
   {
     q: 'What operating systems are supported?',
-    a: 'Sentryɸ is available for Windows 10+ and Ubuntu 20.04+. The application is packaged as a standalone installer with all dependencies included — no Python, Node.js, or terminal setup required.',
+    a: 'The release page lists a Windows installer. Check the published assets on GitHub for other platforms.',
   },
   {
     q: 'Can I use Sentryɸ in my CI/CD pipeline?',
@@ -737,6 +735,12 @@ const FAQ_ITEMS = [
 export function FAQSection() {
   return (
     <section className={s.faq} id="faq">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        '@context': 'https://schema.org', '@type': 'FAQPage',
+        mainEntity: FAQ_ITEMS.map(({ q, a }) => ({
+          '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a },
+        })),
+      }) }} />
       <div className={s.faqInner}>
         <div className={`${s.sectionHeader} animate-in`}>
           <span className={s.sectionLabel}>FAQ</span>

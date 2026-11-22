@@ -1,11 +1,10 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'Terms of Service',
-  description:
-    'Sentryɸ terms of service. Authorized use only. MIT licensed. No warranty.',
-  alternates: { canonical: 'https://sentryphi.dev/terms' },
-};
+export const metadata = pageMetadata(
+  '/terms/',
+  "SentryPhi Terms of Service",
+  "Review the terms for using SentryPhi, including authorized security testing, licensing and use of external services.",
+);
 
 export default function TermsPage() {
   const sectionStyle = { marginBottom: '48px' };
@@ -72,7 +71,7 @@ export default function TermsPage() {
 
         <div style={sectionStyle}>
           <h2 style={h2Style}>7. Contact</h2>
-          <p style={pStyle}>For questions about these terms, contact legal@sentryphi.dev or open an issue on our GitHub repository.</p>
+          <p style={pStyle}>For questions about these terms, open an issue in the <a href="https://github.com/prakhar2204/AI_Sentry/issues">project repository</a>.</p>
         </div>
       </div>
     </main>

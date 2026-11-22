@@ -1,0 +1,22 @@
+{
+  "environment": "live public HTTPS",
+  "url": "https://sentryphi.me/",
+  "timestamp": "2026-11-21T20:13:13.574Z",
+  "version": "13.6.0",
+  "formFactor": "mobile",
+  "throttling": {
+    "rttMs": 150,
+    "throughputKbps": 1638.4,
+    "requestLatencyMs": 562.5,
+    "downloadThroughputKbps": 1474.5600000000002,
+    "uploadThroughputKbps": 675,
+    "cpuSlowdownMultiplier": 4
+  },
+  "score": 97,
+  "metrics": {
+    "largest-contentful-paint": 1954.0492,
+    "total-blocking-time": 88,
+    "cumulative-layout-shift": 0,
+    "total-byte-weight": 365434
+  }
+}

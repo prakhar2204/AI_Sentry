@@ -1,0 +1,24 @@
+{
+  "captured": "2026-11-21T20:19:32.111Z",
+  "source": "Live public site, Chrome",
+  "rows": [
+    {
+      "path": "/docs/",
+      "status": 200,
+      "width": 320,
+      "document": 344
+    },
+    {
+      "path": "/blog/",
+      "status": 200,
+      "width": 320,
+      "document": 384
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "width": 390,
+      "document": 398
+    }
+  ]
+}

@@ -8,9 +8,9 @@ import styles from './Navbar.module.css';
 const NAV_LINKS = [
   { label: 'Features', href: '/#features' },
   { label: 'How It Works', href: '/#how-it-works' },
-  { label: 'Docs', href: '/docs' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'Download', href: '/download' },
+  { label: 'Docs', href: '/docs/' },
+  { label: 'Blog', href: '/blog/' },
+  { label: 'Download', href: '/download/' },
 ];
 
 export function Navbar() {
@@ -42,7 +42,7 @@ export function Navbar() {
           </div>
 
           <div className={styles.cta}>
-            <a href="/download" className={styles.ctaBtn}>
+            <a href="/download/" className={styles.ctaBtn}>
               Get Started
               <span className={styles.ctaArrow}>→</span>
             </a>
@@ -71,7 +71,7 @@ export function Navbar() {
             {link.label}
           </a>
         ))}
-        <a href="/download" className={styles.mobileCta}>
+        <a href="/download/" className={styles.mobileCta}>
           Get Started →
         </a>
       </div>

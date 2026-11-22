@@ -1,21 +1,12 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 import s from '@/styles/pages.module.css';
 
-export const metadata: Metadata = {
-  title: 'How to Scan Your LLM for Security Vulnerabilities Before Deployment',
-  description:
-    'A practical step-by-step guide to scanning large language models for prompt injection, jailbreak, data leakage, and harmful output vulnerabilities using Sentryφ before you ship.',
-  alternates: { canonical: 'https://sentryphi.dev/blog/scan-llm-security-vulnerabilities' },
-  openGraph: {
-    title: 'How to Scan Your LLM for Security Vulnerabilities Before Deployment',
-    description:
-      'Step-by-step guide to LLM security scanning with Sentryφ — covers prompt injection, jailbreaks, data leakage, and actionable remediation.',
-    type: 'article',
-    url: 'https://sentryphi.dev/blog/scan-llm-security-vulnerabilities',
-    publishedTime: '2026-11-12',
-    authors: ['Sentryφ Team'],
-  },
-};
+export const metadata = pageMetadata(
+  '/blog/scan-llm-security-vulnerabilities/',
+  "How to Scan an LLM for Security Vulnerabilities",
+  "Follow the SentryPhi scanning workflow from selecting a model and scope to reading findings and planning remediation.",
+  true,
+);
 
 const articleJsonLd = {
   '@context': 'https://schema.org',
@@ -23,17 +14,18 @@ const articleJsonLd = {
   headline: 'How to Scan Your LLM for Security Vulnerabilities Before Deployment',
   description:
     'A practical step-by-step guide to scanning large language models for security vulnerabilities using Sentryφ before deployment.',
-  author: { '@type': 'Organization', name: 'Sentryφ' },
+  image: 'https://sentryphi.me/social-card.webp',
+  author: { '@type': 'Organization', name: 'SentryPhi', url: 'https://sentryphi.me/about/' },
   publisher: {
     '@type': 'Organization',
     name: 'Sentryφ',
-    url: 'https://sentryphi.dev',
+    url: 'https://sentryphi.me',
   },
   datePublished: '2026-11-12',
   dateModified: '2026-11-12',
   mainEntityOfPage: {
     '@type': 'WebPage',
-    '@id': 'https://sentryphi.dev/blog/scan-llm-security-vulnerabilities',
+    '@id': 'https://sentryphi.me/blog/scan-llm-security-vulnerabilities/',
   },
   keywords: [
     'LLM security scanning',
@@ -145,7 +137,7 @@ export default function BlogPostScanLLM() {
             harm.
           </p>
 
-          <h2>How to run a scan with Sentryφ</h2>
+          <h2 id="scan-workflow">How to run a scan with Sentryφ</h2>
           <p>
             Sentryφ combines three analysis layers — static probe testing (via Garak),
             adversarial simulation (via PyRIT), and behavioral evaluation — into a single
@@ -154,7 +146,7 @@ export default function BlogPostScanLLM() {
           <ol>
             <li>
               <strong>Download and install Sentryφ</strong> from{' '}
-              <a href="/download">sentryphi.dev/download</a>. No account required.
+              <a href="/download/">sentryphi.me/download</a>. No account required.
             </li>
             <li>
               <strong>Enter your model endpoint.</strong> Sentryφ works with any
@@ -176,7 +168,7 @@ export default function BlogPostScanLLM() {
             </li>
           </ol>
 
-          <h2>What to do with the results</h2>
+          <h2 id="scan-results">What to do with the results</h2>
           <p>
             A Sentryφ scan report gives you three outputs for each finding:
           </p>
@@ -210,7 +202,7 @@ export default function BlogPostScanLLM() {
 
           <div className={s.blogCta}>
             <p>Ready to scan your model?</p>
-            <a href="/download" className={s.blogCtaBtn}>
+            <a href="/download/" className={s.blogCtaBtn}>
               Download Sentryφ — Free
             </a>
           </div>

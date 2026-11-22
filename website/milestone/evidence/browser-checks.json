@@ -1,0 +1,149 @@
+{
+  "captured": "2026-11-21T20:18:32.109Z",
+  "environment": "Local release, Chrome; simulated analytics endpoint and test ID",
+  "widths": [
+    {
+      "width": 320,
+      "path": "/",
+      "actual": 320
+    },
+    {
+      "width": 320,
+      "path": "/about/",
+      "actual": 320
+    },
+    {
+      "width": 320,
+      "path": "/docs/",
+      "actual": 320
+    },
+    {
+      "width": 320,
+      "path": "/download/",
+      "actual": 320
+    },
+    {
+      "width": 320,
+      "path": "/blog/",
+      "actual": 320
+    },
+    {
+      "width": 320,
+      "path": "/blog/owasp-llm-top-10-guide/",
+      "actual": 320
+    },
+    {
+      "width": 320,
+      "path": "/blog/scan-llm-security-vulnerabilities/",
+      "actual": 320
+    },
+    {
+      "width": 320,
+      "path": "/privacy/",
+      "actual": 320
+    },
+    {
+      "width": 320,
+      "path": "/terms/",
+      "actual": 320
+    },
+    {
+      "width": 390,
+      "path": "/",
+      "actual": 390
+    },
+    {
+      "width": 390,
+      "path": "/about/",
+      "actual": 390
+    },
+    {
+      "width": 390,
+      "path": "/docs/",
+      "actual": 390
+    },
+    {
+      "width": 390,
+      "path": "/download/",
+      "actual": 390
+    },
+    {
+      "width": 390,
+      "path": "/blog/",
+      "actual": 390
+    },
+    {
+      "width": 390,
+      "path": "/blog/owasp-llm-top-10-guide/",
+      "actual": 390
+    },
+    {
+      "width": 390,
+      "path": "/blog/scan-llm-security-vulnerabilities/",
+      "actual": 390
+    },
+    {
+      "width": 390,
+      "path": "/privacy/",
+      "actual": 390
+    },
+    {
+      "width": 390,
+      "path": "/terms/",
+      "actual": 390
+    },
+    {
+      "width": 1280,
+      "path": "/",
+      "actual": 1280
+    },
+    {
+      "width": 1280,
+      "path": "/about/",
+      "actual": 1280
+    },
+    {
+      "width": 1280,
+      "path": "/docs/",
+      "actual": 1280
+    },
+    {
+      "width": 1280,
+      "path": "/download/",
+      "actual": 1280
+    },
+    {
+      "width": 1280,
+      "path": "/blog/",
+      "actual": 1280
+    },
+    {
+      "width": 1280,
+      "path": "/blog/owasp-llm-top-10-guide/",
+      "actual": 1280
+    },
+    {
+      "width": 1280,
+      "path": "/blog/scan-llm-security-vulnerabilities/",
+      "actual": 1280
+    },
+    {
+      "width": 1280,
+      "path": "/privacy/",
+      "actual": 1280
+    },
+    {
+      "width": 1280,
+      "path": "/terms/",
+      "actual": 1280
+    }
+  ],
+  "errors": [],
+  "event": [
+    "event",
+    "download_click",
+    {
+      "platform": "windows"
+    }
+  ]
+}

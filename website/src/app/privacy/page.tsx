@@ -1,11 +1,10 @@
-import type { Metadata } from 'next';
+import { pageMetadata } from '@/lib/metadata';
 
-export const metadata: Metadata = {
-  title: 'Privacy Policy',
-  description:
-    'Sentryɸ privacy policy. We collect zero telemetry, require no accounts, and process all scan data locally on your machine.',
-  alternates: { canonical: 'https://sentryphi.dev/privacy' },
-};
+export const metadata = pageMetadata(
+  '/privacy/',
+  "SentryPhi Privacy Policy",
+  "Read about desktop scan data, website analytics, cookies and third-party model providers.",
+);
 
 export default function PrivacyPage() {
   const sectionStyle = { marginBottom: '48px' };
@@ -37,11 +36,11 @@ export default function PrivacyPage() {
           color: 'var(--text-primary)', marginBottom: '8px',
         }}>Privacy Policy</h1>
         <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '48px' }}>
-          Last updated: October 2026
+          Last updated November 2026
         </p>
 
         <div style={sectionStyle}>
-          <h2 style={h2Style}>1. Data We Collect</h2>
+          <h2 style={h2Style}>1. Desktop Application</h2>
           <p style={pStyle}>
             <strong style={{ color: 'var(--text-primary)' }}>None.</strong> Sentryɸ does not collect personal information, usage analytics, telemetry data, or any other user data. The application runs entirely on your local machine.
           </p>
@@ -57,7 +56,7 @@ export default function PrivacyPage() {
 
         <div style={sectionStyle}>
           <h2 style={h2Style}>3. Website Analytics</h2>
-          <p style={pStyle}>The Sentryɸ website (sentryphi.dev) uses privacy-respecting analytics that set no cookies and store no personal data. We collect only aggregate page view counts and referrer information — no individual tracking.</p>
+          <p style={pStyle}>When enabled, the website offers optional Google Analytics. Accepting it allows Google to use analytics cookies and measure page views and installer clicks. Use the analytics control at the bottom of any page to change your choice.</p>
         </div>
 
         <div style={sectionStyle}>
@@ -72,7 +71,7 @@ export default function PrivacyPage() {
 
         <div style={sectionStyle}>
           <h2 style={h2Style}>6. Contact</h2>
-          <p style={pStyle}>For privacy-related questions, open an issue on our GitHub repository or email privacy@sentryphi.dev.</p>
+          <p style={pStyle}>For privacy-related questions, use the <a href="https://github.com/prakhar2204/AI_Sentry/issues">project issue tracker</a> for general questions and avoid posting personal information.</p>
         </div>
       </div>
     </main>
