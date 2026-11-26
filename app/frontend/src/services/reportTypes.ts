@@ -32,6 +32,7 @@ export type RiskLevel = "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "NONE";
 // ─────────────────────────────────────────────
 
 export interface ReportMeta {
+  model_name?:          string;
   target:               string;
   mode:                 string;
   scan_depth:           string;

@@ -6,11 +6,12 @@ export default defineConfig({
   // Assets will use relative paths so they resolve correctly from dist/index.html.
   base: './',
   plugins: [react()],
+  optimizeDeps: { entries: ['index.html'] },
   server: {
     port: 5173,
     open: false,
     watch: {
-      ignored: ['**/release/**', '**/dist/**'],
+      ignored: ['**/release/**', '**/dist/**', '**/resources/backend/**', '**/dist_python/**'],
     },
   },
   test: {

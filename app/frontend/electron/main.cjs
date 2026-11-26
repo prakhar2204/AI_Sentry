@@ -38,7 +38,7 @@ const { AwsCloudAuth, AzureCloudAuth, GcpCloudAuth } = require('./cloud-auth.cjs
 // ─────────────────────────────────────────────
 
 const isDev = process.env.ELECTRON_DEV === '1' || !app.isPackaged;
-const DEV_URL = 'http://localhost:5173';
+const DEV_URL = 'http://127.0.0.1:5173';
 
 // ─────────────────────────────────────────────
 //  Active scan process reference
@@ -624,6 +624,9 @@ ipcMain.handle('system:health-check', async () => {
 // ─────────────────────────────────────────────
 
 app.whenReady().then(() => {
+  require('./updates.cjs').registerUpdates({ app, ipcMain, currentWindow: () => mainWindow,
+    enabled: Boolean(app.isPackaged && (['win32', 'darwin'].includes(process.platform) || process.env.APPIMAGE)),
+    busy: () => Boolean(scanProcess) });
   createWindow();
 
   // On macOS, re-create window when dock icon is clicked
@@ -643,7 +646,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
-  for (const auth of cloudAuth.values()) auth.cancel();
+  for (const auth of cloudAuthMap.values()) auth.cancel();
   killScanProcess();
   backendCommands.stop();
 });

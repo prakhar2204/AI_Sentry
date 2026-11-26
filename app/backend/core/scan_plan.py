@@ -37,10 +37,13 @@ def get_scan_plan(config: dict) -> dict:
     capacity = None
     source = config.get('local_model_path') or (config.get('target') if mode == ScanMode.LOCAL else None)
     if source and not str(source).startswith(('http://', 'https://')):
-        from core.model_profile import inspect_model, capacity_check
-        model = inspect_model(source)
+        from core.model_profile import inspect_scan_model, capacity_check
+        model = inspect_scan_model(source)
         capacity = capacity_check(model)
+    from importlib.util import find_spec
+    engine_packages = {name: find_spec(name) is not None for name in ('garak', 'pyrit')}
     return {
+        'engine_packages': engine_packages,
         'model_profile': model, 'capacity': capacity,
         'engine': engine.name, 'mode': mode.value, 'scan_depth': depth.value,
         'total_probes': total,

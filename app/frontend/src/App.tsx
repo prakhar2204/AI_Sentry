@@ -32,6 +32,7 @@ import { DeployProvider, useDeployContext } from "./store/DeployContext";
 import { DeployFlowProvider, useDeployFlow } from "./store/DeployFlowContext";
 import DeployFlowPage from "./pages/DeployFlowPage";
 import { StepNav, WIZARD_STEPS } from "./components/layout/StepNav";
+import { UpdateSettings } from "./components/layout/UpdateSettings";
 import { ThemeToggle } from "./components/layout/ThemeToggle";
 import { Logo } from "./components/Logo";
 import { isElectron } from "./utils/platform";
@@ -94,6 +95,10 @@ function ScreenRouter() {
     },
     [state.scan_active, navigateTo]
   );
+
+  React.useEffect(() => {
+    if (document.scrollingElement) document.scrollingElement.scrollTop = 0;
+  }, [currentScreen]);
 
   const showStepNav = STEP_NAV_SCREENS.has(currentScreen);
 
@@ -212,6 +217,17 @@ function ScreenRouter() {
 
   return (
     <>
+          <header className="app-shell__header">
+            <div className="app-shell__brand">
+              <div className="app-shell__brand-icon"><Logo size={22} animate={false} /></div>
+              Sentryɸ
+            </div>
+            <div className="app-shell__controls">
+            {!isElectron() && <small>Browser preview</small>}
+            <UpdateSettings startup={currentScreen === "agree" || currentScreen === "input"} />
+            <ThemeToggle />
+          </div>
+          </header>
       {/* ── Step Navigation (hidden on agreement gate) ── */}
       {showStepNav && (
         <StepNav
@@ -245,46 +261,6 @@ export default function App() {
         {/* W4.5: Skip-to-main for keyboard / screen reader users */}
         <a href="#main-content" className="skip-to-main">Skip to main content</a>
         <div className="app-shell">
-          {/* ── Header ── */}
-          <header className="app-shell__header">
-            <div className="app-shell__brand">
-              <div className="app-shell__brand-icon"><Logo size={22} animate={false} /></div>
-              Sentryɸ
-            </div>
-            <div className="app-shell__controls">
-            {/* Mode indicator — Desktop (Electron) or Browser (simulated) */}
-            <span
-              className="mode-indicator"
-              title={isElectron() ? "Running with Python backend" : "Running in browser simulation mode"}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "5px",
-                fontSize: "11px",
-                fontWeight: 600,
-                letterSpacing: "0.03em",
-                padding: "3px 10px",
-                borderRadius: "20px",
-                background: isElectron()
-                  ? "rgba(34,197,94,0.12)"
-                  : "rgba(99,102,241,0.12)",
-                color: isElectron() ? "var(--success, #22c55e)" : "var(--accent-primary, #6366f1)",
-                border: isElectron()
-                  ? "1px solid rgba(34,197,94,0.3)"
-                  : "1px solid rgba(99,102,241,0.3)",
-                cursor: "default",
-                userSelect: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              <span style={{ fontSize: "8px" }}>{isElectron() ? "🟢" : "🔵"}</span>
-              {isElectron() ? "Desktop Mode" : "Browser Mode"}
-            </span>
-            <ThemeToggle />
-          </div>
-          </header>
-
-          {/* ── Content ── */}
           <ScreenRouter />
         </div>
         </DeployFlowProvider>

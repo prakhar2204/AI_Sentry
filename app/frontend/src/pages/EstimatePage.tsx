@@ -54,9 +54,10 @@ interface EstimatePageProps {
 //  Helpers
 // ─────────────────────────────────────────────
 
-function formatVram(mb: number): string {
-  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GB`;
-  return `${mb} MB`;
+function formatVram(mb?: number): string {
+  if (mb == null) return "Unknown";
+  if (mb >= 1024) return `${(mb / 1024).toFixed(1)} GiB`;
+  return `${mb} MiB`;
 }
 
 
@@ -153,7 +154,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
       <div className="estimate-page__content">
         {estimate?.capacity && <AlertBanner type={estimate.capacity.allowed ? 'info' : 'error'}
           message={estimate.capacity.reason} />}
-        {estimate?.model_profile && <p>Model: {estimate.model_profile.name} · {estimate.model_profile.weights_gib} GiB weights · CPU RAM estimate {estimate.model_profile.required_ram_gib} GiB · Full GPU estimate {estimate.model_profile.recommended_vram_gib} GiB VRAM</p>}
+
 
         {/* ── Loading State ── */}
         {loading && (
@@ -243,6 +244,11 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                     {estimate.engine}
                   </dd>
                 </div>
+                {estimate.engine_packages && <div className="estimate-page__stat-row">
+                  <dt className="estimate-page__stat-label">Backend packages</dt>
+                  <dd className="estimate-page__stat-value">{Object.entries(estimate.engine_packages).map(([name, installed]) =>
+                    (name === 'pyrit' ? 'PyRIT' : 'Garak') + (installed ? ' installed' : ' unavailable')).join(' · ')}</dd>
+                </div>}
               </dl>
             </section>
 
@@ -250,6 +256,18 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
             <section className="estimate-page__section">
               <h2 className="estimate-page__section-title">Compute Resources</h2>
 
+              {estimate.model_profile ? <>
+                <strong>{estimate.model_profile.name}</strong>
+                <dl className="resource-grid">
+                  <div><dt>Weights on disk</dt><dd>{estimate.model_profile.weights_gib} GiB</dd></div>
+                  <div><dt>Weights in memory</dt><dd>≈ {estimate.model_profile.runtime_weights_gib} GiB</dd></div>
+                  <div><dt>Attention cache</dt><dd>≈ {estimate.model_profile.kv_cache_gib.toFixed(2)} GiB</dd></div>
+                  <div><dt>CPU-only RAM budget</dt><dd>≈ {estimate.model_profile.required_ram_gib} GiB</dd></div>
+                  <div><dt>Available host RAM</dt><dd>{estimate.capacity?.available_ram_gib ?? 'Unknown'} GiB</dd></div>
+                  <div><dt>{estimate.model_profile.format === 'gguf' ? 'Full offload VRAM budget' : 'Model VRAM on CPU'}</dt><dd>{estimate.model_profile.recommended_vram_gib} GiB</dd></div>
+                </dl>
+                <p>Budget for {estimate.model_profile.context_length.toLocaleString()} tokens and {estimate.model_profile.concurrency} concurrent request. Actual usage varies with response length and runtime buffers.</p>
+              </> : <p>Model memory is managed by the inference endpoint. Its RAM and VRAM usage cannot be measured from this client.</p>}
               {gpuLoading && (
                 <p className="estimate-page__loading-text" style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>
                   Detecting GPU...
@@ -282,7 +300,7 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                       <div className="estimate-page__stat-row">
                         <dt className="estimate-page__stat-label">VRAM Total</dt>
                         <dd className="estimate-page__stat-value" id="stat-vram-total">
-                          {formatVram(gpuInfo.vram_total_mb ?? 0)}
+                          {formatVram(gpuInfo.vram_total_mb)}
                         </dd>
                       </div>
 
@@ -292,14 +310,14 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                           className="estimate-page__stat-value"
                           id="stat-vram-free"
                         >
-                          {formatVram(gpuInfo.vram_free_mb ?? 0)}
+                          {formatVram(gpuInfo.vram_free_mb)}
                         </dd>
                       </div>
 
                       <div className="estimate-page__stat-row">
                         <dt className="estimate-page__stat-label">GPU Utilization</dt>
                         <dd className="estimate-page__stat-value" id="stat-gpu-util">
-                          {gpuInfo.utilization_pct ?? 0}%
+                          {gpuInfo.utilization_pct == null ? "Unknown" : gpuInfo.utilization_pct + "%"}
                           {(gpuInfo.utilization_pct ?? 0) > 80 && " ⚠ High load"}
                         </dd>
                       </div>
@@ -312,14 +330,6 @@ export function EstimatePage({ onContinue, onBack }: EstimatePageProps) {
                       </div>
                     </>
                   )}
-
-                  {/* Estimated probe-runner VRAM overhead */}
-                  <div className="estimate-page__stat-row">
-                    <dt className="estimate-page__stat-label">Est. VRAM Required</dt>
-                    <dd className="estimate-page__stat-value" id="stat-vram-req">
-                      Depends on model size and context length
-                    </dd>
-                  </div>
 
                   {/* CPU-only warning */}
                   {!gpuInfo.available && (

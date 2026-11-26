@@ -51,8 +51,8 @@ export function AgreementPage({ onAccept }: AgreementPageProps) {
           <div className="agreement-page__logo">
             <Logo size={32} animate={false} />
           </div>
-          <div className="agreement-page__brand">Sentryɸ</div>
-          <div className="agreement-page__tagline">AI Security Scanner</div>
+          <h1 className="agreement-page__brand">Terms and privacy</h1>
+          <p className="agreement-page__tagline">Review the terms before starting your model assessment.</p>
         </div>
 
         {/* ── Terms of Use ── */}
@@ -87,8 +87,7 @@ export function AgreementPage({ onAccept }: AgreementPageProps) {
           <div className="agreement-page__section-body">
             <ol className="agreement-page__list">
               <li>
-                <strong>Local Processing.</strong> All scan data is processed
-                on your machine. Nothing is transmitted to external servers.
+                <strong>Local Processing.</strong> Local file scans run on this machine. Endpoint scans send requests to the model server you select. The desktop app contacts GitHub to check for software updates.
               </li>
               <li>
                 <strong>No Data Collection.</strong> No personal information,
@@ -129,7 +128,7 @@ export function AgreementPage({ onAccept }: AgreementPageProps) {
           </button>
         </div>
 
-        <p className="agreement-page__version">v1.0.0 · Local Only</p>
+
 
       </div>
     </div>

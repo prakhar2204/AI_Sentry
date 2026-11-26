@@ -8,7 +8,17 @@
  */
 
 /** Shape of the electronAPI exposed via contextBridge */
+export interface DesktopUpdate {
+  automatic: boolean;
+  installOnExit: boolean;
+  stage: 'checking' | 'available' | 'current' | 'downloading' | 'ready' | 'error' | 'development';
+  currentVersion: string;
+  version: string;
+  percent: number;
+}
 interface ElectronAPI {
+  updateCommand?(action: 'state' | 'queue' | 'auto' | 'download' | 'install' | 'retry', value?: boolean): Promise<DesktopUpdate>;
+  onUpdate?(callback: (state: DesktopUpdate) => void): () => void;
   getPathForFile?: (file: File) => string;
   openModelFilePicker?: (folder?: boolean) => Promise<{ filePath: string; fileName: string } | null>;
   cloudAuth: (config: { provider: string; action: string; options?: unknown }) => Promise<{

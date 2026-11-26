@@ -1,0 +1,46 @@
+- generic [ref=e2]:
+  - link "Skip to main content" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - img "Sentryɸ" [ref=e8]
+        - text: Sentryɸ
+      - generic [ref=e12]:
+        - generic [ref=e13]: Browser preview
+        - button "Switch to light mode" [ref=e14] [cursor=pointer]: ☀
+    - main "Main content" [ref=e15]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - img "Sentryɸ" [ref=e21]
+          - heading "Terms and privacy" [level=1] [ref=e25]
+          - paragraph [ref=e26]: Review the terms before starting your model assessment.
+        - generic [ref=e27]:
+          - heading "Terms of Use" [level=2] [ref=e28]
+          - list [ref=e30]:
+            - listitem [ref=e31]:
+              - strong [ref=e32]: Authorized Use Only.
+              - text: You must have explicit authorization to scan the target. Unauthorized scanning may violate applicable laws.
+            - listitem [ref=e33]:
+              - strong [ref=e34]: Accuracy Disclaimer.
+              - text: Results are advisory and do not constitute a guarantee of security or compliance.
+            - listitem [ref=e35]:
+              - strong [ref=e36]: No Warranty.
+              - text: Provided "as is" without warranty of any kind.
+            - listitem [ref=e37]:
+              - strong [ref=e38]: Usage Limits.
+              - text: You agree not to use this tool for denial-of-service attacks or unauthorized data extraction.
+        - generic [ref=e39]:
+          - heading "Privacy" [level=2] [ref=e40]
+          - list [ref=e42]:
+            - listitem [ref=e43]:
+              - strong [ref=e44]: Local Processing.
+              - text: All scan data is processed on your machine. Nothing is transmitted to external servers.
+            - listitem [ref=e45]:
+              - strong [ref=e46]: No Data Collection.
+              - text: No personal information, usage analytics, or telemetry is collected.
+        - generic [ref=e48] [cursor=pointer]:
+          - checkbox "I have read and agree to the Terms of Use and Privacy Notice. I understand the risks of security scanning and accept full responsibility for my use of this tool." [ref=e49]
+          - generic [ref=e50]: I have read and agree to the Terms of Use and Privacy Notice. I understand the risks of security scanning and accept full responsibility for my use of this tool.
+        - generic [ref=e51]:
+          - button "Agree & Continue" [disabled]

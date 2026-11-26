@@ -121,6 +121,47 @@ def inspect_model(source: str, context_length=4096, concurrency=1) -> dict:
                 'A capacity estimate is not a benchmark or a guarantee of model/runtime compatibility.']}
 
 
+def inspect_scan_model(source):
+    """Estimate storage for the precision and context used by local inference."""
+    profile = inspect_model(source)
+    if profile['format'] == 'transformers':
+        directory = Path(profile['source'])
+        index = directory / 'model.safetensors.index.json'
+        if index.is_file():
+            shards = set(json.loads(index.read_text(encoding='utf-8'))['weight_map'].values())
+        else:
+            shards = {'model.safetensors'}
+        disk_bytes = 0
+        resident_bytes = 0
+        for shard in shards:
+            path = directory / shard
+            disk_bytes += path.stat().st_size
+            with path.open('rb') as stream:
+                length = int.from_bytes(stream.read(8), 'little')
+                payload_end = path.stat().st_size - 8 - length
+                if not 2 <= length <= 32 * 1024**2 or payload_end < 0:
+                    raise ValueError('Invalid safetensors header size')
+                tensors = json.loads(stream.read(length))
+            for name, tensor in tensors.items():
+                if name == '__metadata__':
+                    continue
+                start, end = tensor['data_offsets']
+                if not 0 <= start <= end <= payload_end:
+                    raise ValueError('Invalid safetensors data offsets')
+                if tensor['dtype'].startswith(('F', 'BF')):
+                    resident_bytes += math.prod(tensor['shape']) * 4
+                else:
+                    resident_bytes += end - start
+        profile['weights_gib'] = round(disk_bytes / GIB, 3)
+        profile['runtime_weights_gib'] = round(resident_bytes / GIB, 3)
+        profile['kv_cache_gib'] *= 2  # FP32 CPU runtime
+        profile['required_ram_gib'] = math.ceil(resident_bytes / GIB * 1.2 + profile['kv_cache_gib'] + 2)
+        profile['recommended_vram_gib'] = 0
+    else:
+        profile['runtime_weights_gib'] = profile['weights_gib']
+    return profile
+
+
 def artifact_digest(profile):
     """Content hash for scan→upload binding; metadata fingerprints only accelerate UI checks."""
     digest = hashlib.sha256()
@@ -151,7 +192,8 @@ def capacity_check(profile, available_ram_bytes=None, available_vram_bytes=None)
             available_vram_bytes = 0
     if profile['format'] == 'gguf':
         required = max(math.ceil(profile['weights_gib'] + 2), required - int(available_vram_bytes / GIB * .8))
+    placement = 'with estimated GPU offload' if profile['format'] == 'gguf' and available_vram_bytes else 'for CPU inference'
     return {'allowed': available >= required, 'available_ram_gib': round(available, 2),
             'required_ram_gib': required, 'recommended_vram_gib': profile['recommended_vram_gib'],
             'available_vram_gib': round(available_vram_bytes / GIB, 2),
-            'reason': f'Estimated requirement with available GPU offload: {required} GiB system RAM; measured {available:.1f} GiB. CPU execution needs the full RAM estimate.'}
+            'reason': f'Estimated host memory {placement}: {required} GiB. Currently available: {available:.1f} GiB.'}

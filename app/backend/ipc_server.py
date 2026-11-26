@@ -289,9 +289,9 @@ def run_scan_pipeline(config: dict) -> None:
     )
 
     if is_local_gguf:
-        from core.model_profile import inspect_model, capacity_check, artifact_digest
+        from core.model_profile import inspect_scan_model, capacity_check, artifact_digest
         try:
-            scanned_model_profile = inspect_model(local_model_path)
+            scanned_model_profile = inspect_scan_model(local_model_path)
         except (OSError, ValueError) as error:
             raise RuntimeError(f'Could not load model: {error}') from error
         capacity = capacity_check(scanned_model_profile)
@@ -508,6 +508,8 @@ def run_scan_pipeline(config: dict) -> None:
 
     # ── Complete event: full report + normalization/OWASP data ────────────
     report_dict = report.to_dict()
+    if manifest.model_name:
+        report_dict['meta']['model_name'] = manifest.model_name
     if scanned_model_profile:
         if artifact_digest(scanned_model_profile) != scanned_model_profile['content_sha256']:
             raise RuntimeError('Model files changed during scanning. Scan the updated artifact again before deployment.')

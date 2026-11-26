@@ -53,7 +53,7 @@ export function ModelDownload({ onComplete, onBusy }: { onComplete: (path: strin
   }
   return <div className="input-page__native-picker">
     <label htmlFor="model-download-url">Public model download link</label>
-    <input id="model-download-url" className="text-input" type="url" disabled={busy} value={url}
+    <input id="model-download-url" className="text-input__field" type="url" disabled={busy} value={url}
       onChange={e => setUrl(e.target.value)} placeholder="https://…/model.gguf" />
     <p>Direct HTTPS GGUF links are downloaded to this app’s model folder before scanning. For private repositories or Transformers packages, download the complete package and browse to it.</p>
     <button type="button" className="button button--secondary" disabled={busy || !url.trim()} onClick={start}>Download model</button>

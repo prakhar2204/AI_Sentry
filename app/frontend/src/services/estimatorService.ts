@@ -1,7 +1,8 @@
 import { buildScanConfig } from "./scanService";
 
 export interface EstimateResult {
-  model_profile?: { name: string; format: string; weights_gib: number; required_ram_gib: number; recommended_vram_gib: number };
+  engine_packages?: Record<string, boolean>;
+  model_profile?: { name: string; format: string; weights_gib: number; runtime_weights_gib: number; context_length: number; concurrency: number; kv_cache_gib: number; required_ram_gib: number; recommended_vram_gib: number };
   capacity?: { allowed: boolean; reason: string; available_ram_gib: number; required_ram_gib: number };
   total_probes: number;
   estimated_time_sec: number | null;

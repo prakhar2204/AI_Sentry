@@ -282,14 +282,7 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
     return "Probe Engine (Auto)";
   })();
 
-  // Target display — if it looks like a file path, show server URL instead
-  const targetDisplay = (() => {
-    const t = state.target || "";
-    if (state.mode === "local" && t && !t.startsWith("http")) {
-      return `${t} → http://localhost:11434`;
-    }
-    return t;
-  })();
+  const targetDisplay = state.target || "";
 
   // Category icon helper
   const catIcon = (status: string) => {
@@ -431,7 +424,7 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
                       </span>
                       <span className="scan-page__cat-label">{cat.label}</span>
                       <span className="scan-page__cat-probes">
-                        {cat.probes_completed}/{cat.probes_total}
+                        {cat.probes_total > 0 ? `${cat.probes_completed}/${cat.probes_total}` : "—"}
                       </span>
                       <span
                         className={`scan-page__cat-badge scan-page__cat-badge--${cat.status}`}
@@ -447,8 +440,8 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
 
             {/* ── E. Activity Feed ── */}
             {activityLog.length > 0 && (
-              <section className="scan-page__section" id="scan-activity-section">
-                <h2 className="scan-page__section-title">Scan Activity</h2>
+              <details className="scan-page__section" id="scan-activity-section">
+                <summary className="scan-page__section-title">Activity log ({activityLog.length})</summary>
                 <div
                   className="scan-page__feed"
                   ref={feedRef}
@@ -466,7 +459,7 @@ export function ScanPage({ onComplete, onCancel }: ScanPageProps) {
                     </div>
                   ))}
                 </div>
-              </section>
+              </details>
             )}
 
             {/* ── G. Controls ── */}

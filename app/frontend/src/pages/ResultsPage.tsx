@@ -29,6 +29,7 @@
  */
 
 import React, { useState, useCallback, useMemo } from "react";
+import { ReportComparison } from "../components/ReportComparison";
 import { RiskGauge } from "../components/common/RiskGauge";
 import { useReportContext, selectFilteredFindings, pageFindings } from "../store/ReportContext";
 import { REPORT_ACTIONS } from "../store/actions";
@@ -784,6 +785,8 @@ export function ResultsPage({ onViewActions, onExport, onNewScan, onDeploy }: Re
         />
       </section>
 
+      {!isSimulated && <ReportComparison key={report.meta.scan_id} report={report} />}
+
       {/* ── F. Recommendations ── */}
       {recommendations.length > 0 && (
         <section className="results-page__section" id="results-recommendations-section">
@@ -810,7 +813,7 @@ export function ResultsPage({ onViewActions, onExport, onNewScan, onDeploy }: Re
         <section className="results-page__section" id="results-no-recommendations">
           <h2 className="results-page__section-title">Recommendations</h2>
           <p className="results-page__no-recs">
-            No recommendations — target passed all probes.
+            The completed run reported no findings.
           </p>
         </section>
       )}

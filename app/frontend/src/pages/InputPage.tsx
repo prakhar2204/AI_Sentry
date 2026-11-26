@@ -338,11 +338,13 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
 
             {window.electronAPI?.openModelFilePicker && <FileDropZone label="Drop a model file" id="desktop-model-drop"
               accept=".gguf,.safetensors" onFile={handleLocalFile} disabled={downloadBusy} />}
-            <ModelDownload onComplete={downloaded} onBusy={setDownloadBusy} />
+            <details className="input-secondary">
+              <summary>Download a model from a link</summary>
+              <ModelDownload onComplete={downloaded} onBusy={setDownloadBusy} />
+            </details>
 
-            <div className="input-page__separator">
-              <span className="input-page__separator-text">or enter server URL</span>
-            </div>
+            <details className="input-secondary" open={localPath.startsWith("http") || undefined}>
+              <summary>Connect to a running model server</summary>
 
             <TextInput
               label="Local Server URL (if already running)"
@@ -356,6 +358,7 @@ export function InputPage({ onContinue, onBack }: InputPageProps) {
               placeholder="http://localhost:11434/v1/chat/completions"
               error={!localFileName && !localPath.startsWith("http") ? targetError || undefined : undefined}
             />
+            </details>
           </section>
         )}
 

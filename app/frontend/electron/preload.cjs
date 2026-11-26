@@ -17,6 +17,12 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  updateCommand: (action, value) => ipcRenderer.invoke('updates:command', action, value),
+  onUpdate: callback => {
+    const handler = (_event, state) => callback(state);
+    ipcRenderer.on('updates:changed', handler);
+    return () => ipcRenderer.removeListener('updates:changed', handler);
+  },
   getPathForFile: file => webUtils.getPathForFile(file),
   // ── Scan lifecycle ──────────────────────────────────────
   /** Start a scan with the given config. Returns { started: boolean, error?: string } */
